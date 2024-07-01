@@ -33,7 +33,7 @@ const CONFIG = {
   API: {
     /** 查询 */
     search: {
-      url: "/api/torrent/search",
+      url: "/torrent/search",
       method: "POST",
 
       // payload 示例
@@ -47,11 +47,11 @@ const CONFIG = {
       // }
     },
     genDlToken: {
-      url: "/api/torrent/genDlToken",
+      url: "/torrent/genDlToken",
       method: "POST",
     },
     collection: {
-      url: "/api/torrent/collection",
+      url: "/torrent/collection",
       method: "POST",
     },
   },

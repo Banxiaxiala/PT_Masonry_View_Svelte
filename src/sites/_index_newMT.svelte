@@ -51,7 +51,12 @@
   // 0. 变量声明 & 配置 ------------------------------------------------
 
   // search api
-  const searchApiURL = location.origin + config.API.search.url;
+  // const searchApiURL = location.origin + config.API.search.url + '/api';
+  const affix = location.origin.match(/\.([^.]+)$/)[0];
+  const _searchApiURL_generate = 'https://api.m-team'+ affix + '/api' + config.API.search.url; // 按照本链接生成的
+  const _searchApiURL_localStorage = localStorage.getItem('apiHost') + config.API.search.url ; // 从 localStorage 获取的
+  // NOTE:先这么着吧, 看之后有没有机会做一个筛选...
+  const searchApiURL = _searchApiURL_localStorage || _searchApiURL_generate; 
 
   // NOTE: 这里不能注释掉, 必须留着, 不然 MT 可能不加载 NEXUS_TOOLS
   // Nexus_Tools 绑定
