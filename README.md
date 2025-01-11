@@ -108,6 +108,7 @@ https://github.com/KesaubeEire/PT_Masonry_View_Svelte/assets/20382002/3e827f13-2
 
 - 应对主站更新
   - [x] 240701: 应对 M-team 主站 api 统一更新为 api.m-team.xxxx
+  - [x] 250111: 应对 M-team 主站 api 添加 Ts 的请求头
 
 ## FIX HISTORY
 - MT /detail 编辑种子失效 <直接脚本排除了, 算是糊弄过去了> [2024.5.11 v1.1.12]

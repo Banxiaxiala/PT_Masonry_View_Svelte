@@ -2,7 +2,7 @@
 // @name            PT种子列表瀑布流视图(Svelte重构)
 // @name:en         PT_Masonry_View_Svelte
 // @namespace       https://github.com/KesaubeEire/PT_Masonry_View_Svelte
-// @version         1.1.13b
+// @version         1.1.14b
 // @author          Kesa
 // @description     PT种子列表无限下拉瀑布流视图(Svelte重构)
 // @description:en  PT Masonry View by Svelte.
@@ -12295,7 +12295,10 @@
     const auth = localStorage.getItem("auth") || "";
     const headers = {
       "Content-Type": "application/json;charset=UTF-8",
-      Authorization: auth
+      Authorization: auth,
+      // NOTE: 250111: 应对 M-team 主站 api 添加 Ts 的请求头
+      // @ts-ignore
+      "Ts": Math.floor(/* @__PURE__ */ new Date() / 1e3)
     };
     function RequestExample() {
       console.log("当前页面 path:	", location.pathname);

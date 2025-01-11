@@ -171,6 +171,9 @@
   const headers = {
     "Content-Type": "application/json;charset=UTF-8",
     Authorization: auth,
+    // NOTE: 250111: 应对 M-team 主站 api 添加 Ts 的请求头
+    // @ts-ignore
+    "Ts": Math.floor(new Date() / 1000),
   };
 
   /**初始化 search 请求->已封装好载荷(payload)*/
