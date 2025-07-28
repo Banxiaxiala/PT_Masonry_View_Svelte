@@ -1,3 +1,29 @@
+# 通知
+
+本项目已经有年头了, M-team 的专用新脚本已经做好, 地址 -> [点这里](https://github.com/KesaubeEire/PT_Fall-View)
+
+KamePT 依然沿用这个脚本, 所以如果你 Mteam 和 KamePT 都需要瀑布流, 那么需要在这个脚本的设置里禁掉 Mteam 的域名保留 KamePT 的域名哟.
+
+
+
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+
+
 # [PT_Masonry] PT 瀑布流视图<br><span style="font-size:20px;">目前支持站点: </span><span style="font-size:20px;font-weight:700;color:red;"> Kame MT </span>
 
 <!-- ./video.mp4 -->
