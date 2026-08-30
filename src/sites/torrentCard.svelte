@@ -24,11 +24,15 @@
     it.status = torrentInfo.status || {};
   }
 
-  /** 详情链接: PTT 用 __ksDetailUrl(it), 其他用 /detail/{id} */
+  /** 详情链接: 优先用原表格解析的真实详情链接(NexusPHP 站 details.php?id=..),
+   * 其次 PTT(__ksDetailUrl), 最后 M-Team /detail/{id}。
+   * 修复: kamept 等 NexusPHP 站此前误用 /detail/{id}(M-Team 风格)导致跳错。
+   */
   function detailLink() {
+    if (it.torrentLink) return it.torrentLink;
     if (__isPTT) return __ksDetailUrl(it);
     if (it.id) return "/detail/" + it.id;
-    return it.torrentLink || "#";
+    return "#";
   }
 
   /** M-Team NEW_MT 站: 点击卡片标题/封面在 iframe 中打开详情 */
@@ -52,12 +56,12 @@
   let picSrc = "";
   $: picSrc = (it.imageList && it.imageList[0]) || "";
 
-  /** 图片加载失败占位 */
-  let picError = false;
-  const onPicError = () => {
-    picError = true;
-    sort_masonry();
-  };
+  // 封面图加载完全交由 lib/lazyImage 的 __kesaWatchLazy 队列接管:
+  // - 原表格 lazy img 通过 new Image() 预热进浏览器缓存(并强制 loading=eager)
+  // - 卡片 <img class="nexus-lazy-load_Kesa"> 走并发限制的 __kesaQueue
+  // - 加载前查 __kesaFindLoaded: 命中页面里同 src 已加载的 img, 直接 l.src=o 复用缓存(不重新请求)
+  // - onerror 重试 1 次 → 仍失败走 image_proxy.php 端点回退 → 仍失败 SVG 占位
+  // 因此此处不主动写 src 也不监听 on:error, 避免和队列冲突。
 
   /** 根据背景颜色动态调整文字黑白 */
   function getTextColor(background) {
@@ -128,21 +132,19 @@
       </div>
     {/if}
 
-    <!-- 封面图(懒加载) -->
-    <!-- svelte-ignore a11y-click-events-have-key-events -->
+    <!-- 封面图(走懒加载队列 __kesaWatchLazy, 见 lib/lazyImage.js)
+         无 data-src 时直接显示 pic_error 占位, 不创建空 img -->
     <div class="card-image" on:click={onClickCard}>
-      {#if picError}
+      {#if !picSrc}
         <div class="pic_error">
-          {$_pic_failed_showInfo ? (it.name || "图片加载失败") : "图片加载失败"}
+          {$_pic_failed_showInfo ? (it.name || "暂无图片") : "暂无图片"}
         </div>
       {:else}
         <img
           class="card-image--img nexus-lazy-load_Kesa"
-          src={config.LOADING_PIC}
           data-src={picSrc}
           alt={it.name}
           on:load={sort_masonry}
-          on:error={onPicError}
         />
       {/if}
       <!-- 局部悬浮预览触发区(预览大图方式=局部悬浮时, 鼠标悬停此处触发大图预览) -->

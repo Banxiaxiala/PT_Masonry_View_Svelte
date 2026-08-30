@@ -16,6 +16,7 @@
   } from "./stores";
   import { GET_TORRENT_LIST_SELECTOR, GLOBAL_SITE, IS_MT } from "./sites";
   import { __wdvAutoSync, __wdvAutoPush } from "./lib/sync";
+  import { __kesaWatchLazy } from "./lib/lazyImage";
   import BtnTurnPage from "./component/btnTurnPage.svelte";
   import { fade } from "svelte/transition";
   // ------------------------------------------------
@@ -25,14 +26,21 @@
   );
 
   // 1. 隐藏原种子列表并进行前置操作 --------------------------------------------------------------------------------------
-  let _ORIGIN_TL_Node = document.querySelector(GET_TORRENT_LIST_SELECTOR());
-  // M-Team NEW_MT 站: 无原始种子表格, 复用 main.js 创建的占位节点, 保证瀑布流正常挂载
+  // 参照 1.2.3b: M-Team 的 _ORIGIN_TL_Node 直接用真实 div.app-content__inner(由 main.js
+  // 轮询等到出现后才挂载), 瀑布流作为其兄弟节点插入; 这样瀑布流模式隐藏原生表格时,
+  // 瀑布流自然显示在内容区, 而非被原生表格埋在下方面不可见。
+  // SPA 页(/search 等)无 div.app-content__inner 时 fallback 到 #__kesaMTPlaceholder。
+  let _ORIGIN_TL_Node = document.querySelector("div.app-content__inner");
   if (!_ORIGIN_TL_Node && IS_MT(window.location.hostname)) {
     _ORIGIN_TL_Node = document.querySelector("#__kesaMTPlaceholder");
+  }
+  if (!_ORIGIN_TL_Node) {
+    _ORIGIN_TL_Node = document.querySelector(GET_TORRENT_LIST_SELECTOR());
   }
   // 隐藏原有视图
   // @ts-ignore
   // _ORIGIN_TL_Node.style.display = "none";
+
   $: {
     if (_ORIGIN_TL_Node) {
       _ORIGIN_TL_Node.style.display = $_show_mode ? "none" : "block";
@@ -136,6 +144,11 @@
     const componentBtnTurnPage = new BtnTurnPage({
       target: nextPageNode,
     });
+
+    // 懒加载接管器: 启动时预热原列表封面图(new Image() 灌浏览器缓存 + 强制 eager),
+    // 后续由 _index.svelte afterUpdate 在每次卡片渲染后接管新增的 .nexus-lazy-load_Kesa。
+    // 设计: 复用原列表已加载的同 src 图(避免重复请求), 失败回退站点 image_proxy 端点。
+    __kesaWatchLazy();
 
     // 多设备 WebDAV 同步: 打开页面自动下载(已读/设置/页码), 关闭页面自动上传(兜底)
     __wdvAutoSync();

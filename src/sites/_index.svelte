@@ -13,6 +13,7 @@
   import { onMount, afterUpdate } from "svelte";
 
   import { sortMasonry, NEXUS_TOOLS, debounce } from "../utils";
+  import { __kesaWatchLazy } from "../lib/lazyImage";
   import {
     GLOBAL_SITE,
     GET_CURRENT_PT_DOMAIN,
@@ -122,7 +123,11 @@
       console.warn("卡片列数或卡片间隔过小, 列数不小于2, 间隔不小于1");
       return 0;
     }
-    const U = (_wf.clientWidth - (column - 1) * gap) / column;
+    // 容器尚无实际宽度(卡片未渲染/容器暂未排版)时用视口宽兜底,
+    // 否则 (0-(column-1)*gap)/column 得到负宽(如 -15)导致卡片不可见。
+    let _cw = _wf.clientWidth;
+    if (!_cw || _cw <= 0) _cw = window.innerWidth - 2 * _margin;
+    const U = (_cw - (column - 1) * gap) / column;
     // 同步每张卡片宽度
     if (waterfallNode) {
       Array.from(waterfallNode.querySelectorAll(".card")).forEach((W) => {
@@ -222,12 +227,19 @@
   } else {
     // NexusPHP 路由: 直接解析原表格 DOM
     // PTT/NicePT/PTFans 用 __pttParse(按站点列索引适配); 其余(kamept)用各站 config.TORRENT_LIST_TO_JSON
-    infoList = [
-      ...infoList,
-      ...(__isPTT
-        ? __pttParse(originTable)
-        : config.TORRENT_LIST_TO_JSON(originTable).map(__normalizeTorrent)),
-    ];
+    try {
+      infoList = [
+        ...infoList,
+        ...(__isPTT
+          ? __pttParse(originTable)
+          : config.TORRENT_LIST_TO_JSON(originTable).map(__normalizeTorrent)),
+      ];
+    } catch (err) {
+      // 防御: 解析崩溃会让 new Waterfall() 抛错 → 卡片/加载按钮全不渲染(但悬浮窗已先建, 仍显示)。
+      // 这里捕获并打印, 避免整组件初始化失败, 并让具体错误在控制台可见。
+      console.error("[Waterfall] 种子列表解析失败, 卡片可能为空:", err);
+      infoList = [];
+    }
   }
 
   console.log("---> 环境:\t", import.meta.env.VITE_APP_ENV);
@@ -237,7 +249,12 @@
   }
 
   // NOTE: 如果站点有特殊操作, 这里执行
-  GLOBAL_SITE[$_current_domain]?.special();
+  // 防御: special() 若抛错会中断组件初始化(卡片全不渲染), 故捕获并打印
+  try {
+    GLOBAL_SITE[$_current_domain]?.special();
+  } catch (err) {
+    console.error("[Waterfall] 站点特殊操作 special() 失败(不影响卡片渲染):", err);
+  }
 
   // 3. 开整瀑布流 --------------------------------------------------------------------------------------
 
@@ -471,8 +488,11 @@
    */
   let __mteamReqListener = null;
   let __mteamResListener = null;
+  let __mteamDocListener = null;
   /** 是否接受本次 /search 响应(仅种子列表请求, 过滤 "mode":"waterfall" 等非列表请求) */
   let __mteamIsAccept = false;
+  /** 是否已拿到种子数据(劫持或回退任一成功即置位, 避免重复请求) */
+  let __mteamGot = false;
   function __mteamBoot() {
     // 启动劫持(XHR + fetch), 无需清理(脚本生命周期与页面一致)
     Launch_Hijack({ path: "/search", method: "POST" });
@@ -499,25 +519,138 @@
         if (!Array.isArray(list)) return;
 
         // 每个 /search 响应即一页完整数据, 整体替换(分页导航由站点发起新请求, 触发新响应)
-        infoList = list.map(__normalizeTorrent);
-
-        if (masonry) {
-          masonry.reloadItems();
-          masonry.layout("fast");
-          masonry.layout("fast");
-        }
-        // 整理懒加载
-        setTimeout(NEXUS_TOOLS, 600);
+        __mtFill(list);
       } catch (err) {
         console.warn("M-Team 响应解析失败:", err);
       }
     };
     window.addEventListener("res>POST->/search", __mteamResListener);
+
+    // ---- M-Team 沙盒回退数据源 ----
+    // 油猴脚本运行在 sandbox, 无法劫持页面主世界(webpack 应用)发起的 XHR/fetch,
+    // 故 `res>POST->/search` 事件在 SSR 页(/browse/movie 等)永不触发 → infoList 恒空 → 卡片 0。
+    // 这里提供回退: 向页面主世界注入脚本读取 localStorage + HMAC-SHA1 签名 + fetch 请求
+    // apiHost + /torrent/search, 再通过 document 自定义事件(跨世界共享)把 data.data 回传沙盒。
+    __mteamDocListener = (e) => {
+      const list = e.detail && e.detail.list;
+      if (!Array.isArray(list) || !list.length) return;
+      __mtFill(list);
+    };
+    document.addEventListener("__kesaMTData", __mteamDocListener);
+
+    // 劫持 3 秒仍无数据 → 主动签名请求回退(参考 1.2.3b __kesaOldU 方案, 适配沙盒)
+    setTimeout(() => {
+      if (__mteamGot) return;
+      __mtFetchFallback();
+      // 轮询兜底: 即便 CustomEvent 跨世界不可达, 也能从共享 DOM 属性(documentElement)读到数据
+      let __polls = 0;
+      const __poll = setInterval(() => {
+        if (__mteamGot) { clearInterval(__poll); return; }
+        const arr = document.documentElement && document.documentElement.__kesaMTData;
+        if (Array.isArray(arr) && arr.length) {
+          clearInterval(__poll);
+          __mtFill(arr);
+          return;
+        }
+        if (++__polls >= 8) clearInterval(__poll); // 最多约 4 秒
+      }, 500);
+    }, 3000);
+  }
+
+  /** M-Team 沙盒回退: 注入主世界脚本执行签名请求, 结果经 document 自定义事件回传 */
+  function __mtFetchFallback() {
+    try {
+      // 主世界脚本: 读取 localStorage → 签名 → fetch apiHost + /torrent/search → 派发 __kesaMTData
+      const mainScript = `(function(){
+        try{
+          var __secret="HLkPcWmycL57mfJt";
+          var __apiHost=localStorage.getItem("apiHost")||"";
+          var __u=(__apiHost||("https://api.m-team"+location.origin.match(/\\.([^.]+)$/)[0]+"/api"))+"/torrent/search";
+          var __o={${__mtBuildReqBody()}};
+          __o._timestamp=Date.now();
+          if(!window.crypto||!window.crypto.subtle)return;
+          window.crypto.subtle.importKey("raw",new TextEncoder().encode(__secret),{name:"HMAC",hash:"SHA-1"},false,["sign"]).then(function(k){
+            return window.crypto.subtle.sign("HMAC",k,new TextEncoder().encode("POST&"+new URL(__u).pathname+"&"+__o._timestamp));
+          }).then(function(sig){
+            __o._sgin=btoa(String.fromCharCode.apply(null,new Uint8Array(sig)));
+            var __h={"Content-Type":"application/json",version:"1.1.7",webVersion:"1170",visitorId:localStorage.getItem("visitorId")||"",did:localStorage.getItem("did")||"",authorization:localStorage.getItem("auth")||"",ts:Math.floor(Date.now()/1e3)};
+            return fetch(__u,{method:"POST",headers:__h,body:JSON.stringify(__o)});
+          }).then(function(r){return r.json();}).then(function(j){
+            var __arr=(j&&j.data&&j.data.data)||[];
+            if(!__arr.length)return;
+            document.documentElement.__kesaMTData=__arr;
+            document.dispatchEvent(new CustomEvent("__kesaMTData",{detail:{list:__arr}}));
+          }).catch(function(err){console.warn("[Masonry] M-Team 回退请求失败:",err);});
+        }catch(err){console.warn("[Masonry] M-Team 回退注入失败:",err);}
+      })();`;
+      const s = document.createElement("script");
+      s.textContent = mainScript;
+      (document.head || document.documentElement).appendChild(s);
+      s.remove();
+      console.log("[Masonry] M-Team 劫持无数据, 已回退主动签名请求(注入主世界)");
+    } catch (err) {
+      console.warn("[Masonry] M-Team 回退启动失败:", err);
+    }
+  }
+
+  /** M-Team 回退请求体: 从当前 URL 解析 mode/分类/页码/排序 */
+  function __mtBuildReqBody() {
+    try {
+      const u = new URL(window.location.href);
+      const mode = u.pathname.split("/")[2] || "normal";
+      const cats = u.searchParams.getAll("cat");
+      const pageNum = Number(u.searchParams.get("pageNumber")) || 1;
+      const sort = u.searchParams.get("sort") || "";
+      const b = ["pageNumber:" + pageNum, "pageSize:20", "visible:1"];
+      if (mode) b.push("mode:" + JSON.stringify(mode));
+      if (cats && cats.length) b.push("categories:" + JSON.stringify(cats));
+      if (sort) {
+        let sf = sort.split(":")[0].toUpperCase();
+        let sfF = "";
+        if (sf.includes("DATE")) sfF = "CREATED_DATE";
+        else if (sf.includes("SIZE")) sfF = "SIZE";
+        else if (sf.includes("SEEDER")) sfF = "SEEDERS";
+        else if (sf.includes("LEECHER")) sfF = "LEECHERS";
+        else if (sf.includes("TIME")) sfF = "TIMES_COMPLETED";
+        let sd = sort.split(":")[1].toUpperCase().includes("ASC") ? "ASC" : "DESC";
+        if (sfF) { b.push("sortField:" + JSON.stringify(sfF)); b.push("sortDirection:" + JSON.stringify(sd)); }
+      }
+      return b.join(",");
+    } catch (e) {
+      return "pageNumber:1,pageSize:20,visible:1,mode:\"normal\"";
+    }
+  }
+
+  /** 填充 infoList 并刷新瀑布流(M-Team 通用) */
+  function __mtFill(list) {
+    if (__mteamGot) return;
+    __mteamGot = true;
+    try {
+      infoList = list.map(__normalizeTorrent);
+    } catch (err) {
+      console.warn("M-Team 数据归一化失败:", err);
+      infoList = list;
+    }
+    // 等 Svelte 把卡片渲染进 DOM 后再重算布局: 首次 masonry 创建时 infoList 为空,
+    // 容器 clientWidth=0 曾导致卡片负宽(-15)不可见, 必须在卡片存在后重新计算宽度并排版。
+    setTimeout(() => {
+      if (window.CHANGE_CARD_LAYOUT) window.CHANGE_CARD_LAYOUT();
+      if (masonry) {
+        masonry.reloadItems();
+        masonry.layout("fast");
+        masonry.layout("fast");
+      }
+      setTimeout(NEXUS_TOOLS, 300);
+    }, 80);
   }
 
   /** 更新项目配置*/
   afterUpdate(() => {
     console.log("afterUpdate-------------------->");
+
+    // 懒加载接管: 每次 svelte 更新后接管新插入的 .nexus-lazy-load_Kesa 卡片图
+    // (去重由 __kesaQueue 内部 __kesaQueued/__kesaFail 标志保证, 重复调用无副作用)
+    try { __kesaWatchLazy(); } catch (e) {}
 
     // 配置 onMount 和 翻页的协同响应, 避免被其他 dom 刷新干扰重复调用
     if (masonry && onMountSignal) {

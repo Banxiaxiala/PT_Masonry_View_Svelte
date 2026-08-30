@@ -2,7 +2,7 @@
 // @name            PT种子列表瀑布流视图(Svelte重构)
 // @name:en         PT_Masonry_View_Svelte
 // @namespace       https://github.com/KesaubeEire/PT_Masonry_View_Svelte
-// @version         1.2.12b
+// @version         1.2.19b
 // @author          Kesa
 // @description     PT种子列表无限下拉瀑布流视图(Svelte重构) [M-Team数据源: 劫持站点自身请求(原作者逻辑)]
 // @description:en  PT Masonry View by Svelte.
@@ -2340,14 +2340,14 @@
         throttleSort();
       }
     }
-    if (typeof __kesaWatchLazy === "function")
-      __kesaWatchLazy();
+    if (typeof __kesaWatchLazy$1 === "function")
+      __kesaWatchLazy$1();
   }
-  let __kesaQ = [];
-  let __kesaBusy = 0;
-  let __kesaDone = {};
-  const __kesaLimit = 4;
-  function __kesaWatchLazy() {
+  let __kesaQ$1 = [];
+  let __kesaBusy$1 = 0;
+  let __kesaDone$1 = {};
+  const __kesaLimit$1 = 4;
+  function __kesaWatchLazy$1() {
     document.querySelectorAll('img[loading="lazy"]').forEach((im) => {
       const src = im.getAttribute("src") || im.getAttribute("data-src") || "";
       if (!src || /emptyImg|trans\.gif|spinner|^data:/i.test(src))
@@ -2362,32 +2362,32 @@
     });
     document.querySelectorAll(".nexus-lazy-load_Kesa:not(.preview_Kesa)").forEach((l) => {
       if (l.dataset.src && !l.__kesaQueued && !l.__kesaFail)
-        __kesaQueue(l);
+        __kesaQueue$1(l);
     });
   }
-  function __kesaQueue(l) {
+  function __kesaQueue$1(l) {
     if (l.__kesaQueued || l.classList.contains("preview_Kesa") || l.__kesaFail)
       return;
     const o = l.dataset.src;
     if (!o)
       return;
-    if (__kesaDone[o] === 1) {
+    if (__kesaDone$1[o] === 1) {
       l.__kesaQueued = 1, l.referrerPolicy = "no-referrer", l.src = o, l.classList.add("preview_Kesa"), sortMasonry();
       return;
     }
-    if (__kesaDone[o] === -1) {
+    if (__kesaDone$1[o] === -1) {
       l.__kesaQueued = 1, l.__kesaFail = 1, l.src = o, l.classList.add("preview_Kesa"), sortMasonry();
       return;
     }
-    l.__kesaQueued = 1, __kesaQ.push(l), __kesaPump();
+    l.__kesaQueued = 1, __kesaQ$1.push(l), __kesaPump$1();
   }
-  function __kesaPump() {
-    while (__kesaBusy < __kesaLimit && __kesaQ.length) {
-      const l = __kesaQ.shift();
-      l.__kesaQueued = 0, __kesaStart(l);
+  function __kesaPump$1() {
+    while (__kesaBusy$1 < __kesaLimit$1 && __kesaQ$1.length) {
+      const l = __kesaQ$1.shift();
+      l.__kesaQueued = 0, __kesaStart$1(l);
     }
   }
-  function __kesaFindLoaded(o) {
+  function __kesaFindLoaded$1(o) {
     try {
       const all = document.querySelectorAll("img");
       for (let i = 0; i < all.length; i++) {
@@ -2400,12 +2400,12 @@
     }
     return null;
   }
-  function __kesaFailSvg() {
+  function __kesaFailSvg$1() {
     return "data:image/svg+xml;utf8," + encodeURIComponent(
       "<svg xmlns='http://www.w3.org/2000/svg' width='400' height='560'><text x='50%' y='50%' font-size='24' fill='#aaa' text-anchor='middle' dominant-baseline='middle'>暂时无法加载出图片</text></svg>"
     );
   }
-  function __kesaStart(l) {
+  function __kesaStart$1(l) {
     if (l.__kesaBusy || l.classList.contains("preview_Kesa"))
       return;
     const o = l.dataset.src;
@@ -2413,12 +2413,12 @@
       l.__kesaFail = 1;
       return;
     }
-    const __re = __kesaFindLoaded(o);
+    const __re = __kesaFindLoaded$1(o);
     if (__re) {
-      l.referrerPolicy = __re.referrerPolicy || "", l.src = o, l.classList.add("preview_Kesa"), __kesaDone[o] = 1, sortMasonry();
+      l.referrerPolicy = __re.referrerPolicy || "", l.src = o, l.classList.add("preview_Kesa"), __kesaDone$1[o] = 1, sortMasonry();
       return;
     }
-    l.__kesaBusy = 1, __kesaBusy++;
+    l.__kesaBusy = 1, __kesaBusy$1++;
     const p = new Image();
     const a = l.__kesaTry | 0;
     let __to = null;
@@ -2426,37 +2426,37 @@
     p.onload = () => {
       __to && clearTimeout(__to);
       if (l.__kesaTimedOut) {
-        __kesaDone[o] = 1, l.referrerPolicy = p.referrerPolicy, l.src = o, l.classList.add("preview_Kesa"), sortMasonry();
+        __kesaDone$1[o] = 1, l.referrerPolicy = p.referrerPolicy, l.src = o, l.classList.add("preview_Kesa"), sortMasonry();
         return;
       }
-      __kesaDone[o] = 1, l.__kesaBusy = 0, __kesaBusy--, __kesaPump(), l.referrerPolicy = p.referrerPolicy, l.src = o, l.classList.add("preview_Kesa"), sortMasonry();
+      __kesaDone$1[o] = 1, l.__kesaBusy = 0, __kesaBusy$1--, __kesaPump$1(), l.referrerPolicy = p.referrerPolicy, l.src = o, l.classList.add("preview_Kesa"), sortMasonry();
     };
     p.onerror = () => {
       __to && clearTimeout(__to);
       if (l.__kesaTimedOut) {
-        __kesaDone[o] = -1, l.__kesaFail = 1, l.src = __kesaFailSvg(), l.classList.add("preview_Kesa"), sortMasonry();
+        __kesaDone$1[o] = -1, l.__kesaFail = 1, l.src = __kesaFailSvg$1(), l.classList.add("preview_Kesa"), sortMasonry();
         return;
       }
       l.__kesaTry = a + 1;
       if (a === 0) {
-        l.__kesaBusy = 0, __kesaBusy--, setTimeout(() => {
-          __kesaQ.unshift(l), __kesaPump();
+        l.__kesaBusy = 0, __kesaBusy$1--, setTimeout(() => {
+          __kesaQ$1.unshift(l), __kesaPump$1();
         }, 500);
         return;
       }
       if (a === 1 && !/ptfans\.cc/i.test(location.hostname) && !o.includes("image_proxy.php") && !l.__kesaProxy) {
-        l.__kesaProxy = 1, l.dataset.src = location.origin + "/image_proxy.php?url=" + encodeURIComponent(o), l.__kesaBusy = 0, __kesaBusy--, setTimeout(() => {
-          __kesaQ.unshift(l), __kesaPump();
+        l.__kesaProxy = 1, l.dataset.src = location.origin + "/image_proxy.php?url=" + encodeURIComponent(o), l.__kesaBusy = 0, __kesaBusy$1--, setTimeout(() => {
+          __kesaQ$1.unshift(l), __kesaPump$1();
         }, 500);
         return;
       }
-      __kesaDone[o] = -1, l.__kesaFail = 1, l.__kesaBusy = 0, __kesaBusy--, __kesaPump(), l.src = o, l.classList.add("preview_Kesa"), sortMasonry();
+      __kesaDone$1[o] = -1, l.__kesaFail = 1, l.__kesaBusy = 0, __kesaBusy$1--, __kesaPump$1(), l.src = o, l.classList.add("preview_Kesa"), sortMasonry();
     };
     p.src = o;
     __to = setTimeout(function() {
       if (l.__kesaTimedOut)
         return;
-      l.__kesaTimedOut = 1, l.__kesaBusy = 0, __kesaBusy--, __kesaPump();
+      l.__kesaTimedOut = 1, l.__kesaBusy = 0, __kesaBusy$1--, __kesaPump$1();
     }, 4e3);
   }
   function NEXUS_TOOLS() {
@@ -2684,7 +2684,7 @@
         kesa_preview.css(previewPosition_Kesa(e, imgEle));
       });
       if ("IntersectionObserver" in window) {
-        __kesaWatchLazy();
+        __kesaWatchLazy$1();
       }
     });
   }
@@ -4823,10 +4823,18 @@
     Iframe_Width: 1260,
     /** NOTE: 站点特殊操作 */
     special: function() {
-      const _box = typeof $ === "function" && $("ksearchboxmain") || document.getElementById("ksearchboxmain");
-      _box ? _box.style.display = "none" : null;
+      let _box = null;
+      if (typeof $ === "function" && $(ksearchboxmain).length) {
+        _box = $(ksearchboxmain)[0];
+      } else {
+        _box = document.getElementById("ksearchboxmain");
+      }
+      if (_box)
+        _box.style.display = "none";
       const link = document.querySelector('a[href="?sort=7&type=asc&seeders_begin=1"]');
-      link ? link.childNodes[0].style.color = "black" : null;
+      const _fc = link && link.childNodes && link.childNodes[0];
+      if (_fc)
+        _fc.style.color = "black";
       let np = document.querySelector("img#nexus-preview");
       if (np)
         np.style.zIndex = 12e3;
@@ -4862,14 +4870,14 @@
       if (get_store_value(__bTags).includes(category))
         return;
       const categoryLinkDOM = categoryImg.parentNode;
-      const categoryLink = categoryLinkDOM.href;
-      const categoryNumber = categoryLink.slice(-3);
+      const categoryLink = categoryLinkDOM && categoryLinkDOM.href ? categoryLinkDOM.href : "";
+      const categoryNumber = typeof categoryLink === "string" ? categoryLink.slice(-3) : "";
       const _categoryImg = categoryImg.cloneNode(true);
       _categoryImg.className = "card-category-img";
       const torrentIndex = CONFIG$1.INDEX++;
       const torrentNameLink = row.querySelector(".torrentname a");
       const torrentName = torrentNameLink ? torrentNameLink.textContent.trim() : "";
-      const torrentLink = torrentNameLink.href;
+      const torrentLink = torrentNameLink && torrentNameLink.href ? torrentNameLink.href : "";
       const pattern = /id=(\d+)/;
       const match = torrentLink.match(pattern);
       const torrentId = match ? parseInt(match[1]) : null;
@@ -7681,6 +7689,192 @@
       init(this, options, instance$4, create_fragment$4, safe_not_equal, { originTable: 28 }, null, [-1, -1, -1]);
     }
   }
+  let __kesaQ = [];
+  let __kesaBusy = 0;
+  let __kesaDone = {};
+  const __kesaLimit = 4;
+  const __kesaFailSvg = () => {
+    return "data:image/svg+xml;utf8," + encodeURIComponent(
+      "<svg xmlns='http://www.w3.org/2000/svg' width='400' height='560'><text x='50%' y='50%' font-size='24' fill='#aaa' text-anchor='middle' dominant-baseline='middle'>暂时无法加载出图片</text></svg>"
+    );
+  };
+  function __kesaWatchLazy() {
+    try {
+      document.querySelectorAll('img[loading="lazy"]').forEach((im) => {
+        const src = im.getAttribute("src") || im.getAttribute("data-src") || "";
+        if (!src || /emptyImg|trans\.gif|spinner|^data:/i.test(src))
+          return;
+        if (im.loading !== "eager")
+          im.loading = "eager";
+        if (!im.__warmed) {
+          im.__warmed = 1;
+          try {
+            const w = new Image();
+            w.src = src;
+          } catch (e) {
+          }
+        }
+      });
+    } catch (e) {
+    }
+    try {
+      document.querySelectorAll(".nexus-lazy-load_Kesa:not(.preview_Kesa)").forEach((l) => {
+        if (l.dataset.src && !l.__kesaQueued && !l.__kesaFail)
+          __kesaQueue(l);
+      });
+    } catch (e) {
+    }
+  }
+  function __kesaQueue(l) {
+    if (l.__kesaQueued || l.classList.contains("preview_Kesa") || l.__kesaFail)
+      return;
+    const o = l.dataset.src;
+    if (!o)
+      return;
+    if (__kesaDone[o] === 1) {
+      try {
+        l.referrerPolicy = "no-referrer";
+        l.src = o;
+        l.classList.add("preview_Kesa");
+        try {
+          l.dispatchEvent(new Event("load"));
+        } catch (e) {
+        }
+      } catch (e) {
+      }
+      return;
+    }
+    if (__kesaDone[o] === -1) {
+      try {
+        l.__kesaFail = 1;
+        l.src = __kesaFailSvg();
+        l.classList.add("preview_Kesa");
+      } catch (e) {
+      }
+      return;
+    }
+    l.__kesaQueued = 1;
+    __kesaQ.push(l);
+    __kesaPump();
+  }
+  function __kesaPump() {
+    while (__kesaBusy < __kesaLimit && __kesaQ.length) {
+      const l = __kesaQ.shift();
+      l.__kesaQueued = 0;
+      __kesaStart(l);
+    }
+  }
+  function __kesaFindLoaded(o) {
+    try {
+      const all = document.querySelectorAll("img");
+      for (let i = 0; i < all.length; i++) {
+        const im = all[i];
+        const src = im.currentSrc || im.getAttribute("src") || "";
+        if (src === o && im.complete && im.naturalWidth > 0)
+          return im;
+      }
+    } catch (e) {
+    }
+    return null;
+  }
+  function __kesaStart(l) {
+    if (l.__kesaBusy || l.classList.contains("preview_Kesa"))
+      return;
+    const o = l.dataset.src;
+    if (!o) {
+      l.__kesaFail = 1;
+      return;
+    }
+    const __re = __kesaFindLoaded(o);
+    if (__re) {
+      try {
+        l.referrerPolicy = __re.referrerPolicy || "no-referrer";
+        l.src = o;
+        l.classList.add("preview_Kesa");
+        __kesaDone[o] = 1;
+        try {
+          l.dispatchEvent(new Event("load"));
+        } catch (e) {
+        }
+      } catch (e) {
+      }
+      return;
+    }
+    l.__kesaBusy = 1;
+    __kesaBusy++;
+    try {
+      const p = new Image();
+      const a = l.__kesaTry | 0;
+      if (a >= 1)
+        p.referrerPolicy = "no-referrer";
+      p.onload = () => {
+        try {
+          __kesaDone[o] = 1;
+          l.__kesaBusy = 0;
+          __kesaBusy--;
+          __kesaPump();
+          l.referrerPolicy = p.referrerPolicy || "no-referrer";
+          l.src = o;
+          l.classList.add("preview_Kesa");
+          try {
+            l.dispatchEvent(new Event("load"));
+          } catch (e) {
+          }
+        } catch (e) {
+        }
+      };
+      p.onerror = () => {
+        try {
+          l.__kesaTry = a + 1;
+          if (a === 0) {
+            l.__kesaBusy = 0;
+            __kesaBusy--;
+            setTimeout(() => {
+              try {
+                __kesaQ.unshift(l);
+                __kesaPump();
+              } catch (e) {
+              }
+            }, 500);
+            return;
+          }
+          if (a === 1 && !/ptfans\.cc/i.test(location.hostname) && !o.includes("image_proxy.php") && !l.__kesaProxy) {
+            try {
+              l.__kesaProxy = 1;
+              l.dataset.src = location.origin + "/image_proxy.php?url=" + encodeURIComponent(o);
+            } catch (e) {
+            }
+            l.__kesaBusy = 0;
+            __kesaBusy--;
+            setTimeout(() => {
+              try {
+                __kesaQ.unshift(l);
+                __kesaPump();
+              } catch (e) {
+              }
+            }, 500);
+            return;
+          }
+          __kesaDone[o] = -1;
+          l.__kesaFail = 1;
+          l.__kesaBusy = 0;
+          __kesaBusy--;
+          try {
+            l.src = __kesaFailSvg();
+            l.classList.add("preview_Kesa");
+          } catch (e) {
+          }
+        } catch (e) {
+        }
+      };
+      p.src = o;
+    } catch (e) {
+      l.__kesaBusy = 0;
+      __kesaBusy--;
+      __kesaDone[o] = -1;
+      l.__kesaFail = 1;
+    }
+  }
   const CARD = {
     /** 瀑布流卡片宽度 */
     CARD_WIDTH: get_store_value(_card_width),
@@ -7895,7 +8089,7 @@
           a,
           "href",
           /*detailLink*/
-          ctx[10]()
+          ctx[9]()
         );
         attr(a, "target", "_blank");
         attr(div, "class", "card-title svelte-xrdclb");
@@ -7910,7 +8104,7 @@
             a,
             "click",
             /*onClickCard*/
-            ctx[11]
+            ctx[10]
           );
           mounted = true;
         }
@@ -7931,7 +8125,6 @@
   }
   function create_else_block$2(ctx) {
     let img;
-    let img_src_value;
     let img_alt_value;
     let mounted;
     let dispose;
@@ -7939,8 +8132,6 @@
       c() {
         img = element("img");
         attr(img, "class", "card-image--img nexus-lazy-load_Kesa svelte-xrdclb");
-        if (!src_url_equal(img.src, img_src_value = CONFIG.LOADING_PIC))
-          attr(img, "src", img_src_value);
         attr(
           img,
           "data-src",
@@ -7953,20 +8144,12 @@
       m(target, anchor) {
         insert(target, img, anchor);
         if (!mounted) {
-          dispose = [
-            listen(
-              img,
-              "load",
-              /*sort_masonry*/
-              ctx[14]
-            ),
-            listen(
-              img,
-              "error",
-              /*onPicError*/
-              ctx[12]
-            )
-          ];
+          dispose = listen(
+            img,
+            "load",
+            /*sort_masonry*/
+            ctx[12]
+          );
           mounted = true;
         }
       },
@@ -7990,7 +8173,7 @@
         if (detaching)
           detach(img);
         mounted = false;
-        run_all(dispose);
+        dispose();
       }
     };
   }
@@ -7998,10 +8181,10 @@
     let div;
     let t_value = (
       /*$_pic_failed_showInfo*/
-      (ctx[9] ? (
+      (ctx[8] ? (
         /*it*/
-        ctx[1].name || "图片加载失败"
-      ) : "图片加载失败") + ""
+        ctx[1].name || "暂无图片"
+      ) : "暂无图片") + ""
     );
     let t;
     return {
@@ -8016,11 +8199,11 @@
       },
       p(ctx2, dirty) {
         if (dirty & /*$_pic_failed_showInfo, it*/
-        514 && t_value !== (t_value = /*$_pic_failed_showInfo*/
-        (ctx2[9] ? (
+        258 && t_value !== (t_value = /*$_pic_failed_showInfo*/
+        (ctx2[8] ? (
           /*it*/
-          ctx2[1].name || "图片加载失败"
-        ) : "图片加载失败") + ""))
+          ctx2[1].name || "暂无图片"
+        ) : "暂无图片") + ""))
           set_data(t, t_value);
       },
       d(detaching) {
@@ -8033,7 +8216,7 @@
     let div;
     let t_value = (
       /*_discountText*/
-      (ctx[13][
+      (ctx[11][
         /*it*/
         ctx[1].status.discount
       ] || /*it*/
@@ -8065,7 +8248,7 @@
       p(ctx2, dirty) {
         if (dirty & /*it*/
         2 && t_value !== (t_value = /*_discountText*/
-        (ctx2[13][
+        (ctx2[11][
           /*it*/
           ctx2[1].status.discount
         ] || /*it*/
@@ -8219,7 +8402,7 @@
           a,
           "href",
           /*detailLink*/
-          ctx[10]()
+          ctx[9]()
         );
       },
       m(target, anchor) {
@@ -8422,7 +8605,7 @@
     let t8;
     let show_if = (
       /*$_CARD_SHOW*/
-      ctx[8].tags && (Number(
+      ctx[7].tags && (Number(
         /*it*/
         ctx[1].labels
       ) || 0)
@@ -8431,13 +8614,11 @@
     let dispose;
     let if_block0 = (
       /*$_CARD_SHOW*/
-      ctx[8].title && create_if_block_9(ctx)
+      ctx[7].title && create_if_block_9(ctx)
     );
     function select_block_type(ctx2, dirty) {
-      if (
-        /*picError*/
-        ctx2[4]
-      )
+      if (!/*picSrc*/
+      ctx2[3])
         return create_if_block_8;
       return create_else_block$2;
     }
@@ -8450,15 +8631,15 @@
     );
     let if_block3 = (
       /*$_CARD_SHOW*/
-      ctx[8].size_download_collect && create_if_block_6(ctx)
+      ctx[7].size_download_collect && create_if_block_6(ctx)
     );
     let if_block4 = (
       /*$_CARD_SHOW*/
-      ctx[8].statistics && create_if_block_5(ctx)
+      ctx[7].statistics && create_if_block_5(ctx)
     );
     let if_block5 = (
       /*$_CARD_SHOW*/
-      ctx[8].sub_title && /*it*/
+      ctx[7].sub_title && /*it*/
       ctx[1].smallDescr && create_if_block_4(ctx)
     );
     let if_block6 = show_if && create_if_block$3(ctx);
@@ -8504,7 +8685,7 @@
           div0,
           "color",
           /*cateFontColor*/
-          ctx[5]
+          ctx[4]
         );
         attr(div1, "class", "hover-trigger svelte-xrdclb");
         attr(div2, "class", "card-image svelte-xrdclb");
@@ -8521,13 +8702,13 @@
           div5,
           "background-color",
           /*$_current_bgColor*/
-          ctx[7]
+          ctx[6]
         );
         set_style(
           div5,
           "display",
           /*gayHidden*/
-          ctx[6] ? "none" : ""
+          ctx[5] ? "none" : ""
         );
       },
       m(target, anchor) {
@@ -8564,7 +8745,7 @@
             div2,
             "click",
             /*onClickCard*/
-            ctx[11]
+            ctx[10]
           );
           mounted = true;
         }
@@ -8584,17 +8765,17 @@
           );
         }
         if (dirty & /*cateFontColor*/
-        32) {
+        16) {
           set_style(
             div0,
             "color",
             /*cateFontColor*/
-            ctx2[5]
+            ctx2[4]
           );
         }
         if (
           /*$_CARD_SHOW*/
-          ctx2[8].title
+          ctx2[7].title
         ) {
           if (if_block0) {
             if_block0.p(ctx2, dirty);
@@ -8635,7 +8816,7 @@
         }
         if (
           /*$_CARD_SHOW*/
-          ctx2[8].size_download_collect
+          ctx2[7].size_download_collect
         ) {
           if (if_block3) {
             if_block3.p(ctx2, dirty);
@@ -8650,7 +8831,7 @@
         }
         if (
           /*$_CARD_SHOW*/
-          ctx2[8].statistics
+          ctx2[7].statistics
         ) {
           if (if_block4) {
             if_block4.p(ctx2, dirty);
@@ -8665,7 +8846,7 @@
         }
         if (
           /*$_CARD_SHOW*/
-          ctx2[8].sub_title && /*it*/
+          ctx2[7].sub_title && /*it*/
           ctx2[1].smallDescr
         ) {
           if (if_block5) {
@@ -8680,9 +8861,9 @@
           if_block5 = null;
         }
         if (dirty & /*$_CARD_SHOW, it*/
-        258)
+        130)
           show_if = /*$_CARD_SHOW*/
-          ctx2[8].tags && (Number(
+          ctx2[7].tags && (Number(
             /*it*/
             ctx2[1].labels
           ) || 0);
@@ -8708,21 +8889,21 @@
           );
         }
         if (dirty & /*$_current_bgColor*/
-        128) {
+        64) {
           set_style(
             div5,
             "background-color",
             /*$_current_bgColor*/
-            ctx2[7]
+            ctx2[6]
           );
         }
         if (dirty & /*gayHidden*/
-        64) {
+        32) {
           set_style(
             div5,
             "display",
             /*gayHidden*/
-            ctx2[6] ? "none" : ""
+            ctx2[5] ? "none" : ""
           );
         }
       },
@@ -8781,21 +8962,23 @@
     let $_current_bgColor;
     let $_CARD_SHOW;
     let $_pic_failed_showInfo;
-    component_subscribe($$self, _SITE_SETTING, ($$value) => $$invalidate(16, $_SITE_SETTING = $$value));
-    component_subscribe($$self, _iframe_url, ($$value) => $$invalidate(17, $_iframe_url = $$value));
-    component_subscribe($$self, _iframe_switch, ($$value) => $$invalidate(18, $_iframe_switch = $$value));
-    component_subscribe($$self, _current_bgColor, ($$value) => $$invalidate(7, $_current_bgColor = $$value));
-    component_subscribe($$self, _CARD_SHOW, ($$value) => $$invalidate(8, $_CARD_SHOW = $$value));
-    component_subscribe($$self, _pic_failed_showInfo, ($$value) => $$invalidate(9, $_pic_failed_showInfo = $$value));
+    component_subscribe($$self, _SITE_SETTING, ($$value) => $$invalidate(14, $_SITE_SETTING = $$value));
+    component_subscribe($$self, _iframe_url, ($$value) => $$invalidate(15, $_iframe_url = $$value));
+    component_subscribe($$self, _iframe_switch, ($$value) => $$invalidate(16, $_iframe_switch = $$value));
+    component_subscribe($$self, _current_bgColor, ($$value) => $$invalidate(6, $_current_bgColor = $$value));
+    component_subscribe($$self, _CARD_SHOW, ($$value) => $$invalidate(7, $_CARD_SHOW = $$value));
+    component_subscribe($$self, _pic_failed_showInfo, ($$value) => $$invalidate(8, $_pic_failed_showInfo = $$value));
     let { torrentInfo } = $$props;
     let { cardWidth } = $$props;
     let it;
     function detailLink() {
+      if (it.torrentLink)
+        return it.torrentLink;
       if (__isPTT)
         return __ksDetailUrl(it);
       if (it.id)
         return "/detail/" + it.id;
-      return it.torrentLink || "#";
+      return "#";
     }
     function onClickCard(e) {
       if (__isPTT)
@@ -8809,11 +8992,6 @@
       set_store_value(_iframe_url, $_iframe_url = /^https?:/.test(link) ? link : location.origin + link, $_iframe_url);
     }
     let picSrc = "";
-    let picError = false;
-    const onPicError = () => {
-      $$invalidate(4, picError = true);
-      sort_masonry();
-    };
     let cateColor = "transparent";
     let cateFontColor = "black";
     const _discountText = { FREE: "免费", PERCENT_50: "50%" };
@@ -8822,21 +9000,21 @@
     }
     $$self.$$set = ($$props2) => {
       if ("torrentInfo" in $$props2)
-        $$invalidate(15, torrentInfo = $$props2.torrentInfo);
+        $$invalidate(13, torrentInfo = $$props2.torrentInfo);
       if ("cardWidth" in $$props2)
         $$invalidate(0, cardWidth = $$props2.cardWidth);
     };
     $$self.$$.update = () => {
       if ($$self.$$.dirty & /*torrentInfo*/
-      32768) {
+      8192) {
         {
           $$invalidate(1, it = torrentInfo || {});
           $$invalidate(1, it.status = torrentInfo.status || {}, it);
         }
       }
       if ($$self.$$.dirty & /*it, $_SITE_SETTING*/
-      65538) {
-        $$invalidate(6, gayHidden = !__isPTT && it.category === 440 && $_SITE_SETTING.mt.hide_gay);
+      16386) {
+        $$invalidate(5, gayHidden = !__isPTT && it.category === 440 && $_SITE_SETTING.mt.hide_gay);
       }
       if ($$self.$$.dirty & /*it*/
       2) {
@@ -8846,7 +9024,7 @@
       6) {
         {
           $$invalidate(2, cateColor = CONFIG.CATEGORY[it.category] ?? "transparent");
-          $$invalidate(5, cateFontColor = cateColor && cateColor !== "transparent" ? getTextColor(cateColor) : "black");
+          $$invalidate(4, cateFontColor = cateColor && cateColor !== "transparent" ? getTextColor(cateColor) : "black");
         }
       }
     };
@@ -8855,7 +9033,6 @@
       it,
       cateColor,
       picSrc,
-      picError,
       cateFontColor,
       gayHidden,
       $_current_bgColor,
@@ -8863,7 +9040,6 @@
       $_pic_failed_showInfo,
       detailLink,
       onClickCard,
-      onPicError,
       _discountText,
       sort_masonry,
       torrentInfo,
@@ -8873,12 +9049,12 @@
   class TorrentCard extends SvelteComponent {
     constructor(options) {
       super();
-      init(this, options, instance$3, create_fragment$3, safe_not_equal, { torrentInfo: 15, cardWidth: 0 });
+      init(this, options, instance$3, create_fragment$3, safe_not_equal, { torrentInfo: 13, cardWidth: 0 });
     }
   }
   function get_each_context(ctx, list, i) {
     const child_ctx = ctx.slice();
-    child_ctx[30] = list[i];
+    child_ctx[33] = list[i];
     return child_ctx;
   }
   function create_each_block(key_1, ctx) {
@@ -8889,7 +9065,7 @@
       props: {
         torrentInfo: (
           /*info*/
-          ctx[30]
+          ctx[33]
         ),
         cardWidth: (
           /*CARD*/
@@ -8916,7 +9092,7 @@
         if (dirty[0] & /*infoList*/
         4)
           torrentcard_changes.torrentInfo = /*info*/
-          ctx[30];
+          ctx[33];
         if (dirty[0] & /*CARD*/
         1)
           torrentcard_changes.cardWidth = /*CARD*/
@@ -9016,7 +9192,7 @@
     );
     const get_key = (ctx2) => (
       /*info*/
-      ctx2[30].id
+      ctx2[33].id
     );
     for (let i = 0; i < each_value.length; i += 1) {
       let child_ctx = get_each_context(ctx, each_value, i);
@@ -9190,6 +9366,75 @@
       return 1;
     }
   }
+  function __mtFetchFallback() {
+    try {
+      const mainScript = `(function(){
+        try{
+          var __secret="HLkPcWmycL57mfJt";
+          var __apiHost=localStorage.getItem("apiHost")||"";
+          var __u=(__apiHost||("https://api.m-team"+location.origin.match(/\\.([^.]+)$/)[0]+"/api"))+"/torrent/search";
+          var __o={${__mtBuildReqBody()}};
+          __o._timestamp=Date.now();
+          if(!window.crypto||!window.crypto.subtle)return;
+          window.crypto.subtle.importKey("raw",new TextEncoder().encode(__secret),{name:"HMAC",hash:"SHA-1"},false,["sign"]).then(function(k){
+            return window.crypto.subtle.sign("HMAC",k,new TextEncoder().encode("POST&"+new URL(__u).pathname+"&"+__o._timestamp));
+          }).then(function(sig){
+            __o._sgin=btoa(String.fromCharCode.apply(null,new Uint8Array(sig)));
+            var __h={"Content-Type":"application/json",version:"1.1.7",webVersion:"1170",visitorId:localStorage.getItem("visitorId")||"",did:localStorage.getItem("did")||"",authorization:localStorage.getItem("auth")||"",ts:Math.floor(Date.now()/1e3)};
+            return fetch(__u,{method:"POST",headers:__h,body:JSON.stringify(__o)});
+          }).then(function(r){return r.json();}).then(function(j){
+            var __arr=(j&&j.data&&j.data.data)||[];
+            if(!__arr.length)return;
+            document.documentElement.__kesaMTData=__arr;
+            document.dispatchEvent(new CustomEvent("__kesaMTData",{detail:{list:__arr}}));
+          }).catch(function(err){console.warn("[Masonry] M-Team 回退请求失败:",err);});
+        }catch(err){console.warn("[Masonry] M-Team 回退注入失败:",err);}
+      })();`;
+      const s = document.createElement("script");
+      s.textContent = mainScript;
+      (document.head || document.documentElement).appendChild(s);
+      s.remove();
+      console.log("[Masonry] M-Team 劫持无数据, 已回退主动签名请求(注入主世界)");
+    } catch (err) {
+      console.warn("[Masonry] M-Team 回退启动失败:", err);
+    }
+  }
+  function __mtBuildReqBody() {
+    try {
+      const u = new URL(window.location.href);
+      const mode = u.pathname.split("/")[2] || "normal";
+      const cats = u.searchParams.getAll("cat");
+      const pageNum = Number(u.searchParams.get("pageNumber")) || 1;
+      const sort = u.searchParams.get("sort") || "";
+      const b = ["pageNumber:" + pageNum, "pageSize:20", "visible:1"];
+      if (mode)
+        b.push("mode:" + JSON.stringify(mode));
+      if (cats && cats.length)
+        b.push("categories:" + JSON.stringify(cats));
+      if (sort) {
+        let sf = sort.split(":")[0].toUpperCase();
+        let sfF = "";
+        if (sf.includes("DATE"))
+          sfF = "CREATED_DATE";
+        else if (sf.includes("SIZE"))
+          sfF = "SIZE";
+        else if (sf.includes("SEEDER"))
+          sfF = "SEEDERS";
+        else if (sf.includes("LEECHER"))
+          sfF = "LEECHERS";
+        else if (sf.includes("TIME"))
+          sfF = "TIMES_COMPLETED";
+        let sd = sort.split(":")[1].toUpperCase().includes("ASC") ? "ASC" : "DESC";
+        if (sfF) {
+          b.push("sortField:" + JSON.stringify(sfF));
+          b.push("sortDirection:" + JSON.stringify(sd));
+        }
+      }
+      return b.join(",");
+    } catch (e) {
+      return 'pageNumber:1,pageSize:20,visible:1,mode:"normal"';
+    }
+  }
   function instance$2($$self, $$props, $$invalidate) {
     var _a;
     let $_Global_Masonry;
@@ -9198,12 +9443,12 @@
     let $_current_domain;
     let $_turnPage;
     let $_current_bgColor;
-    component_subscribe($$self, _Global_Masonry, ($$value) => $$invalidate(17, $_Global_Masonry = $$value));
+    component_subscribe($$self, _Global_Masonry, ($$value) => $$invalidate(19, $_Global_Masonry = $$value));
     component_subscribe($$self, _animated, ($$value) => $$invalidate(9, $_animated = $$value));
     component_subscribe($$self, _card_layout, ($$value) => $$invalidate(10, $_card_layout = $$value));
-    component_subscribe($$self, _current_domain, ($$value) => $$invalidate(18, $_current_domain = $$value));
+    component_subscribe($$self, _current_domain, ($$value) => $$invalidate(20, $_current_domain = $$value));
     component_subscribe($$self, _turnPage, ($$value) => $$invalidate(3, $_turnPage = $$value));
-    component_subscribe($$self, _current_bgColor, ($$value) => $$invalidate(19, $_current_bgColor = $$value));
+    component_subscribe($$self, _current_bgColor, ($$value) => $$invalidate(21, $_current_bgColor = $$value));
     let { originTable } = $$props;
     let { waterfallNode } = $$props;
     function computeCardWidth(column, gap) {
@@ -9218,7 +9463,10 @@
         console.warn("卡片列数或卡片间隔过小, 列数不小于2, 间隔不小于1");
         return 0;
       }
-      const U = (_wf.clientWidth - (column - 1) * gap) / column;
+      let _cw = _wf.clientWidth;
+      if (!_cw || _cw <= 0)
+        _cw = window.innerWidth - 2 * _margin;
+      const U = (_cw - (column - 1) * gap) / column;
       if (waterfallNode) {
         Array.from(waterfallNode.querySelectorAll(".card")).forEach((W) => {
           W.style.width = U + "px";
@@ -9275,13 +9523,22 @@
     if (isMT2) {
       console.log("M-Team NEW_MT 站: 走劫持 /search 数据源路由");
     } else {
-      infoList = [
-        ...infoList,
-        ...__isPTT ? __pttParse(originTable) : config.TORRENT_LIST_TO_JSON(originTable).map(__normalizeTorrent)
-      ];
+      try {
+        infoList = [
+          ...infoList,
+          ...__isPTT ? __pttParse(originTable) : config.TORRENT_LIST_TO_JSON(originTable).map(__normalizeTorrent)
+        ];
+      } catch (err) {
+        console.error("[Waterfall] 种子列表解析失败, 卡片可能为空:", err);
+        infoList = [];
+      }
     }
     console.log("---> 环境:	", "production");
-    (_a = SITE[$_current_domain]) == null ? void 0 : _a.special();
+    try {
+      (_a = SITE[$_current_domain]) == null ? void 0 : _a.special();
+    } catch (err) {
+      console.error("[Waterfall] 站点特殊操作 special() 失败(不影响卡片渲染):", err);
+    }
     let masonry2;
     let debounceLoad;
     function scan_and_launch() {
@@ -9410,7 +9667,9 @@
     });
     let __mteamReqListener = null;
     let __mteamResListener = null;
+    let __mteamDocListener = null;
     let __mteamIsAccept = false;
+    let __mteamGot = false;
     function __mteamBoot() {
       Launch_Hijack({ path: "/search", method: "POST" });
       __mteamReqListener = (e) => {
@@ -9431,21 +9690,76 @@
           const list = rawObject && rawObject.data ? rawObject.data : [];
           if (!Array.isArray(list))
             return;
-          $$invalidate(2, infoList = list.map(__normalizeTorrent));
-          if (masonry2) {
-            masonry2.reloadItems();
-            masonry2.layout("fast");
-            masonry2.layout("fast");
-          }
-          setTimeout(NEXUS_TOOLS, 600);
+          __mtFill(list);
         } catch (err) {
           console.warn("M-Team 响应解析失败:", err);
         }
       };
       window.addEventListener("res>POST->/search", __mteamResListener);
+      __mteamDocListener = (e) => {
+        const list = e.detail && e.detail.list;
+        if (!Array.isArray(list) || !list.length)
+          return;
+        __mtFill(list);
+      };
+      document.addEventListener("__kesaMTData", __mteamDocListener);
+      setTimeout(
+        () => {
+          if (__mteamGot)
+            return;
+          __mtFetchFallback();
+          let __polls = 0;
+          const __poll = setInterval(
+            () => {
+              if (__mteamGot) {
+                clearInterval(__poll);
+                return;
+              }
+              const arr = document.documentElement && document.documentElement.__kesaMTData;
+              if (Array.isArray(arr) && arr.length) {
+                clearInterval(__poll);
+                __mtFill(arr);
+                return;
+              }
+              if (++__polls >= 8)
+                clearInterval(__poll);
+            },
+            500
+          );
+        },
+        3e3
+      );
+    }
+    function __mtFill(list) {
+      if (__mteamGot)
+        return;
+      __mteamGot = true;
+      try {
+        $$invalidate(2, infoList = list.map(__normalizeTorrent));
+      } catch (err) {
+        console.warn("M-Team 数据归一化失败:", err);
+        $$invalidate(2, infoList = list);
+      }
+      setTimeout(
+        () => {
+          if (window.CHANGE_CARD_LAYOUT)
+            window.CHANGE_CARD_LAYOUT();
+          if (masonry2) {
+            masonry2.reloadItems();
+            masonry2.layout("fast");
+            masonry2.layout("fast");
+          }
+          setTimeout(NEXUS_TOOLS, 300);
+        },
+        80
+      );
     }
     afterUpdate(() => {
       console.log("afterUpdate-------------------->");
+      try {
+        __kesaWatchLazy();
+      } catch (e) {
+      }
       if (masonry2 && onMountSignal) {
         console.log("reload Items-------------------->");
         masonry2.reloadItems();
@@ -9841,9 +10155,12 @@
     component_subscribe($$self, _show_mode, ($$value) => $$invalidate(6, $_show_mode = $$value));
     component_subscribe($$self, _iframe_url, ($$value) => $$invalidate(2, $_iframe_url = $$value));
     console.log(`[${( new Date()).toLocaleTimeString()}]<--------------------------HMR-------------------------->`);
-    let _ORIGIN_TL_Node2 = document.querySelector(GET_TORRENT_LIST_SELECTOR());
+    let _ORIGIN_TL_Node2 = document.querySelector("div.app-content__inner");
     if (!_ORIGIN_TL_Node2 && IS_MT(window.location.hostname)) {
       _ORIGIN_TL_Node2 = document.querySelector("#__kesaMTPlaceholder");
+    }
+    if (!_ORIGIN_TL_Node2) {
+      _ORIGIN_TL_Node2 = document.querySelector(GET_TORRENT_LIST_SELECTOR());
     }
     while (!Masonry) {
       console.log("等待初始化......");
@@ -9904,6 +10221,7 @@
         }
       });
       new BtnTurnPage({ target: nextPageNode });
+      __kesaWatchLazy();
       __wdvAutoSync();
       window.addEventListener("pagehide", __wdvAutoPush);
     });
@@ -9949,12 +10267,24 @@
     });
   }
   if (isMT) {
-    _ORIGIN_TL_Node = document.createElement("div");
-    _ORIGIN_TL_Node.id = "__kesaMTPlaceholder";
-    _ORIGIN_TL_Node.style.display = "none";
-    document.body.append(_ORIGIN_TL_Node);
-    console.log("M-Team NEW_MT 站: 已创建瀑布流挂载占位节点");
-    mountApp();
+    let mtTries = 0;
+    const mtTimer = setInterval(() => {
+      mtTries++;
+      _ORIGIN_TL_Node = document.querySelector("div.app-content__inner") || document.querySelector("table.w-full.table-fixed");
+      if (_ORIGIN_TL_Node) {
+        clearInterval(mtTimer);
+        console.log("M-Team 站: 已定位原生表格容器, 挂载瀑布流");
+        mountApp();
+      } else if (mtTries > 100) {
+        clearInterval(mtTimer);
+        _ORIGIN_TL_Node = document.createElement("div");
+        _ORIGIN_TL_Node.id = "__kesaMTPlaceholder";
+        _ORIGIN_TL_Node.style.display = "none";
+        document.body.append(_ORIGIN_TL_Node);
+        console.log("M-Team SPA 站: 未发现原生表格容器, 使用占位节点挂载");
+        mountApp();
+      }
+    }, 100);
   } else if (!list_selector) {
     console.log("未识别到种子列表 selector 捏~");
   } else {

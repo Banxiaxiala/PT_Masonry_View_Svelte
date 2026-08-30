@@ -50,15 +50,23 @@ const CONFIG = {
   /** NOTE: 站点特殊操作 */
   special: function () {
     // 给龟站的搜索箱默认设置为"不扩展", 否则平常占地方(from tg by LNN)
-    // 防御: 部分环境可能无 jQuery 全局 $, 用原生 querySelector 兜底
-    // $('ksearchboxmain').style.display = 'none'
-    const _box = (typeof $ === "function" && $('ksearchboxmain')) || document.getElementById('ksearchboxmain');
-    _box ? _box.style.display = 'none' : null;
+    // 防御: 修复 1.2.13b 卡片仍不显示——当页面加载了 jQuery(如 kamept 的 nexus.js)时,
+    // `$('ksearchboxmain')` 返回"空 jQuery 集合"(truthy)而非元素, 其 .style 为 undefined,
+    // 直接 `.style.display = 'none'` 会抛 `Cannot set properties of undefined`, 中断组件初始化 → 卡片全不渲染。
+    // 故统一取原生元素: jQuery 取 [0] / 原生 getElementById, 再判空后赋值。
+    let _box = null;
+    if (typeof $ === "function" && $(ksearchboxmain).length) {
+      _box = $(ksearchboxmain)[0];
+    } else {
+      _box = document.getElementById('ksearchboxmain');
+    }
+    if (_box) _box.style.display = 'none';
 
     // "点此查看即将断种资源" 文字设置为黑色(from tg by LNN)
     const link = document.querySelector('a[href="?sort=7&type=asc&seeders_begin=1"]');
-    // @ts-ignore
-    link ? link.childNodes[0].style.color = 'black' : null;
+    // 防御: childNodes 可能为空 → childNodes[0] 为 undefined, 访问 .style.color 会抛错
+    const _fc = link && link.childNodes && link.childNodes[0];
+    if (_fc) _fc.style.color = 'black';
 
 
     // 让勋章不被卡片遮盖
@@ -129,8 +137,8 @@ function TORRENT_LIST_TO_JSON(torrent_list_Dom) {
 
     // 获取种子分类链接 / 分类号
     const categoryLinkDOM = categoryImg.parentNode;
-    const categoryLink = categoryLinkDOM.href;
-    const categoryNumber = categoryLink.slice(-3);
+    const categoryLink = categoryLinkDOM && categoryLinkDOM.href ? categoryLinkDOM.href : "";
+    const categoryNumber = typeof categoryLink === "string" ? categoryLink.slice(-3) : "";
     const _categoryImg = categoryImg.cloneNode(true)
     _categoryImg.className = "card-category-img"
     // console.log(categoryLinkDOM);
@@ -145,7 +153,8 @@ function TORRENT_LIST_TO_JSON(torrent_list_Dom) {
     const torrentName = torrentNameLink ? torrentNameLink.textContent.trim() : "";
 
     // 获取种子详情链接
-    const torrentLink = torrentNameLink.href;
+    // 防御: .torrentname a 缺失(部分非标准行/未登录等)时用空串兜底, 避免 .href 报 null 中断整页解析
+    const torrentLink = torrentNameLink && torrentNameLink.href ? torrentNameLink.href : "";
     // console.log(torrentLink);
 
     // 获取种子id

@@ -37,14 +37,31 @@ function mountApp() {
 // (list_selector 需精确命中 SITE[domain], 若访问的 m-team 子域不在白名单
 //  list_selector 为 null, 但劫持 /search 数据源仍可用, 必须能正常挂载)
 if (isMT) {
-  // document-start 时无 table.torrents, 但占位节点可立即创建,
-  // 数据由 _index.svelte 的劫持路由填充。占位节点创建后即可挂载。
-  _ORIGIN_TL_Node = document.createElement("div");
-  _ORIGIN_TL_Node.id = "__kesaMTPlaceholder";
-  _ORIGIN_TL_Node.style.display = "none";
-  document.body.append(_ORIGIN_TL_Node);
-  console.log("M-Team NEW_MT 站: 已创建瀑布流挂载占位节点");
-  mountApp();
+  // 参照 1.2.3b: M-Team 瀑布流应作为真实 div.app-content__inner 的兄弟节点插入,
+  // _ORIGIN_TL_Node 即真实容器, 这样瀑布流模式隐藏原生种子表格时瀑布流自然显示在内容区。
+  // SSR 页(/browse/* 等)的 div.app-content__inner 由 webpack 应用异步渲染, 需轮询等待。
+  let mtTries = 0;
+  const mtTimer = setInterval(() => {
+    mtTries++;
+    _ORIGIN_TL_Node =
+      document.querySelector("div.app-content__inner") ||
+      document.querySelector("table.w-full.table-fixed");
+    if (_ORIGIN_TL_Node) {
+      clearInterval(mtTimer);
+      console.log("M-Team 站: 已定位原生表格容器, 挂载瀑布流");
+      mountApp();
+    } else if (mtTries > 100) {
+      // 约 10s 上限; SPA 页(/search 等)可能无 div.app-content__inner,
+      // fallback 创建占位节点挂载, 保证 SPA 页瀑布流仍可用。
+      clearInterval(mtTimer);
+      _ORIGIN_TL_Node = document.createElement("div");
+      _ORIGIN_TL_Node.id = "__kesaMTPlaceholder";
+      _ORIGIN_TL_Node.style.display = "none";
+      document.body.append(_ORIGIN_TL_Node);
+      console.log("M-Team SPA 站: 未发现原生表格容器, 使用占位节点挂载");
+      mountApp();
+    }
+  }, 100);
 } else if (!list_selector) {
   // 没有相应站点的种子列表 selector 就不进行整个程序
   console.log('未识别到种子列表 selector 捏~');
