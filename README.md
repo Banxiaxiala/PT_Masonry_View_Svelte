@@ -6,7 +6,8 @@
 
 | 网站 | 站点域名 | 是否适配 |
 |------|----------|:--------:|
-| M-Team | m-team.cc（各子域）/ mua.xloli.cc | ✅ |
+| M-Team | m-team.cc（各子域） | ✅ |
+| mua.xloli.cc | mua.xloli.cc（独立站，复用 M-Team 架构） | ✅ |
 | KamePT | kamept.com | ✅ |
 | PTT | pttime.org | ✅ |
 | NicePT | nicept.net | ✅ |

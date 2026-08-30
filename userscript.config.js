@@ -10,8 +10,8 @@ export function config(mode) {
     icon: "https://avatars.githubusercontent.com/u/35516655",
     namespace: "https://github.com/Banxiaxiala/PT_Masonry_View_Svelte",
     description: {
-      "": "PT种子列表无限下拉瀑布流视图(Svelte重构)。适配站点: M-Team(m-team.cc/mua.xloli.cc, 劫持 /search API)✅、KamePT(kamept.com)✅、PTT(pttime.org)✅、NicePT(nicept.net)✅、PTFans(ptfans.cc)✅。",
-      en: "PT Masonry View by Svelte. Supported sites: M-Team✅, KamePT✅, PTT✅, NicePT✅, PTFans✅.",
+      "": "PT种子列表无限下拉瀑布流视图(Svelte重构)。适配站点: M-Team(m-team.cc各子域, 劫持 /search API)✅、mua.xloli.cc(独立站, 复用 M-Team 架构)✅、KamePT(kamept.com)✅、PTT(pttime.org)✅、NicePT(nicept.net)✅、PTFans(ptfans.cc)✅。",
+      en: "PT Masonry View by Svelte. Supported sites: M-Team✅, mua.xloli.cc✅, KamePT✅, PTT✅, NicePT✅, PTFans✅.",
     },
     author: "Banxiaxiala",
     match: [
