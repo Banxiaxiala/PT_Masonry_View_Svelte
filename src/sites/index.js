@@ -1,6 +1,6 @@
 import { config as config_Kame } from "./kamept";
 import { config as config_Mteam } from "./mteam";
-import { __isPTT, __pttParse } from "./ptt";
+import { __isPTT, __pttParse, __pttBoot, __pttInject } from "./ptt";
 
 /** 站点参数相关参数顶层对象 */
 const SITE = {
@@ -75,4 +75,6 @@ export {
   isSupportedDomain,
   __isPTT,
   __pttParse,
+  __pttBoot,
+  __pttInject,
 }

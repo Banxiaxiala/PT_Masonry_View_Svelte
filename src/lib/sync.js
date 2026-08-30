@@ -1263,32 +1263,28 @@ function __kesaPageInd(n) {
         if (prevBtn) prevBtn.disabled = c <= 1;
         return;
       }
-      // 定位"加载下一页"按钮(M-Team 的 #turnPage / 含"加载下一页"文本的按钮)
-      let btn = document.getElementById("turnPage");
-      if (!btn) {
-        const all = document.querySelectorAll("button");
-        for (let i = 0; i < all.length; i++) {
-          if (all[i].textContent.indexOf("加载下一页") >= 0) {
-            btn = all[i];
-            break;
-          }
-        }
-      }
       let wrap = null;
       let afterWf = false;
-      if (btn) {
-        wrap = btn.parentElement || btn.parentNode;
-      } else {
-        // NexusPHP 等: 注入到瀑布流容器之后
-        const wf = document.querySelector("div.waterfall");
-        if (wf && wf.parentNode) {
-          afterWf = true;
-          wrap = wf;
+      // 优先把页码选择器注入到瀑布流容器末尾(即"点击加载下一页"按钮下方)。
+      // 说明: _index.svelte 的 #turnPage 被包在一层内层 <div> 里且按钮 position:absolute,
+      // 若 wrap=btn.parentElement 会把 box append 到内层 div 顶部(按钮脱离文档流, 出现在 div 顶部)
+      // 而非按钮下方。参照参考版 1.2.3b: #turnPage 直接在 div.waterfall 容器内, box append 到容器
+      // 底部即按钮下方, 故统一改为 append 到 div.waterfall 末尾。
+      const wf = document.querySelector("div.waterfall");
+      if (wf && wf.parentNode) {
+        afterWf = false;
+        wrap = wf;
+      }
+      if (!wrap) {
+        // 兜底: 无瀑布流容器时退回 #turnPage 父元素(参考版逻辑)
+        const btn0 = document.getElementById("turnPage");
+        if (btn0) {
+          wrap = btn0.parentElement || btn0.parentNode;
         }
-        if (!wrap) {
-          if (__pmSelLog++ < 3) console.log("[kesa] 页码选择器: 未找到可注入位置");
-          return;
-        }
+      }
+      if (!wrap) {
+        if (__pmSelLog++ < 3) console.log("[kesa] 页码选择器: 未找到可注入位置");
+        return;
       }
       if (!wrap) return;
       const box = document.createElement("div");

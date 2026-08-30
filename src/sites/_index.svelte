@@ -21,6 +21,7 @@
     IS_MT,
     __isPTT,
     __pttParse,
+    __pttBoot,
   } from "./index";
   import "../utils/masonry.pkgd.Kesa";
 
@@ -229,6 +230,11 @@
     // M-Team 路由: 数据来自对站点自身 /search 请求的劫持(res>POST->/search 事件),
     // 而非 NexusPHP 的 DOM 解析。初始 infoList 为空, 等首个响应事件填充。
     console.log("M-Team NEW_MT 站: 走劫持 /search 数据源路由");
+  } else if (__isPTT) {
+    // PTT(www.pttime.org/nicept.net/ptfans.cc) 专属架构路由: 结构与普通 NexusPHP 站不同(adults.php 等),
+    // 参照参考版 1.2.3b 采用 NEW_MT 注入路由——__pttBoot 提供宿主 + 经 window.__kesaHijack.handler
+    // 注入首页数据(onMount 里 __pttHandlerBoot 注册 handler)。初始 infoList 为空, 等注入填充。
+    console.log("PTT 站: 走 __pttBoot 宿主/注入路由(参照参考版 1.2.3b)");
   } else {
     // NexusPHP 路由: 直接解析原表格 DOM
     // PTT/NicePT/PTFans 用 __pttParse(按站点列索引适配); 其余(kamept)用各站 config.TORRENT_LIST_TO_JSON
@@ -464,6 +470,12 @@
       __mteamBoot();
     }
 
+    // PTT 专属架构路由: 注册 __kesaHijack.handler 处理器(参照参考版 1.2.3b __kesaBind),
+    // 供 __pttBoot 的 __pttInject(1) 经 S.handler 注入首页数据填充 infoList。
+    if (__isPTT) {
+      __pttHandlerBoot();
+    }
+
     // 给瀑布流节点放一个手动点击整理的功能
     waterfallNode.addEventListener("click", (event) => {
       // 模拟 self, 只有在点击本身而非子元素的时候时触发效果
@@ -638,6 +650,54 @@
     }
     // 等 Svelte 把卡片渲染进 DOM 后再重算布局: 首次 masonry 创建时 infoList 为空,
     // 容器 clientWidth=0 曾导致卡片负宽(-15)不可见, 必须在卡片存在后重新计算宽度并排版。
+    setTimeout(() => {
+      if (window.CHANGE_CARD_LAYOUT) window.CHANGE_CARD_LAYOUT();
+      if (masonry) {
+        masonry.reloadItems();
+        masonry.layout("fast");
+        masonry.layout("fast");
+      }
+      setTimeout(NEXUS_TOOLS, 300);
+    }, 80);
+  }
+
+  // ---- PTT 专属架构数据源(参照参考版 1.2.3b 的 NEW_MT 注入路由) ----
+  // PTT(www.pttime.org/nicept.net/ptfans.cc) 结构(adults.php 等)与普通 NexusPHP 站不同,
+  // 不走 DOM 解析路由, 而由 __pttBoot(main.js) 提供宿主并调用 __pttInject(page) 把首页数据
+  // 经 window.__kesaHijack.handler 注入。此处注册该 handler(镜像参考版 __kesaHandler)。
+  /** PTT 是否已绑定 handler(避免重复绑定) */
+  let __pttHooked = false;
+  function __pttHandlerBoot() {
+    const S = window.__kesaHijack;
+    if (!S || __pttHooked) return;
+    __pttHooked = true;
+    S.handler = __pttHandler;
+    // 消费 __pttBoot 注入前的排队数据(若 __pttInject 在 handler 就绪前先到)
+    if (S.queue && S.queue.length) {
+      const q = S.queue;
+      S.queue = [];
+      q.forEach((d) => { try { __pttHandler(d); } catch (e) {} });
+    }
+  }
+  /** PTT 注入处理器: 解析 __pttInject 派发的 {type:"res", data} 并填充 infoList 刷新瀑布流 */
+  function __pttHandler(d) {
+    if (!d || d.type !== "res") return;
+    if (d.body && d.body.indexOf('"mode":"waterfall"') >= 0) return;
+    let re;
+    try { re = JSON.parse(d.data); } catch (e) { return; }
+    const pl = re && re.data, ls = pl && pl.data;
+    if (!Array.isArray(ls)) return;
+    let list;
+    try { list = ls.map(__normalizeTorrent); } catch (err) { list = ls; }
+    const pg = pl.pageNumber || 1;
+    const cur = currentPageFromUrl();
+    infoList = pg === 1 || infoList.length === 0 || pg <= cur ? [...list] : [...infoList, ...list];
+    try {
+      const S = window.__kesaHijack;
+      if (S && typeof S.setPage === "function") S.setPage(pg);
+    } catch (e) {}
+    // 等 Svelte 把卡片渲染进 DOM 后再重算布局(参照 __mtFill: 首次 masonry 创建时 infoList 为空,
+    // 容器 clientWidth=0 曾导致卡片负宽不可见, 必须在卡片存在后重新计算宽度并排版)
     setTimeout(() => {
       if (window.CHANGE_CARD_LAYOUT) window.CHANGE_CARD_LAYOUT();
       if (masonry) {

@@ -2,7 +2,7 @@
 // @name            PT种子列表瀑布流视图(Svelte重构)
 // @name:en         PT_Masonry_View_Svelte
 // @namespace       https://github.com/KesaubeEire/PT_Masonry_View_Svelte
-// @version         1.2.21b
+// @version         1.2.22b
 // @author          Kesa
 // @description     PT种子列表无限下拉瀑布流视图(Svelte重构) [M-Team数据源: 劫持站点自身请求(原作者逻辑)]
 // @description:en  PT Masonry View by Svelte.
@@ -4634,31 +4634,23 @@
             prevBtn.disabled = c <= 1;
           return;
         }
-        let btn = document.getElementById("turnPage");
-        if (!btn) {
-          const all = document.querySelectorAll("button");
-          for (let i = 0; i < all.length; i++) {
-            if (all[i].textContent.indexOf("加载下一页") >= 0) {
-              btn = all[i];
-              break;
-            }
-          }
-        }
         let wrap = null;
         let afterWf = false;
-        if (btn) {
-          wrap = btn.parentElement || btn.parentNode;
-        } else {
-          const wf = document.querySelector("div.waterfall");
-          if (wf && wf.parentNode) {
-            afterWf = true;
-            wrap = wf;
+        const wf = document.querySelector("div.waterfall");
+        if (wf && wf.parentNode) {
+          afterWf = false;
+          wrap = wf;
+        }
+        if (!wrap) {
+          const btn0 = document.getElementById("turnPage");
+          if (btn0) {
+            wrap = btn0.parentElement || btn0.parentNode;
           }
-          if (!wrap) {
-            if (__pmSelLog++ < 3)
-              console.log("[kesa] 页码选择器: 未找到可注入位置");
-            return;
-          }
+        }
+        if (!wrap) {
+          if (__pmSelLog++ < 3)
+            console.log("[kesa] 页码选择器: 未找到可注入位置");
+          return;
         }
         if (!wrap)
           return;
@@ -5316,6 +5308,78 @@
       }
     }
     return out;
+  }
+  function __pttLoadMasonry() {
+    if (window.Masonry)
+      return;
+    if (document.querySelector("script[data-ptt-masonry]"))
+      return;
+    [
+      "https://unpkg.com/masonry-layout@4.2.2/dist/masonry.pkgd.min.js",
+      "https://unpkg.com/imagesloaded@5/imagesloaded.pkgd.min.js"
+    ].forEach((src) => {
+      const sc = document.createElement("script");
+      sc.src = src;
+      sc.setAttribute("data-ptt-masonry", "1");
+      (document.head || document.documentElement).appendChild(sc);
+    });
+  }
+  function __pttInject(page) {
+    const S = window.__kesaHijack;
+    console.log("[PTT适配] handler=", S && typeof S.handler, "page=", page);
+    if (!S || typeof S.handler !== "function")
+      return false;
+    const objs = __pttParse(document);
+    console.log("[PTT适配] 解析到种子数:", objs.length);
+    if (!objs.length)
+      return false;
+    try {
+      S.handler({ type: "res", data: JSON.stringify({ data: { data: objs, pageNumber: page || 1 } }) });
+      console.log("[PTT适配] 已注入第", page, "页");
+      return true;
+    } catch (e) {
+      console.error("[PTT适配] 注入异常:", e);
+      return false;
+    }
+  }
+  function __pttBoot() {
+    if (!__isPTT)
+      return;
+    console.log("[PTT适配] __pttBoot 启动");
+    if (!document.querySelector("div.app-content__inner")) {
+      const sc = document.createElement("div");
+      sc.className = "app-content__inner";
+      sc.style.cssText = "display:none;";
+      const tl = document.getElementById("torrenttable") || document.querySelector("table.torrents");
+      const mo = tl && tl.closest("table.mainouter");
+      const anchor = tl || mo;
+      if (anchor && anchor.parentNode)
+        anchor.parentNode.insertBefore(sc, anchor.nextSibling);
+      else
+        document.body.appendChild(sc);
+    }
+    if (!document.querySelector(".ant-layout")) {
+      const al = document.createElement("div");
+      al.className = "ant-layout";
+      al.style.cssText = "display:none;";
+      document.body.appendChild(al);
+    }
+    __pttLoadMasonry();
+    const tryOnce = () => {
+      if (!__pttInject(1))
+        setTimeout(tryOnce, 500);
+    };
+    setTimeout(tryOnce, 2e3);
+    if (!document.getElementById("__pttPreviewCss")) {
+      const st = document.createElement("style");
+      st.id = "__pttPreviewCss";
+      st.textContent = "div#_iframe ._iframe{width:min(var(--pw,1600px),94vw)!important;height:var(--ph,96%)!important}div#_iframe ._iframe iframe{width:100%!important;height:100%}";
+      (document.head || document.documentElement).appendChild(st);
+    }
+    setTimeout(() => {
+      const sp = document.querySelector(".sideP");
+      console.log("[PTT适配] 侧边栏 .sideP 存在:", !!sp, sp ? "display=" + getComputedStyle(sp).display + " rect=" + JSON.stringify(sp.getBoundingClientRect()) : "");
+    }, 4e3);
   }
   const SITE = {
     // ---- M-Team NEW_MT 站 (mteamHijack.js 劫持路由) ----
@@ -9124,8 +9188,8 @@
   }
   function get_each_context(ctx, list, i) {
     const child_ctx = ctx.slice();
-    child_ctx[33] = list[i];
-    child_ctx[35] = i;
+    child_ctx[36] = list[i];
+    child_ctx[38] = i;
     return child_ctx;
   }
   function create_each_block(key_1, ctx) {
@@ -9136,7 +9200,7 @@
       props: {
         torrentInfo: (
           /*info*/
-          ctx[33]
+          ctx[36]
         ),
         cardWidth: (
           /*CARD*/
@@ -9144,7 +9208,7 @@
         ),
         index: (
           /*i*/
-          ctx[35]
+          ctx[38]
         )
       }
     });
@@ -9167,7 +9231,7 @@
         if (dirty[0] & /*infoList*/
         4)
           torrentcard_changes.torrentInfo = /*info*/
-          ctx[33];
+          ctx[36];
         if (dirty[0] & /*CARD*/
         1)
           torrentcard_changes.cardWidth = /*CARD*/
@@ -9175,7 +9239,7 @@
         if (dirty[0] & /*infoList*/
         4)
           torrentcard_changes.index = /*i*/
-          ctx[35];
+          ctx[38];
         torrentcard.$set(torrentcard_changes);
       },
       i(local) {
@@ -9271,7 +9335,7 @@
     );
     const get_key = (ctx2) => (
       /*info*/
-      ctx2[33].id
+      ctx2[36].id
     );
     for (let i = 0; i < each_value.length; i += 1) {
       let child_ctx = get_each_context(ctx, each_value, i);
@@ -9522,12 +9586,12 @@
     let $_current_domain;
     let $_turnPage;
     let $_current_bgColor;
-    component_subscribe($$self, _Global_Masonry, ($$value) => $$invalidate(19, $_Global_Masonry = $$value));
+    component_subscribe($$self, _Global_Masonry, ($$value) => $$invalidate(20, $_Global_Masonry = $$value));
     component_subscribe($$self, _animated, ($$value) => $$invalidate(9, $_animated = $$value));
     component_subscribe($$self, _card_layout, ($$value) => $$invalidate(10, $_card_layout = $$value));
-    component_subscribe($$self, _current_domain, ($$value) => $$invalidate(20, $_current_domain = $$value));
+    component_subscribe($$self, _current_domain, ($$value) => $$invalidate(21, $_current_domain = $$value));
     component_subscribe($$self, _turnPage, ($$value) => $$invalidate(3, $_turnPage = $$value));
-    component_subscribe($$self, _current_bgColor, ($$value) => $$invalidate(21, $_current_bgColor = $$value));
+    component_subscribe($$self, _current_bgColor, ($$value) => $$invalidate(22, $_current_bgColor = $$value));
     let { originTable } = $$props;
     let { waterfallNode } = $$props;
     function computeCardWidth(column, gap) {
@@ -9601,6 +9665,8 @@
     const isMT2 = IS_MT($_current_domain);
     if (isMT2) {
       console.log("M-Team NEW_MT 站: 走劫持 /search 数据源路由");
+    } else if (__isPTT) {
+      console.log("PTT 站: 走 __pttBoot 宿主/注入路由(参照参考版 1.2.3b)");
     } else {
       try {
         infoList = [
@@ -9731,6 +9797,9 @@
       if (isMT2) {
         __mteamBoot();
       }
+      if (__isPTT) {
+        __pttHandlerBoot();
+      }
       waterfallNode.addEventListener("click", (event) => {
         if (event.target === event.currentTarget) {
           if (masonry2)
@@ -9818,6 +9887,67 @@
       } catch (err) {
         console.warn("M-Team 数据归一化失败:", err);
         $$invalidate(2, infoList = list);
+      }
+      setTimeout(
+        () => {
+          if (window.CHANGE_CARD_LAYOUT)
+            window.CHANGE_CARD_LAYOUT();
+          if (masonry2) {
+            masonry2.reloadItems();
+            masonry2.layout("fast");
+            masonry2.layout("fast");
+          }
+          setTimeout(NEXUS_TOOLS, 300);
+        },
+        80
+      );
+    }
+    let __pttHooked = false;
+    function __pttHandlerBoot() {
+      const S = window.__kesaHijack;
+      if (!S || __pttHooked)
+        return;
+      __pttHooked = true;
+      S.handler = __pttHandler;
+      if (S.queue && S.queue.length) {
+        const q = S.queue;
+        S.queue = [];
+        q.forEach((d) => {
+          try {
+            __pttHandler(d);
+          } catch (e) {
+          }
+        });
+      }
+    }
+    function __pttHandler(d) {
+      if (!d || d.type !== "res")
+        return;
+      if (d.body && d.body.indexOf('"mode":"waterfall"') >= 0)
+        return;
+      let re;
+      try {
+        re = JSON.parse(d.data);
+      } catch (e) {
+        return;
+      }
+      const pl = re && re.data, ls = pl && pl.data;
+      if (!Array.isArray(ls))
+        return;
+      let list;
+      try {
+        list = ls.map(__normalizeTorrent);
+      } catch (err) {
+        list = ls;
+      }
+      const pg = pl.pageNumber || 1;
+      const cur = currentPageFromUrl();
+      $$invalidate(2, infoList = pg === 1 || infoList.length === 0 || pg <= cur ? [...list] : [...infoList, ...list]);
+      try {
+        const S = window.__kesaHijack;
+        if (S && typeof S.setPage === "function")
+          S.setPage(pg);
+      } catch (e) {
       }
       setTimeout(
         () => {
@@ -10353,7 +10483,19 @@
       })()
     });
   }
-  if (isMT) {
+  if (__isPTT) {
+    let pttTries = 0;
+    const pttTimer = setInterval(() => {
+      pttTries++;
+      _ORIGIN_TL_Node = document.querySelector("#torrenttable") || document.querySelector("table.torrents");
+      if (_ORIGIN_TL_Node || pttTries > 100) {
+        clearInterval(pttTimer);
+        console.log("PTT 站: 已定位原种子表格, 走 __pttBoot 宿主/注入路由(参照参考版 1.2.3b)");
+        __pttBoot();
+        mountApp();
+      }
+    }, 100);
+  } else if (isMT) {
     let mtTries = 0;
     const mtTimer = setInterval(() => {
       mtTries++;
