@@ -1,5 +1,6 @@
 import { config as config_Kame } from "./kamept";
 import { config as config_Mteam } from "./mteam";
+import { __isPTT, __pttParse } from "./ptt";
 
 /** 站点参数相关参数顶层对象 */
 const SITE = {
@@ -12,10 +13,10 @@ const SITE = {
 
   // ---- NexusPHP DOM 站 (ptt.js 的 __pttParse 逻辑) ----
   "kamept.com": config_Kame,
-  "pttime.org": config_Kame,
-  "www.pttime.org": config_Kame,
-  "nicept.net": config_Kame,
-  "ptfans.cc": config_Kame,
+  "pttime.org": { ...config_Kame, torrentListTable: "#torrenttable" },
+  "www.pttime.org": { ...config_Kame, torrentListTable: "#torrenttable" },
+  "nicept.net": { ...config_Kame, torrentListTable: "table.torrents" },
+  "ptfans.cc": { ...config_Kame, torrentListTable: "table.torrents" },
 };
 
 /** 判断是否为 NexusPHP DOM 站
@@ -70,4 +71,6 @@ export {
   IS_NEXUSPHP,
   IS_MT,
   isSupportedDomain,
+  __isPTT,
+  __pttParse,
 }

@@ -1027,6 +1027,59 @@ function __kesaIsNX() {
   return /\.php/i.test(location.pathname);
 }
 
+// ---- 侧边栏"第 N 页"指示器(点击直接跳转该页真实 URL) ----
+function __kesaCurPage() {
+  try {
+    const sp = new URLSearchParams(location.search);
+    const v = parseInt(sp.get("page") || sp.get("pageNumber") || sp.get("p") || "", 10);
+    return isNaN(v) || v < 1 ? 1 : v;
+  } catch (e) {
+    return 1;
+  }
+}
+function __kesaPageUrl(n) {
+  try {
+    const u = new URL(location.href);
+    // 替换而非新增: 先清掉两个页码参数, 再设置正确的那个
+    u.searchParams.delete("page");
+    u.searchParams.delete("pageNumber");
+    u.searchParams.set(__kesaIsNX() ? "page" : "pageNumber", n);
+    return u.toString();
+  } catch (e) {
+    return location.href;
+  }
+}
+function __kesaPageInd(n) {
+  try {
+    if (!document.getElementById("__kesaPageCss")) {
+      const st = document.createElement("style");
+      st.id = "__kesaPageCss";
+      st.textContent =
+        ".kesaPageGo{display:block;text-align:center;font-size:11px;font-weight:600;color:#fff;background:rgba(64,64,64,.85);border-radius:8px;padding:3px 6px;margin:4px 6px;line-height:1.5;cursor:pointer}.kesaPageGo:hover{background:#0054b0}";
+      (document.head || document.documentElement).appendChild(st);
+    }
+    const cur = n || __kesaCurPage();
+    // 实时记录页码(在判断侧边栏之前, 确保任何情况下都记录), 供刷新后恢复
+    __kesaSavePageState(cur);
+    // 真实页码显示在侧边栏底部, 点击可直接跳转到该页真实 URL(便于存档)
+    const sb = document.querySelector(".sideP");
+    if (!sb) return;
+    let el = document.querySelector(".kesaPageGo");
+    if (!el) {
+      el = document.createElement("div");
+      el.className = "kesaPageGo";
+      el.addEventListener("click", () => {
+        const pg = parseInt(el.dataset.page, 10) || 1;
+        __kesaSavePageState(pg);
+        location.href = __kesaPageUrl(pg);
+      });
+      sb.appendChild(el);
+    }
+    el.dataset.page = String(cur);
+    el.textContent = "第 " + cur + " 页";
+  } catch (e) {}
+}
+
 /* ============================================================================
  * 5. 多设备页码同步(WebDAV): 记录/合并最大页码, 悬浮按钮跳转
  *    (原 bundle 的自包含 IIFE, 移植为模块内的自执行部分)
@@ -1346,6 +1399,13 @@ export {
   __mkSwitchRow,
   __markRead,
   __extractId,
+  __kesaStateKey,
+  __kesaSavePageState,
+  __kesaRestorePage,
+  __kesaIsNX,
+  __kesaCurPage,
+  __kesaPageUrl,
+  __kesaPageInd,
 };
 
 // 挂载到 window：读取追踪 / WebDAV / 页码
@@ -1380,6 +1440,9 @@ window.__kesaPage = {
   savePageState: __kesaSavePageState,
   restorePage: __kesaRestorePage,
   isNX: __kesaIsNX,
+  curPage: __kesaCurPage,
+  pageUrl: __kesaPageUrl,
+  pageInd: __kesaPageInd,
   mkSwitchRow: __mkSwitchRow,
   fillWebDAVSection: __fillWebDAVSection,
   fillReadSection: __fillReadSection,

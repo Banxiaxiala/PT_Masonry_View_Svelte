@@ -84,6 +84,157 @@ function sortMasonry(speed = 'normal') {
       throttleSort()
     }
   }
+  // 同步预热/排队懒加载图片(兼容各站不同滚动容器)
+  if (typeof __kesaWatchLazy === 'function') __kesaWatchLazy();
+}
+
+// NOTE: 3b. 图片懒加载并发队列(替换简单的 IntersectionObserver)-------------------------------
+// 并发数 4, 4 秒超时, 复用已加载同 src 图片, 失败降级处理
+let __kesaQ = [];
+let __kesaBusy = 0;
+let __kesaDone = {};
+const __kesaLimit = 4;
+
+/** 预热原列表封面图 + 排队所有未加载懒加载图片 */
+function __kesaWatchLazy() {
+  // 原列表封面 loading=lazy 且被 display:none 隐藏, 从不加载; 强制 eager 并用 new Image() 灌入缓存复用
+  document.querySelectorAll('img[loading="lazy"]').forEach((im) => {
+    const src = im.getAttribute("src") || im.getAttribute("data-src") || "";
+    if (!src || /emptyImg|trans\.gif|spinner|^data:/i.test(src)) return;
+    if (im.loading !== "eager") im.loading = "eager";
+    if (!im.__warmed) {
+      im.__warmed = 1;
+      const w = new Image();
+      w.src = src;
+    }
+  });
+  // 直接排队加载所有未加载的懒加载图片
+  document.querySelectorAll(".nexus-lazy-load_Kesa:not(.preview_Kesa)").forEach((l) => {
+    if (l.dataset.src && !l.__kesaQueued && !l.__kesaFail) __kesaQueue(l);
+  });
+}
+
+function __kesaQueue(l) {
+  if (l.__kesaQueued || l.classList.contains("preview_Kesa") || l.__kesaFail) return;
+  const o = l.dataset.src;
+  if (!o) return;
+  if (__kesaDone[o] === 1) {
+    ((l.__kesaQueued = 1), (l.referrerPolicy = "no-referrer"), (l.src = o), l.classList.add("preview_Kesa"), sortMasonry());
+    return;
+  }
+  if (__kesaDone[o] === -1) {
+    ((l.__kesaQueued = 1), (l.__kesaFail = 1), (l.src = o), l.classList.add("preview_Kesa"), sortMasonry());
+    return;
+  }
+  ((l.__kesaQueued = 1), __kesaQ.push(l), __kesaPump());
+}
+
+function __kesaPump() {
+  while (__kesaBusy < __kesaLimit && __kesaQ.length) {
+    const l = __kesaQ.shift();
+    ((l.__kesaQueued = 0), __kesaStart(l));
+  }
+}
+
+function __kesaFindLoaded(o) {
+  try {
+    const all = document.querySelectorAll("img");
+    for (let i = 0; i < all.length; i++) {
+      const im = all[i];
+      const src = im.currentSrc || im.getAttribute("src") || "";
+      if (src === o && im.complete && im.naturalWidth > 0) return im;
+    }
+  } catch (e) {}
+  return null;
+}
+
+function __kesaFailSvg() {
+  return (
+    "data:image/svg+xml;utf8," +
+    encodeURIComponent(
+      "<svg xmlns='http://www.w3.org/2000/svg' width='400' height='560'><text x='50%' y='50%' font-size='24' fill='#aaa' text-anchor='middle' dominant-baseline='middle'>暂时无法加载出图片</text></svg>"
+    )
+  );
+}
+
+function __kesaStart(l) {
+  if (l.__kesaBusy || l.classList.contains("preview_Kesa")) return;
+  const o = l.dataset.src;
+  if (!o) {
+    l.__kesaFail = 1;
+    return;
+  }
+  // 复用页面中已加载的同 src 图片, 避免重新请求卡住
+  const __re = __kesaFindLoaded(o);
+  if (__re) {
+    ((l.referrerPolicy = __re.referrerPolicy || ""),
+      (l.src = o),
+      l.classList.add("preview_Kesa"),
+      (__kesaDone[o] = 1),
+      sortMasonry());
+    return;
+  }
+  ((l.__kesaBusy = 1), __kesaBusy++);
+  const p = new Image();
+  const a = l.__kesaTry | 0;
+  let __to = null;
+  a >= 1 && (p.referrerPolicy = "no-referrer");
+  p.onload = () => {
+    __to && clearTimeout(__to);
+    if (l.__kesaTimedOut) {
+      (__kesaDone[o] = 1), (l.referrerPolicy = p.referrerPolicy), (l.src = o), l.classList.add("preview_Kesa"), sortMasonry();
+      return;
+    }
+    ((__kesaDone[o] = 1),
+      (l.__kesaBusy = 0),
+      __kesaBusy--,
+      __kesaPump(),
+      (l.referrerPolicy = p.referrerPolicy),
+      (l.src = o),
+      l.classList.add("preview_Kesa"),
+      sortMasonry());
+  };
+  p.onerror = () => {
+    __to && clearTimeout(__to);
+    if (l.__kesaTimedOut) {
+      (__kesaDone[o] = -1), (l.__kesaFail = 1), (l.src = __kesaFailSvg()), l.classList.add("preview_Kesa"), sortMasonry();
+      return;
+    }
+    l.__kesaTry = a + 1;
+    if (a === 0) {
+      ((l.__kesaBusy = 0),
+        __kesaBusy--,
+        setTimeout(() => {
+          __kesaQ.unshift(l), __kesaPump();
+        }, 500));
+      return;
+    }
+    if (a === 1 && !/ptfans\.cc/i.test(location.hostname) && !o.includes("image_proxy.php") && !l.__kesaProxy) {
+      // ptfans.cc 的 image_proxy.php 端点已失效, 跳过无效重试
+      ((l.__kesaProxy = 1),
+        (l.dataset.src = location.origin + "/image_proxy.php?url=" + encodeURIComponent(o)),
+        (l.__kesaBusy = 0),
+        __kesaBusy--,
+        setTimeout(() => {
+          __kesaQ.unshift(l), __kesaPump();
+        }, 500));
+      return;
+    }
+    ((__kesaDone[o] = -1),
+      (l.__kesaFail = 1),
+      (l.__kesaBusy = 0),
+      __kesaBusy--,
+      __kesaPump(),
+      (l.src = o),
+      l.classList.add("preview_Kesa"),
+      sortMasonry());
+  };
+  p.src = o;
+  // 4 秒超时: 仅释放并发槽, 该图继续后台加载, 完成后自动显示
+  __to = setTimeout(function () {
+    if (l.__kesaTimedOut) return;
+    (l.__kesaTimedOut = 1), (l.__kesaBusy = 0), __kesaBusy--, __kesaPump();
+  }, 4000);
 }
 
 // NOTE: 3. Nexus 工具(触摸预览 + 懒加载)-------------------------------/**NEXUS 预览工具箱, 提供图片预览和图片懒加载, 神器*/
@@ -438,42 +589,9 @@ function NEXUS_TOOLS() {
         kesa_preview.css(previewPosition_Kesa(e, imgEle))
       });
 
-    // -------------lazy load
+    // -------------lazy load (并发队列: 预热 + 排队 + 超时 + 复用, 兼容各站滚动容器)
     if ("IntersectionObserver" in window) {
-      let imgList = [...document.querySelectorAll(".nexus-lazy-load_Kesa")];
-      // console.log(imgList);
-      const io = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-          const el = entry.target;
-          const intersectionRatio = entry.intersectionRatio;
-          // el._entry = entry
-          // console.log(`el, ${el.getAttribute("data-src")}, intersectionRatio: ${intersectionRatio}`);
-
-          // if (
-          //   intersectionRatio > 0 &&
-          //   intersectionRatio <= 1 &&
-          //   !el.classList.contains("preview_Kesa")
-          // ) 
-          if (entry.isIntersecting && !el.classList.contains("preview_Kesa")
-          ) {
-            // 懒加载成功
-            // console.log(`el, ${el.getAttribute("data-src")}, loadImg`);
-            // let currentIndex = el.nextSibling.nextSibling.textContent.trim();
-            // console.log(`index: ${currentIndex} 懒加载添加成功~`);
-            // console.log(el);
-            const source = el.dataset.src;
-            el.src = source;
-            el.classList.add("preview_Kesa");
-            // 加载完图片后重新布局 Masonry
-            // 这里是真实图片的加载
-            // TODO: 这里可以写个防抖优化性能, 但是人好像自带防抖的, 哈哈......
-            sortMasonry();
-          }
-          // el.onload = el.onerror = () => io.unobserve(el);
-        });
-      });
-
-      imgList.forEach((img) => io.observe(img));
+      __kesaWatchLazy();
     }
   });
 }

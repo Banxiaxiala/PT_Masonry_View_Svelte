@@ -17,11 +17,14 @@
     GET_CURRENT_PT_DOMAIN,
     GET_TORRENT_LIST_SELECTOR,
     IS_MT,
+    __isPTT,
+    __pttParse,
   } from "./index";
   import "../utils/masonry.pkgd.Kesa";
 
   import { CARD, PAGE } from "../default.config";
   import { Launch_Hijack } from "../lib/mteamHijack";
+  import { __kesaRestorePage, __kesaSavePageState, __kesaPageInd } from "../lib/sync";
 
   import TorrentCard from "./torrentCard.svelte";
 
@@ -87,6 +90,19 @@
     if (t.indexOf("FREE") !== -1) return "FREE";
     if (t.indexOf("50") !== -1 || t.indexOf("2X") !== -1) return "PERCENT_50";
     return "NORMAL";
+  }
+
+  /** 从 URL 解析当前页码(NexusPHP 用 page, M-Team 用 pageNumber)
+   * @returns {number} 页码(无则 1)
+   */
+  function currentPageFromUrl() {
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      const v = parseInt(sp.get("page") || sp.get("pageNumber") || sp.get("p") || "", 10);
+      return isNaN(v) || v < 1 ? 1 : v;
+    } catch (e) {
+      return 1;
+    }
   }
 
   /** 根据容器宽度和卡片宽度动态调整卡片间隔 gutter
@@ -187,9 +203,12 @@
     console.log("M-Team NEW_MT 站: 走劫持 /search 数据源路由");
   } else {
     // NexusPHP 路由: 直接解析原表格 DOM
+    // PTT/NicePT/PTFans 用 __pttParse(按站点列索引适配); 其余(kamept)用各站 config.TORRENT_LIST_TO_JSON
     infoList = [
       ...infoList,
-      ...config.TORRENT_LIST_TO_JSON(originTable).map(__normalizeTorrent),
+      ...(__isPTT
+        ? __pttParse(originTable)
+        : config.TORRENT_LIST_TO_JSON(originTable).map(__normalizeTorrent)),
     ];
   }
 
@@ -291,6 +310,25 @@
         // NOTE: 原表格随着下一页加载增多
         // FIXME: 目前这里没有问题, 但是保不准其他站点会有问题, 到时候再说吧
         // console.log(table);
+
+        if (__isPTT) {
+          // PTT/NicePT/PTFans: 用 __pttParse 按站点列索引解析下一页(不 append 原表格行, 瀑布流直接消费 infoList)
+          const objs = __pttParse(doc);
+          if (objs.length) {
+            infoList = [...infoList, ...objs];
+            PAGE.IS_ORIGIN = false;
+            PAGE.PAGE_CURRENT = PAGE.PAGE_NEXT;
+            onMountSignal = true;
+            setTimeout(() => { onMountSignal = false; }, 1000);
+          } else {
+            console.log("获取不到下页信息, 可能到头了");
+          }
+          // 记录页码(供刷新恢复 + WebDAV 页码同步) + 更新侧边栏"第 N 页"指示器
+          __kesaSavePageState(PAGE.PAGE_NEXT);
+          __kesaPageInd(PAGE.PAGE_NEXT);
+          return;
+        }
+
         // 获取下一页表格
         const list = Array.from(table.cloneNode(true).children[0].children);
         // 改第一行的标题名称
@@ -326,6 +364,10 @@
         PAGE.IS_ORIGIN = false;
         PAGE.PAGE_CURRENT = PAGE.PAGE_NEXT;
 
+        // 记录页码(供刷新恢复 + WebDAV 页码同步) + 更新侧边栏"第 N 页"指示器
+        __kesaSavePageState(PAGE.PAGE_NEXT);
+        __kesaPageInd(PAGE.PAGE_NEXT);
+
         // NOTE: 配置 onMount 和 翻页的协同响应, 避免被其他 dom 刷新干扰重复调用
         onMountSignal = true;
         setTimeout(() => {
@@ -357,6 +399,24 @@
     // 初始化整理布局
     masonry.layout("fast");
     masonry.layout("fast");
+
+    // 刷新后恢复页码(仅真实刷新 F5/Ctrl+R 时, 依据 base URL 一致才跳转)
+    __kesaRestorePage();
+    // 实时记录当前页码 + 侧边栏"第 N 页"指示器(点击跳转真实 URL)
+    __kesaSavePageState(currentPageFromUrl());
+    __kesaPageInd(currentPageFromUrl());
+
+    // 窗口尺寸变化后重跑布局(防抖, 保持用户设定列数 + 重新居中)
+    if (!window.__kesaResizeBound) {
+      window.__kesaResizeBound = true;
+      let rTimer = null;
+      window.addEventListener("resize", function () {
+        clearTimeout(rTimer);
+        rTimer = setTimeout(function () {
+          window.CHANGE_CARD_LAYOUT && window.CHANGE_CARD_LAYOUT();
+        }, 120);
+      });
+    }
 
     // M-Team 路由: 启动劫持, 监听 /search 请求与响应
     if (isMT) {

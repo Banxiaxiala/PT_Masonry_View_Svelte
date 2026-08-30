@@ -13,6 +13,7 @@
     _show_configPanel,
   } from "./stores";
   import { GET_TORRENT_LIST_SELECTOR, GLOBAL_SITE, IS_MT } from "./sites";
+  import { __wdvAutoSync, __wdvAutoPush } from "./lib/sync";
   import BtnTurnPage from "./component/btnTurnPage.svelte";
   import { fade } from "svelte/transition";
   // ------------------------------------------------
@@ -107,6 +108,10 @@
     const componentBtnTurnPage = new BtnTurnPage({
       target: nextPageNode,
     });
+
+    // 多设备 WebDAV 同步: 打开页面自动下载(已读/设置/页码), 关闭页面自动上传(兜底)
+    __wdvAutoSync();
+    window.addEventListener("pagehide", __wdvAutoPush);
   });
 </script>
 
