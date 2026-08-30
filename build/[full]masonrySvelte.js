@@ -2,24 +2,38 @@
 // @name            PT种子列表瀑布流视图(Svelte重构)
 // @name:en         PT_Masonry_View_Svelte
 // @namespace       https://github.com/KesaubeEire/PT_Masonry_View_Svelte
-// @version         1.1.0
+// @version         1.2.12b
 // @author          Kesa
-// @description     PT种子列表无限下拉瀑布流视图(Svelte重构)
+// @description     PT种子列表无限下拉瀑布流视图(Svelte重构) [M-Team数据源: 劫持站点自身请求(原作者逻辑)]
 // @description:en  PT Masonry View by Svelte.
 // @license         MIT
 // @icon            https://avatars.githubusercontent.com/u/23617963
 // @match           https://kamept.com/*
-// @match           https://kp.m-team.cc/*
-// @match           https://pterclub.com/*
+// @match           https://www.pttime.org/*
+// @match           https://pttime.org/*
+// @match           https://www.nicept.net/*
+// @match           https://www.ptfans.cc/*
+// @match           https://ptfans.cc/*
+// @match           https://*.m-team.cc/*
+// @match           https://mua.xloli.cc/*
 // @exclude         */offers.php*
 // @exclude         */index.php*
 // @exclude         */forums.php*
 // @exclude         */viewrequests.php*
 // @exclude         */seek.php*
-// @grant           none
+// @exclude         *m-team*/detail/*
+// @exclude         */detail/*
+// @exclude         *details.php*
+// @exclude         *preview.php*
+// @exclude         *torrent-details*
+// @grant           GM_addStyle
+// @grant           GM_getValue
+// @grant           GM_setValue
+// @grant           GM_xmlhttpRequest
+// @run-at          document-start
 // ==/UserScript==
 
-(t=>{const e=document.createElement("style");e.dataset.source="vite-plugin-monkey",e.textContent=t,document.head.append(e)})(' div.waterfall{width:100%;padding-top:20px;padding-bottom:60px;border-radius:20px;height:100%;margin:20px auto;transition:height .3s}button.debug{position:fixed;top:10px;right:10px;padding:4px;background-color:#333;color:#fff;border:none;border-radius:5px;cursor:pointer}button#toggle_oldTable{top:10px}button#btnReLayout{top:40px}button#btnSwitchMode{top:70px}button#sort_masonry{top:100px}.switch.svelte-2vaqag.svelte-2vaqag{width:100%;height:30px;display:flex;align-items:center;justify-content:space-between}.s_title.svelte-2vaqag.svelte-2vaqag{display:flex;align-items:center;font-size:14px;position:relative}.title_green.svelte-2vaqag.svelte-2vaqag{color:green;font-weight:800}.title_red.svelte-2vaqag.svelte-2vaqag{color:red;font-weight:800}.s_title.svelte-2vaqag:has(.hint):hover ._hint.svelte-2vaqag{display:block}._hint.svelte-2vaqag.svelte-2vaqag{display:none;position:absolute;bottom:28px;left:0;width:max-content;height:auto;background-color:#fff;border:1px solid black;border-radius:8px;padding:4px 8px;box-sizing:content-box;z-index:1}input[type=checkbox].svelte-2vaqag.svelte-2vaqag{width:0px;height:0px;display:none;visibility:hidden}label.svelte-2vaqag.svelte-2vaqag{width:48px;height:12px;display:inline-block;position:relative;background-color:#777;border:2px solid #555;border-radius:30px;transition:all .2s}label.svelte-2vaqag.svelte-2vaqag:after{content:"";display:block;width:24px;height:24px;background-color:#555;position:absolute;border-radius:50%;left:-2px;top:-6px;transition:transform .2s}input[type=checkbox].svelte-2vaqag:checked~label.svelte-2vaqag{background-color:#00a0fc;border-color:#006dc9}input[type=checkbox].svelte-2vaqag:checked~label.svelte-2vaqag:after{background-color:#0054b0;transform:translate(28px)}.sideP.svelte-mdsgbd.svelte-mdsgbd{position:fixed;opacity:.4;margin:4px 2px;border-radius:8px;overflow:hidden;z-index:40000;border:2px solid transparent}.sideP.svelte-mdsgbd.svelte-mdsgbd:hover{opacity:1;border:2px solid yellow}.sideP__title.svelte-mdsgbd.svelte-mdsgbd{width:100%;height:8px;background-color:#ff0}.sideP__title.svelte-mdsgbd.svelte-mdsgbd:hover{cursor:move}.sideP__out.svelte-mdsgbd.svelte-mdsgbd{display:flex;flex-direction:column}.sideP__btn.svelte-mdsgbd.svelte-mdsgbd{background-color:gray;color:#fff;padding:4px 8px;margin:4px;border-radius:8px;cursor:pointer;border:none}.sideP__btn.svelte-mdsgbd.svelte-mdsgbd:hover{background-color:#6531ff}.configP.svelte-mdsgbd.svelte-mdsgbd{position:fixed;left:0;top:0;width:100vw;height:100vh;padding:0;margin:0;z-index:50000;background-color:#0003}.configP_holder.svelte-mdsgbd.svelte-mdsgbd{position:absolute;right:20px;top:20px;overflow-y:scroll;width:360px;max-height:calc(100vh - 40px);padding:0;margin:0;border-radius:24px;border:2px solid black;background-color:#d4e7ff}.configP_holder.svelte-mdsgbd.svelte-mdsgbd::-webkit-scrollbar{display:none}.configP_title.svelte-mdsgbd.svelte-mdsgbd{position:fixed;box-sizing:border-box;width:inherit;display:flex;justify-content:space-between;align-items:center;height:40px;padding:0 10px;border-top-left-radius:24px;border-top-right-radius:24px;border-bottom:2px solid black;background-color:#9ac6ff;z-index:2}.configP_title.svelte-mdsgbd.svelte-mdsgbd p{font-size:18px;font-weight:500}.configP_title.svelte-mdsgbd.svelte-mdsgbd button{border:none;padding:0;margin:0;background-color:transparent}.section.svelte-mdsgbd.svelte-mdsgbd{margin:16px 18px}.section.svelte-mdsgbd.svelte-mdsgbd button{border-radius:10px;margin:4px;padding:12px 16px}.section.svelte-mdsgbd.svelte-mdsgbd .s_title{text-align:center}.section.svelte-mdsgbd.svelte-mdsgbd .s_panel{display:flex;flex-direction:column;justify-content:space-evenly;align-items:center}.section.svelte-mdsgbd.svelte-mdsgbd .s_checkbox{padding:12px;margin:4px;border-radius:10px;border:1px solid black;font-size:14px;display:flex;align-items:center}.configP_holder.svelte-mdsgbd .section.svelte-mdsgbd:nth-child(2){margin-top:48px}#reset_panel_pos.svelte-mdsgbd.svelte-mdsgbd{width:100%;text-align:center;border:1px solid black;border-radius:16px}.card.svelte-vdh3h6.svelte-vdh3h6{border:1px solid rgba(255,255,255,.5);border-radius:16px;margin:6px 0;overflow:hidden;cursor:pointer;box-shadow:#0000004d 3px 3px,#0000001a -1px -1px;transition:box-shadow .2s}.card.svelte-vdh3h6.svelte-vdh3h6:hover{box-shadow:#7300ff4d 5px 5px,#0000001a -1px -1px}.card-title.svelte-vdh3h6.svelte-vdh3h6{padding:2px 0}.card-holder.svelte-vdh3h6.svelte-vdh3h6{background-color:#ffffff80;background:linear-gradient(to bottom,rgba(255,255,255,.4),rgba(255,255,255,0))}.card-category.svelte-vdh3h6.svelte-vdh3h6{text-align:center;letter-spacing:2px;font-weight:700}.card-line.svelte-vdh3h6.svelte-vdh3h6{margin-top:1px;margin-bottom:1px;display:flex;justify-content:space-evenly;align-items:center;height:20px}.two-lines.svelte-vdh3h6.svelte-vdh3h6{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;transition:color .3s}.two-lines.svelte-vdh3h6.svelte-vdh3h6:hover{-webkit-line-clamp:100}.cl-center.svelte-vdh3h6.svelte-vdh3h6{display:flex;justify-content:space-evenly;align-items:center}.cl-tags.svelte-vdh3h6.svelte-vdh3h6{display:flex;justify-content:left;align-items:center;flex-wrap:wrap;gap:2px;transform:translate(4px)}.cl-tags.svelte-vdh3h6.svelte-vdh3h6:has(span){padding-top:2px}.card-details.svelte-vdh3h6.svelte-vdh3h6{display:flex;justify-content:center;align-items:center;flex-direction:column}.card-image.svelte-vdh3h6.svelte-vdh3h6{height:100%;position:relative}.card-image.svelte-vdh3h6 img.svelte-vdh3h6{width:100%;object-fit:cover}.card-alter.svelte-vdh3h6.svelte-vdh3h6{text-align:center;height:20px;display:flex;justify-content:center;align-items:center}.top_and_free.svelte-vdh3h6.svelte-vdh3h6{padding:2px;border-radius:4px;margin-bottom:2px;display:flex;justify-content:center;align-items:center;line-height:11px;height:11px;font-size:10px}._Free.svelte-vdh3h6.svelte-vdh3h6{color:#00f}._2XFree.svelte-vdh3h6.svelte-vdh3h6{color:green}.card-description.svelte-vdh3h6.svelte-vdh3h6{padding-left:4px;padding-right:4px}.card-index.svelte-vdh3h6.svelte-vdh3h6{position:absolute;top:0;left:0;padding-right:9px;padding-left:2px;margin:0;height:20px;line-height:16px;font-size:16px;background-color:#000;color:#ff0;border-top-right-radius:100px;border-bottom-right-radius:100px;display:flex;align-items:center;pointer-events:none}.btnCollet.svelte-vdh3h6.svelte-vdh3h6{padding:1px 2px;cursor:pointer}.hot.svelte-vdh3h6.svelte-vdh3h6,.new.svelte-vdh3h6.svelte-vdh3h6{padding:0 2px;border-radius:8px;background:white;margin:2px}.card-category.svelte-1fw75v2.svelte-1fw75v2{height:24px;padding:0 2px;border:1px;background:black;color:#fff;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;display:flex;align-items:center;justify-content:center}.card_category-img.svelte-1fw75v2.svelte-1fw75v2{height:32px;background-size:100% 141%;background-position:center top;padding-top:6px}.card.svelte-1fw75v2.svelte-1fw75v2{border:1px solid rgba(255,255,255,.5);border-radius:16px;margin:6px 0;overflow:hidden;cursor:pointer;box-shadow:#0000004d 3px 3px,#0000001a -1px -1px;transition:box-shadow .2s}.card.svelte-1fw75v2.svelte-1fw75v2:hover{box-shadow:#7300ff4d 5px 5px,#0000001a -1px -1px}.card-title.svelte-1fw75v2.svelte-1fw75v2{padding:2px 0}.card-holder.svelte-1fw75v2.svelte-1fw75v2{background-color:#ffffff80;background:linear-gradient(to bottom,rgba(255,255,255,.4),rgba(255,255,255,0))}.card-line.svelte-1fw75v2.svelte-1fw75v2{margin-top:1px;margin-bottom:1px;display:flex;justify-content:space-evenly;align-items:center;height:20px}.two-lines.svelte-1fw75v2.svelte-1fw75v2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;transition:color .3s}.two-lines.svelte-1fw75v2.svelte-1fw75v2:hover{-webkit-line-clamp:100}.cl-center.svelte-1fw75v2.svelte-1fw75v2{display:flex;justify-content:space-evenly;align-items:center}.cl-tags.svelte-1fw75v2.svelte-1fw75v2{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:2px;padding-top:4px;padding-bottom:2px}.cl-tags.svelte-1fw75v2.svelte-1fw75v2:has(span){padding-top:2px}.card-details.svelte-1fw75v2.svelte-1fw75v2{display:flex;justify-content:center;align-items:center;flex-direction:column}.card-image.svelte-1fw75v2.svelte-1fw75v2{height:100%;position:relative}.card-image.svelte-1fw75v2 img.svelte-1fw75v2{width:100%;object-fit:cover}.card-alter.svelte-1fw75v2.svelte-1fw75v2{text-align:center;height:20px;display:flex;justify-content:center;align-items:center}.top_and_free.svelte-1fw75v2.svelte-1fw75v2{padding:2px;border-radius:4px;margin-bottom:2px;display:flex;justify-content:center;align-items:center;line-height:11px;height:11px;font-size:10px}._Free.svelte-1fw75v2.svelte-1fw75v2{color:#00f}._2XFree.svelte-1fw75v2.svelte-1fw75v2{color:green}.card-description.svelte-1fw75v2.svelte-1fw75v2{padding-left:4px;padding-right:4px}.card-index.svelte-1fw75v2.svelte-1fw75v2{position:absolute;top:0;left:0;padding-right:9px;padding-left:2px;margin:0;height:20px;line-height:16px;font-size:16px;background-color:#000;color:#ff0;border-top-right-radius:100px;border-bottom-right-radius:100px;display:flex;align-items:center;pointer-events:none}.btnCollet.svelte-1fw75v2.svelte-1fw75v2{padding:1px 2px;cursor:pointer}.tempTags.svelte-1fw75v2.svelte-1fw75v2{background-color:#fff;margin-left:2px;padding-left:2px;padding-right:2px;border-radius:4px}#turnPage.svelte-kydsmq{width:100%;height:32px;border-radius:16px;line-height:20px;font-size:14px;position:absolute;bottom:0px}#_turnPage.svelte-2j14uu{width:100%;height:32px;border-radius:16px;line-height:20px;font-size:14px;margin:10px 0;padding:0 10px}div#_iframe.svelte-1wevt6e{position:fixed;top:0;left:0;width:100vw;height:100vh;background-color:#0026269b;z-index:30000;display:flex}iframe.svelte-1wevt6e{height:96%;margin:auto} ');
+(e=>{if(typeof GM_addStyle=="function"){GM_addStyle(e);return}const t=document.createElement("style");t.textContent=e,document.head.append(t)})(' div.waterfall{width:100%;padding-top:20px;padding-bottom:60px;border-radius:20px;height:100%;margin:20px auto;transition:height .3s}button.debug{position:fixed;top:10px;right:10px;padding:4px;background-color:#333;color:#fff;border:none;border-radius:5px;cursor:pointer}button#toggle_oldTable{top:10px}button#btnReLayout{top:40px}button#btnSwitchMode{top:70px}button#sort_masonry{top:100px}.switch.svelte-2vaqag.svelte-2vaqag{width:100%;height:30px;display:flex;align-items:center;justify-content:space-between}.s_title.svelte-2vaqag.svelte-2vaqag{display:flex;align-items:center;font-size:14px;position:relative}.title_green.svelte-2vaqag.svelte-2vaqag{color:green;font-weight:800}.title_red.svelte-2vaqag.svelte-2vaqag{color:red;font-weight:800}.s_title.svelte-2vaqag:has(.hint):hover ._hint.svelte-2vaqag{display:block}._hint.svelte-2vaqag.svelte-2vaqag{display:none;position:absolute;bottom:28px;left:0;width:max-content;height:auto;background-color:#fff;border:1px solid black;border-radius:8px;padding:4px 8px;box-sizing:content-box;z-index:1}input[type=checkbox].svelte-2vaqag.svelte-2vaqag{width:0px;height:0px;display:none;visibility:hidden}label.svelte-2vaqag.svelte-2vaqag{width:48px;height:12px;display:inline-block;position:relative;background-color:#777;border:2px solid #555;border-radius:30px;transition:all .2s}label.svelte-2vaqag.svelte-2vaqag:after{content:"";display:block;width:24px;height:24px;background-color:#555;position:absolute;border-radius:50%;left:-2px;top:-6px;transition:transform .2s}input[type=checkbox].svelte-2vaqag:checked~label.svelte-2vaqag{background-color:#00a0fc;border-color:#006dc9}input[type=checkbox].svelte-2vaqag:checked~label.svelte-2vaqag:after{background-color:#0054b0;transform:translate(28px)}.sideP.svelte-mdsgbd.svelte-mdsgbd{position:fixed;opacity:.4;margin:4px 2px;border-radius:8px;overflow:hidden;z-index:40000;border:2px solid transparent}.sideP.svelte-mdsgbd.svelte-mdsgbd:hover{opacity:1;border:2px solid yellow}.sideP__title.svelte-mdsgbd.svelte-mdsgbd{width:100%;height:8px;background-color:#ff0}.sideP__title.svelte-mdsgbd.svelte-mdsgbd:hover{cursor:move}.sideP__out.svelte-mdsgbd.svelte-mdsgbd{display:flex;flex-direction:column}.sideP__btn.svelte-mdsgbd.svelte-mdsgbd{background-color:gray;color:#fff;padding:4px 8px;margin:4px;border-radius:8px;cursor:pointer;border:none}.sideP__btn.svelte-mdsgbd.svelte-mdsgbd:hover{background-color:#6531ff}.configP.svelte-mdsgbd.svelte-mdsgbd{position:fixed;left:0;top:0;width:100vw;height:100vh;padding:0;margin:0;z-index:50000;background-color:#0003}.configP_holder.svelte-mdsgbd.svelte-mdsgbd{position:absolute;right:20px;top:20px;overflow-y:scroll;width:360px;max-height:calc(100vh - 40px);padding:0;margin:0;border-radius:24px;border:2px solid black;background-color:#d4e7ff}.configP_holder.svelte-mdsgbd.svelte-mdsgbd::-webkit-scrollbar{display:none}.configP_title.svelte-mdsgbd.svelte-mdsgbd{position:fixed;box-sizing:border-box;width:inherit;display:flex;justify-content:space-between;align-items:center;height:40px;padding:0 10px;border-top-left-radius:24px;border-top-right-radius:24px;border-bottom:2px solid black;background-color:#9ac6ff;z-index:2}.configP_title.svelte-mdsgbd.svelte-mdsgbd p{font-size:18px;font-weight:500}.configP_title.svelte-mdsgbd.svelte-mdsgbd button{border:none;padding:0;margin:0;background-color:transparent}.section.svelte-mdsgbd.svelte-mdsgbd{margin:16px 18px}.section.svelte-mdsgbd.svelte-mdsgbd button{border-radius:10px;margin:4px;padding:12px 16px}.section.svelte-mdsgbd.svelte-mdsgbd .s_title{text-align:center}.section.svelte-mdsgbd.svelte-mdsgbd .s_panel{display:flex;flex-direction:column;justify-content:space-evenly;align-items:center}.section.svelte-mdsgbd.svelte-mdsgbd .s_checkbox{padding:12px;margin:4px;border-radius:10px;border:1px solid black;font-size:14px;display:flex;align-items:center}.configP_holder.svelte-mdsgbd .section.svelte-mdsgbd:nth-child(2){margin-top:48px}#reset_panel_pos.svelte-mdsgbd.svelte-mdsgbd{width:100%;text-align:center;border:1px solid black;border-radius:16px}.card.svelte-xrdclb.svelte-xrdclb{border:1px solid rgba(255,255,255,.5);border-radius:16px;margin:6px 0;overflow:hidden;cursor:pointer;box-shadow:#0000004d 3px 3px,#0000001a -1px -1px;transition:box-shadow .2s}.card.svelte-xrdclb.svelte-xrdclb:hover{box-shadow:#7300ff4d 5px 5px,#0000001a -1px -1px}.card-title.svelte-xrdclb.svelte-xrdclb{padding:2px 0}.card-holder.svelte-xrdclb.svelte-xrdclb{background-color:#ffffff80;background:linear-gradient(to bottom,rgba(255,255,255,.4),rgba(255,255,255,0))}.card-category.svelte-xrdclb.svelte-xrdclb{text-align:center;letter-spacing:2px;font-weight:700;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.card-line.svelte-xrdclb.svelte-xrdclb{margin-top:1px;margin-bottom:1px;display:flex;justify-content:space-evenly;align-items:center;height:20px}.two-lines.svelte-xrdclb.svelte-xrdclb{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;transition:color .3s}.two-lines.svelte-xrdclb.svelte-xrdclb:hover{-webkit-line-clamp:100}.cl-tags.svelte-xrdclb.svelte-xrdclb{display:flex;justify-content:left;align-items:center;flex-wrap:wrap;gap:2px;transform:translate(4px);padding-top:2px}._tag.svelte-xrdclb.svelte-xrdclb{height:1.3em;line-height:1.3em;padding:0 .5em;border-radius:6px;font-size:12px;color:#fff}._tag_diy.svelte-xrdclb.svelte-xrdclb{background-color:#5abd48}._tag_dub.svelte-xrdclb.svelte-xrdclb{background-color:#5a3b14}._tag_sub.svelte-xrdclb.svelte-xrdclb{background-color:#3b4a7f}.card-details.svelte-xrdclb.svelte-xrdclb{display:flex;justify-content:center;align-items:center;flex-direction:column}.card-image.svelte-xrdclb.svelte-xrdclb{height:100%;position:relative}.card-image.svelte-xrdclb img.svelte-xrdclb{width:100%;object-fit:cover}.pic_error.svelte-xrdclb.svelte-xrdclb{width:100%;height:100%;min-height:140px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:13px;color:#999;background-color:#0000000f;padding:8px;box-sizing:border-box}.card-discount.svelte-xrdclb.svelte-xrdclb{position:absolute;top:4px;right:4px;z-index:2;padding:0 6px;border-radius:6px;font-size:12px;color:#fff;pointer-events:none}.hover-trigger.svelte-xrdclb.svelte-xrdclb{position:absolute;right:4px;bottom:4px;z-index:3;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:6px;background-color:#0000008c;color:#fff;cursor:pointer;pointer-events:auto}.hover-trigger.svelte-xrdclb.svelte-xrdclb:hover{background-color:#000c}.card-discount.isFree.svelte-xrdclb.svelte-xrdclb{background-color:#108ee9}.card-discount.is50.svelte-xrdclb.svelte-xrdclb{background-color:#f50}.card-description.svelte-xrdclb.svelte-xrdclb{padding-left:4px;padding-right:4px;display:block;overflow:hidden;text-overflow:ellipsis}#turnPage.svelte-kydsmq{width:100%;height:32px;border-radius:16px;line-height:20px;font-size:14px;position:absolute;bottom:0}#_turnPage.svelte-2j14uu{width:100%;height:32px;border-radius:16px;line-height:20px;font-size:14px;margin:10px 0;padding:0 10px}div#_iframe.svelte-zv560o.svelte-zv560o{position:fixed;top:0;left:0;width:100vw;height:100vh;background-color:#0026269b;z-index:30000;display:flex}._iframe.svelte-zv560o.svelte-zv560o{width:min(var(--pw, 1600px),94vw);height:var(--ph, 96%);margin:auto}._iframe.svelte-zv560o iframe.svelte-zv560o{width:100%;height:100%;border:0;margin:auto} ');
 
 (function () {
   'use strict';
@@ -148,6 +162,7 @@
       }
     };
   }
+  const globals = typeof window !== "undefined" ? window : typeof globalThis !== "undefined" ? globalThis : global;
   function append(target, node) {
     target.appendChild(node);
   }
@@ -230,48 +245,13 @@
       node.style.setProperty(key, value, important ? "important" : "");
     }
   }
+  function toggle_class(element2, name, toggle) {
+    element2.classList[toggle ? "add" : "remove"](name);
+  }
   function custom_event(type, detail, { bubbles = false, cancelable = false } = {}) {
     const e = document.createEvent("CustomEvent");
     e.initCustomEvent(type, bubbles, cancelable, detail);
     return e;
-  }
-  class HtmlTag {
-    constructor(is_svg = false) {
-      this.is_svg = false;
-      this.is_svg = is_svg;
-      this.e = this.n = null;
-    }
-    c(html) {
-      this.h(html);
-    }
-    m(html, target, anchor = null) {
-      if (!this.e) {
-        if (this.is_svg)
-          this.e = svg_element(target.nodeName);
-        else
-          this.e = element(target.nodeType === 11 ? "TEMPLATE" : target.nodeName);
-        this.t = target.tagName !== "TEMPLATE" ? target : target.content;
-        this.c(html);
-      }
-      this.i(anchor);
-    }
-    h(html) {
-      this.e.innerHTML = html;
-      this.n = Array.from(this.e.nodeName === "TEMPLATE" ? this.e.content.childNodes : this.e.childNodes);
-    }
-    i(anchor) {
-      for (let i = 0; i < this.n.length; i += 1) {
-        insert(this.t, this.n[i], anchor);
-      }
-    }
-    p(html) {
-      this.d();
-      this.h(html);
-      this.i(this.a);
-    }
-    d() {
-      this.n.forEach(detach);
-    }
   }
   const managed_styles = /* @__PURE__ */ new Map();
   let active = 0;
@@ -861,11 +841,11 @@
     updateJQuery(jQuery2 || window2.jQuery);
     return jQueryBridget;
   });
-  (function(global, factory8) {
+  (function(global2, factory8) {
     if (typeof define == "function" && define.amd) {
       define("ev-emitter/ev-emitter", factory8);
     } else {
-      global.EvEmitter = factory8();
+      global2.EvEmitter = factory8();
     }
   })(typeof window != "undefined" ? window : globalThis, function() {
     function EvEmitter() {
@@ -2313,31 +2293,31 @@
     Run: 0
   };
   let timer = null;
-  function debounce(func2, delay) {
+  function debounce(func, delay) {
     return function() {
       if (timer) {
         console.warn("debounce dupe!!!!!!");
         clearTimeout(timer);
       }
       timer = setTimeout(function() {
-        func2.apply(this, arguments);
+        func.apply(this, arguments);
         timer = null;
       }, delay);
     };
   }
-  function throttle(func2, delay) {
+  function throttle(func, delay) {
     let timerId;
     let lastExecTime = 0;
     return function(...args) {
       const currentTime = Date.now();
       const elapsedTime = currentTime - lastExecTime;
       if (!timerId && elapsedTime > delay) {
-        func2.apply(this, args);
+        func.apply(this, args);
         lastExecTime = currentTime;
       } else {
         clearTimeout(timerId);
         timerId = setTimeout(() => {
-          func2.apply(this, args);
+          func.apply(this, args);
           lastExecTime = currentTime;
           timerId = null;
         }, delay - elapsedTime);
@@ -2360,6 +2340,124 @@
         throttleSort();
       }
     }
+    if (typeof __kesaWatchLazy === "function")
+      __kesaWatchLazy();
+  }
+  let __kesaQ = [];
+  let __kesaBusy = 0;
+  let __kesaDone = {};
+  const __kesaLimit = 4;
+  function __kesaWatchLazy() {
+    document.querySelectorAll('img[loading="lazy"]').forEach((im) => {
+      const src = im.getAttribute("src") || im.getAttribute("data-src") || "";
+      if (!src || /emptyImg|trans\.gif|spinner|^data:/i.test(src))
+        return;
+      if (im.loading !== "eager")
+        im.loading = "eager";
+      if (!im.__warmed) {
+        im.__warmed = 1;
+        const w = new Image();
+        w.src = src;
+      }
+    });
+    document.querySelectorAll(".nexus-lazy-load_Kesa:not(.preview_Kesa)").forEach((l) => {
+      if (l.dataset.src && !l.__kesaQueued && !l.__kesaFail)
+        __kesaQueue(l);
+    });
+  }
+  function __kesaQueue(l) {
+    if (l.__kesaQueued || l.classList.contains("preview_Kesa") || l.__kesaFail)
+      return;
+    const o = l.dataset.src;
+    if (!o)
+      return;
+    if (__kesaDone[o] === 1) {
+      l.__kesaQueued = 1, l.referrerPolicy = "no-referrer", l.src = o, l.classList.add("preview_Kesa"), sortMasonry();
+      return;
+    }
+    if (__kesaDone[o] === -1) {
+      l.__kesaQueued = 1, l.__kesaFail = 1, l.src = o, l.classList.add("preview_Kesa"), sortMasonry();
+      return;
+    }
+    l.__kesaQueued = 1, __kesaQ.push(l), __kesaPump();
+  }
+  function __kesaPump() {
+    while (__kesaBusy < __kesaLimit && __kesaQ.length) {
+      const l = __kesaQ.shift();
+      l.__kesaQueued = 0, __kesaStart(l);
+    }
+  }
+  function __kesaFindLoaded(o) {
+    try {
+      const all = document.querySelectorAll("img");
+      for (let i = 0; i < all.length; i++) {
+        const im = all[i];
+        const src = im.currentSrc || im.getAttribute("src") || "";
+        if (src === o && im.complete && im.naturalWidth > 0)
+          return im;
+      }
+    } catch (e) {
+    }
+    return null;
+  }
+  function __kesaFailSvg() {
+    return "data:image/svg+xml;utf8," + encodeURIComponent(
+      "<svg xmlns='http://www.w3.org/2000/svg' width='400' height='560'><text x='50%' y='50%' font-size='24' fill='#aaa' text-anchor='middle' dominant-baseline='middle'>暂时无法加载出图片</text></svg>"
+    );
+  }
+  function __kesaStart(l) {
+    if (l.__kesaBusy || l.classList.contains("preview_Kesa"))
+      return;
+    const o = l.dataset.src;
+    if (!o) {
+      l.__kesaFail = 1;
+      return;
+    }
+    const __re = __kesaFindLoaded(o);
+    if (__re) {
+      l.referrerPolicy = __re.referrerPolicy || "", l.src = o, l.classList.add("preview_Kesa"), __kesaDone[o] = 1, sortMasonry();
+      return;
+    }
+    l.__kesaBusy = 1, __kesaBusy++;
+    const p = new Image();
+    const a = l.__kesaTry | 0;
+    let __to = null;
+    a >= 1 && (p.referrerPolicy = "no-referrer");
+    p.onload = () => {
+      __to && clearTimeout(__to);
+      if (l.__kesaTimedOut) {
+        __kesaDone[o] = 1, l.referrerPolicy = p.referrerPolicy, l.src = o, l.classList.add("preview_Kesa"), sortMasonry();
+        return;
+      }
+      __kesaDone[o] = 1, l.__kesaBusy = 0, __kesaBusy--, __kesaPump(), l.referrerPolicy = p.referrerPolicy, l.src = o, l.classList.add("preview_Kesa"), sortMasonry();
+    };
+    p.onerror = () => {
+      __to && clearTimeout(__to);
+      if (l.__kesaTimedOut) {
+        __kesaDone[o] = -1, l.__kesaFail = 1, l.src = __kesaFailSvg(), l.classList.add("preview_Kesa"), sortMasonry();
+        return;
+      }
+      l.__kesaTry = a + 1;
+      if (a === 0) {
+        l.__kesaBusy = 0, __kesaBusy--, setTimeout(() => {
+          __kesaQ.unshift(l), __kesaPump();
+        }, 500);
+        return;
+      }
+      if (a === 1 && !/ptfans\.cc/i.test(location.hostname) && !o.includes("image_proxy.php") && !l.__kesaProxy) {
+        l.__kesaProxy = 1, l.dataset.src = location.origin + "/image_proxy.php?url=" + encodeURIComponent(o), l.__kesaBusy = 0, __kesaBusy--, setTimeout(() => {
+          __kesaQ.unshift(l), __kesaPump();
+        }, 500);
+        return;
+      }
+      __kesaDone[o] = -1, l.__kesaFail = 1, l.__kesaBusy = 0, __kesaBusy--, __kesaPump(), l.src = o, l.classList.add("preview_Kesa"), sortMasonry();
+    };
+    p.src = o;
+    __to = setTimeout(function() {
+      if (l.__kesaTimedOut)
+        return;
+      l.__kesaTimedOut = 1, l.__kesaBusy = 0, __kesaBusy--, __kesaPump();
+    }, 4e3);
   }
   function NEXUS_TOOLS() {
     console.log("------------------------NEXUS TOOLS------------------------");
@@ -2523,7 +2621,8 @@
             pointerEvents: "none",
             width: "100%",
             height: "100%",
-            objectFit: "contain"
+            // 预览大图默认状态: 开启=铺满(contain) 关闭=尽量原图大小(scale-down)
+            objectFit: get_store_value(_state_hover_pic) ? "contain" : "scale-down"
           }
         }));
         parent.append(jQuery("<img>", {
@@ -2542,9 +2641,25 @@
       }
       const kesa_preview = jQuery("#kp_container").length > 0 ? jQuery("#kp_container") : createKesaPreview("");
       jQuery("body").append(kesa_preview);
+      _state_hover_pic.subscribe((v) => {
+        const __im = document.querySelectorAll("#kp_container .kp_img")[0];
+        if (__im)
+          __im.style.objectFit = v ? "contain" : "scale-down";
+      });
       let buffer = null;
-      jQuery("body").on("mouseover", selector, function(e) {
-        imgEle = jQuery(this);
+      const triggerSel = "div.hover-trigger";
+      function resolvePreviewImg(el) {
+        const card = el && el.closest ? el.closest(".card") : null;
+        const img = card ? card.querySelector("img.preview_Kesa, img.card-image--img.nexus-lazy-load_Kesa") : null;
+        return jQuery(img || el);
+      }
+      jQuery("body").on("mouseover", selector + "," + triggerSel, function(e) {
+        const isTrigger = jQuery(this).is(triggerSel);
+        if (get_store_value(_preview_style) && !isTrigger)
+          return;
+        if (!get_store_value(_preview_style) && isTrigger)
+          return;
+        imgEle = resolvePreviewImg(this);
         buffer = setTimeout(() => {
           if (get_store_value(_show_nexus_pic)) {
             imgPosition = getImgPosition(e, imgEle);
@@ -2557,30 +2672,19 @@
             kesa_preview.css(previewPosition_Kesa(e, imgEle)).show();
           }
         }, get_store_value(_delay_nexus_pic));
-      }).on("mouseout", selector, function(e) {
+      }).on("mouseout", selector + "," + triggerSel, function(e) {
         kesa_preview.hide();
         if (buffer)
           clearTimeout(buffer);
-      }).on("mousemove", selector, function(e) {
+      }).on("mousemove", selector + "," + triggerSel, function(e) {
+        if (!imgEle || !imgEle.length)
+          return;
         imgPosition = getImgPosition(e, imgEle);
         getPosition(e, imgPosition);
         kesa_preview.css(previewPosition_Kesa(e, imgEle));
       });
       if ("IntersectionObserver" in window) {
-        let imgList = [...document.querySelectorAll(".nexus-lazy-load_Kesa")];
-        const io = new IntersectionObserver((entries) => {
-          entries.forEach((entry) => {
-            const el = entry.target;
-            entry.intersectionRatio;
-            if (entry.isIntersecting && !el.classList.contains("preview_Kesa")) {
-              const source = el.dataset.src;
-              el.src = source;
-              el.classList.add("preview_Kesa");
-              sortMasonry();
-            }
-          });
-        });
-        imgList.forEach((img) => io.observe(img));
+        __kesaWatchLazy();
       }
     });
   }
@@ -2605,7 +2709,25 @@
   const _show_debug_btn = persistStore("_show_debug_btn", 0);
   const _show_nexus_pic = persistStore("_show_nexus_pic", 1);
   const _delay_nexus_pic = persistStore("_delay_nexus_pic", 600);
+  const _pic_failed_showInfo = persistStore("_pic_failed_showInfo", 1);
+  const _state_hover_pic = persistStore("_state_hover_pic", false);
+  const _preview_style = persistStore("_preview_style", true);
   const _card_width = persistStore("_card_width", 200);
+  const _animated = persistStore("_animated", true);
+  const default_card_layout = { column: 4, gap: 20, margin: 20 };
+  const _card_layout = persistStore("_card_layout", default_card_layout);
+  const _previewWidth = persistStore("_previewWidth", 0);
+  const _previewHeight = persistStore("_previewHeight", 0);
+  let mark_layout = false;
+  _card_layout.subscribe((value) => {
+    if (!mark_layout) {
+      mark_layout = true;
+    } else {
+      if (typeof window !== "undefined" && window.CHANGE_CARD_LAYOUT) {
+        window.CHANGE_CARD_LAYOUT();
+      }
+    }
+  });
   const site_setting = {
     mt: {
       // 隐藏gay卡片: 默认为true
@@ -2654,7 +2776,7 @@
       sortMasonry();
     }
   });
-  function create_if_block_6$2(ctx) {
+  function create_if_block_6$1(ctx) {
     let svg;
     let path;
     let circle;
@@ -2725,7 +2847,7 @@
       }
     };
   }
-  function create_if_block_2$3(ctx) {
+  function create_if_block_2$1(ctx) {
     let t;
     let if_block_anchor;
     function select_block_type(ctx2, dirty) {
@@ -2733,19 +2855,19 @@
         /*green_state*/
         ctx2[7]
       )
-        return create_if_block_3$3;
+        return create_if_block_3$1;
       if (
         /*checked*/
         ctx2[0]
       )
-        return create_if_block_5$2;
-      return create_else_block_1$1;
+        return create_if_block_5$1;
+      return create_else_block_1;
     }
     let current_block_type = select_block_type(ctx);
     let if_block = current_block_type(ctx);
     return {
       c() {
-        t = text(": \n\n      ");
+        t = text(": \r\n\r\n      ");
         if_block.c();
         if_block_anchor = empty();
       },
@@ -2775,7 +2897,7 @@
       }
     };
   }
-  function create_else_block_1$1(ctx) {
+  function create_else_block_1(ctx) {
     let span;
     let t;
     return {
@@ -2806,7 +2928,7 @@
       }
     };
   }
-  function create_if_block_5$2(ctx) {
+  function create_if_block_5$1(ctx) {
     let span;
     let t;
     return {
@@ -2837,15 +2959,15 @@
       }
     };
   }
-  function create_if_block_3$3(ctx) {
+  function create_if_block_3$1(ctx) {
     let if_block_anchor;
     function select_block_type_1(ctx2, dirty) {
       if (
         /*checked*/
         ctx2[0]
       )
-        return create_if_block_4$2;
-      return create_else_block$2;
+        return create_if_block_4$1;
+      return create_else_block$3;
     }
     let current_block_type = select_block_type_1(ctx);
     let if_block = current_block_type(ctx);
@@ -2877,7 +2999,7 @@
       }
     };
   }
-  function create_else_block$2(ctx) {
+  function create_else_block$3(ctx) {
     let span;
     let t;
     return {
@@ -2908,7 +3030,7 @@
       }
     };
   }
-  function create_if_block_4$2(ctx) {
+  function create_if_block_4$1(ctx) {
     let span;
     let t;
     return {
@@ -2939,7 +3061,7 @@
       }
     };
   }
-  function create_if_block_1$4(ctx) {
+  function create_if_block_1$3(ctx) {
     let div;
     let input;
     let t;
@@ -3001,7 +3123,7 @@
       }
     };
   }
-  function create_if_block$6(ctx) {
+  function create_if_block$5(ctx) {
     let current;
     const default_slot_template = (
       /*#slots*/
@@ -3066,7 +3188,7 @@
       }
     };
   }
-  function create_fragment$6(ctx) {
+  function create_fragment$5(ctx) {
     let div1;
     let div0;
     let t0;
@@ -3077,20 +3199,20 @@
     let current;
     let if_block0 = (
       /*label*/
-      ctx[5] && create_if_block_6$2(ctx)
+      ctx[5] && create_if_block_6$1(ctx)
     );
     let if_block1 = (
       /*title_green*/
       (ctx[3] || /*title_red*/
-      ctx[4]) && create_if_block_2$3(ctx)
+      ctx[4]) && create_if_block_2$1(ctx)
     );
     let if_block2 = (
       /*type*/
-      ctx[1] == "switch" && create_if_block_1$4(ctx)
+      ctx[1] == "switch" && create_if_block_1$3(ctx)
     );
     let if_block3 = (
       /*type*/
-      ctx[1] == "range" && create_if_block$6(ctx)
+      ctx[1] == "range" && create_if_block$5(ctx)
     );
     return {
       c() {
@@ -3147,7 +3269,7 @@
           if (if_block0) {
             if_block0.p(ctx2, dirty);
           } else {
-            if_block0 = create_if_block_6$2(ctx2);
+            if_block0 = create_if_block_6$1(ctx2);
             if_block0.c();
             if_block0.m(div0, t0);
           }
@@ -3170,7 +3292,7 @@
           if (if_block1) {
             if_block1.p(ctx2, dirty);
           } else {
-            if_block1 = create_if_block_2$3(ctx2);
+            if_block1 = create_if_block_2$1(ctx2);
             if_block1.c();
             if_block1.m(div0, null);
           }
@@ -3194,7 +3316,7 @@
           if (if_block2) {
             if_block2.p(ctx2, dirty);
           } else {
-            if_block2 = create_if_block_1$4(ctx2);
+            if_block2 = create_if_block_1$3(ctx2);
             if_block2.c();
             if_block2.m(div1, t4);
           }
@@ -3213,7 +3335,7 @@
               transition_in(if_block3, 1);
             }
           } else {
-            if_block3 = create_if_block$6(ctx2);
+            if_block3 = create_if_block$5(ctx2);
             if_block3.c();
             transition_in(if_block3, 1);
             if_block3.m(div1, null);
@@ -3250,14 +3372,14 @@
       }
     };
   }
-  function instance$6($$self, $$props, $$invalidate) {
+  function instance$5($$self, $$props, $$invalidate) {
     let { $$slots: slots = {}, $$scope } = $$props;
     let { type = "switch" } = $$props;
     let { title_fixed = "" } = $$props;
     let { title_green = "" } = $$props;
     let { title_red = "" } = $$props;
     let { label = "" } = $$props;
-    let { func: func2 = null } = $$props;
+    let { func = null } = $$props;
     const id = Math.random().toFixed(8);
     let { checked = false } = $$props;
     let { green_state = true } = $$props;
@@ -3267,8 +3389,8 @@
     }
     const change_handler = () => {
       console.log(title_fixed, checked);
-      if (func2 != null)
-        func2();
+      if (func != null)
+        func();
     };
     $$self.$$set = ($$props2) => {
       if ("type" in $$props2)
@@ -3282,7 +3404,7 @@
       if ("label" in $$props2)
         $$invalidate(5, label = $$props2.label);
       if ("func" in $$props2)
-        $$invalidate(6, func2 = $$props2.func);
+        $$invalidate(6, func = $$props2.func);
       if ("checked" in $$props2)
         $$invalidate(0, checked = $$props2.checked);
       if ("green_state" in $$props2)
@@ -3297,7 +3419,7 @@
       title_green,
       title_red,
       label,
-      func2,
+      func,
       green_state,
       id,
       $$scope,
@@ -3309,7 +3431,7 @@
   class Switch extends SvelteComponent {
     constructor(options) {
       super();
-      init(this, options, instance$6, create_fragment$6, safe_not_equal, {
+      init(this, options, instance$5, create_fragment$5, safe_not_equal, {
         type: 1,
         title_fixed: 2,
         title_green: 3,
@@ -3321,1551 +3443,1346 @@
       });
     }
   }
-  function create_else_block_4(ctx) {
-    let div0;
-    let t1;
-    let div1;
-    return {
-      c() {
-        div0 = element("div");
-        div0.innerHTML = `<svg viewBox="0 0 32 32" width="24" height="24" xmlns="http://www.w3.org/2000/svg"><defs><style>.cls-1 {
-                  fill: none;
-                  stroke: #000;
-                  stroke-linecap: round;
-                  stroke-linejoin: round;
-                  stroke-width: 2px;
-                }
-              </style></defs><title></title><g data-name="43-browser" id="_43-browser"><rect class="cls-1" height="30" width="30" x="1" y="1"></rect><line class="cls-1" x1="1" x2="31" y1="9" y2="9"></line><line class="cls-1" x1="5" x2="7" y1="5" y2="5"></line><line class="cls-1" x1="11" x2="13" y1="5" y2="5"></line><line class="cls-1" x1="9" x2="25" y1="16" y2="16"></line><line class="cls-1" x1="7" x2="25" y1="20" y2="20"></line><line class="cls-1" x1="7" x2="25" y1="24" y2="24"></line></g></svg>`;
-        t1 = space();
-        div1 = element("div");
-        div1.textContent = "原有列表";
+  const __STORE_NS = "Kesa:Masonry";
+  function __mkLocalStore(key, defaultValue) {
+    let value = defaultValue;
+    try {
+      const obj = JSON.parse(localStorage.getItem(__STORE_NS) || "{}") || {};
+      if (obj[key] !== void 0)
+        value = obj[key];
+    } catch (e) {
+    }
+    const subs = /* @__PURE__ */ new Set();
+    const store = {
+      get() {
+        return value;
       },
-      m(target, anchor) {
-        insert(target, div0, anchor);
-        insert(target, t1, anchor);
-        insert(target, div1, anchor);
-      },
-      d(detaching) {
-        if (detaching)
-          detach(div0);
-        if (detaching)
-          detach(t1);
-        if (detaching)
-          detach(div1);
-      }
-    };
-  }
-  function create_if_block_10$2(ctx) {
-    let div0;
-    let t0;
-    let div1;
-    return {
-      c() {
-        div0 = element("div");
-        div0.innerHTML = `<svg enable-background="new 0 0 64 64" width="24" height="24" id="Layer_1" version="1.1" viewBox="0 0 64 64"><path d="M19,2.875H3.5c-0.829,0-1.5,0.671-1.5,1.5v19.979c0,0.829,0.671,1.5,1.5,1.5H19c0.829,0,1.5-0.671,1.5-1.5V4.375  C20.5,3.546,19.829,2.875,19,2.875z M17.5,22.854H5V5.875h12.5V22.854z" fill="white"></path><path d="M19,28.773H3.5c-0.829,0-1.5,0.671-1.5,1.5v6.166c0,0.828,0.671,1.5,1.5,1.5H19c0.829,0,1.5-0.672,1.5-1.5v-6.166  C20.5,29.445,19.829,28.773,19,28.773z M17.5,34.939H5v-3.166h12.5V34.939z" fill="white"></path><path d="M19,40.859H3.5c-0.829,0-1.5,0.672-1.5,1.5v17.266c0,0.828,0.671,1.5,1.5,1.5H19c0.829,0,1.5-0.672,1.5-1.5V42.359  C20.5,41.531,19.829,40.859,19,40.859z M17.5,58.125H5V43.859h12.5V58.125z" fill="white"></path><path d="M40,2.875H24.5c-0.829,0-1.5,0.671-1.5,1.5v14.25c0,0.829,0.671,1.5,1.5,1.5H40c0.828,0,1.5-0.671,1.5-1.5V4.375  C41.5,3.546,40.828,2.875,40,2.875z M38.5,17.125H26V5.875h12.5V17.125z" fill="white"></path><path d="M40,23.125H24.5c-0.829,0-1.5,0.671-1.5,1.5V46.5c0,0.828,0.671,1.5,1.5,1.5H40c0.828,0,1.5-0.672,1.5-1.5V24.625  C41.5,23.796,40.828,23.125,40,23.125z M38.5,45H26V26.125h12.5V45z" fill="white"></path><path d="M40,51H24.5c-0.829,0-1.5,0.672-1.5,1.5v7.125c0,0.828,0.671,1.5,1.5,1.5H40c0.828,0,1.5-0.672,1.5-1.5V52.5  C41.5,51.672,40.828,51,40,51z M38.5,58.125H26V54h12.5V58.125z" fill="white"></path><path d="M60.5,2.875H45c-0.828,0-1.5,0.671-1.5,1.5v35.171c0,0.828,0.672,1.5,1.5,1.5h15.5c0.828,0,1.5-0.672,1.5-1.5V4.375  C62,3.546,61.328,2.875,60.5,2.875z M59,38.046H46.5V5.875H59V38.046z" fill="white"></path><path d="M60.5,44.346H45c-0.828,0-1.5,0.672-1.5,1.5v13.779c0,0.828,0.672,1.5,1.5,1.5h15.5c0.828,0,1.5-0.672,1.5-1.5V45.846  C62,45.018,61.328,44.346,60.5,44.346z M59,58.125H46.5V47.346H59V58.125z" fill="white"></path></svg>`;
-        t0 = space();
-        div1 = element("div");
-        div1.textContent = "瀑布流";
-      },
-      m(target, anchor) {
-        insert(target, div0, anchor);
-        insert(target, t0, anchor);
-        insert(target, div1, anchor);
-      },
-      d(detaching) {
-        if (detaching)
-          detach(div0);
-        if (detaching)
-          detach(t0);
-        if (detaching)
-          detach(div1);
-      }
-    };
-  }
-  function create_if_block_9$2(ctx) {
-    let button0;
-    let t1;
-    let button1;
-    let t3;
-    let button2;
-    let t4;
-    let t5;
-    let t6;
-    let button3;
-    let mounted;
-    let dispose;
-    return {
-      c() {
-        button0 = element("button");
-        button0.textContent = "[d]切换宽度";
-        t1 = space();
-        button1 = element("button");
-        button1.textContent = "[d]显示详情";
-        t3 = space();
-        button2 = element("button");
-        t4 = text("[d]");
-        t5 = text(
-          /*label_switchMode*/
-          ctx[1]
-        );
-        t6 = space();
-        button3 = element("button");
-        button3.textContent = "[d]iframe";
-        attr(button0, "class", "sideP__btn svelte-mdsgbd");
-        attr(button1, "class", "sideP__btn svelte-mdsgbd");
-        attr(button2, "class", "sideP__btn svelte-mdsgbd");
-        attr(button3, "class", "sideP__btn svelte-mdsgbd");
-      },
-      m(target, anchor) {
-        insert(target, button0, anchor);
-        insert(target, t1, anchor);
-        insert(target, button1, anchor);
-        insert(target, t3, anchor);
-        insert(target, button2, anchor);
-        append(button2, t4);
-        append(button2, t5);
-        insert(target, t6, anchor);
-        insert(target, button3, anchor);
-        if (!mounted) {
-          dispose = [
-            listen(
-              button0,
-              "click",
-              /*config_changeWidth*/
-              ctx[16]
-            ),
-            listen(
-              button1,
-              "click",
-              /*config_showAllDetails*/
-              ctx[17]
-            ),
-            listen(
-              button2,
-              "click",
-              /*config_switchMode*/
-              ctx[18]
-            ),
-            listen(
-              button3,
-              "click",
-              /*config_changeLoadMode*/
-              ctx[19]
-            )
-          ];
-          mounted = true;
+      set(v) {
+        const changed = v !== value;
+        value = v;
+        try {
+          const obj = JSON.parse(localStorage.getItem(__STORE_NS) || "{}") || {};
+          obj[key] = v;
+          localStorage.setItem(__STORE_NS, JSON.stringify(obj));
+        } catch (e) {
         }
-      },
-      p(ctx2, dirty) {
-        if (dirty[0] & /*label_switchMode*/
-        2)
-          set_data(
-            t5,
-            /*label_switchMode*/
-            ctx2[1]
-          );
-      },
-      d(detaching) {
-        if (detaching)
-          detach(button0);
-        if (detaching)
-          detach(t1);
-        if (detaching)
-          detach(button1);
-        if (detaching)
-          detach(t3);
-        if (detaching)
-          detach(button2);
-        if (detaching)
-          detach(t6);
-        if (detaching)
-          detach(button3);
-        mounted = false;
-        run_all(dispose);
-      }
-    };
-  }
-  function create_if_block$5(ctx) {
-    let div8;
-    let div7;
-    let div0;
-    let p;
-    let t1;
-    let button0;
-    let t2;
-    let t3;
-    let div2;
-    let h10;
-    let t5;
-    let div1;
-    let switch0;
-    let updating_checked;
-    let t6;
-    let switch1;
-    let updating_checked_1;
-    let t7;
-    let switch2;
-    let updating_checked_2;
-    let t8;
-    let switch3;
-    let updating_checked_3;
-    let t9;
-    let t10;
-    let button1;
-    let t12;
-    let t13;
-    let div6;
-    let h11;
-    let t15;
-    let div3;
-    let switch4;
-    let updating_checked_4;
-    let t16;
-    let div5;
-    let h3;
-    let t18;
-    let div4;
-    let switch5;
-    let updating_checked_5;
-    let t19;
-    let switch6;
-    let updating_checked_6;
-    let t20;
-    let switch7;
-    let updating_checked_7;
-    let t21;
-    let switch8;
-    let updating_checked_8;
-    let t22;
-    let switch9;
-    let updating_checked_9;
-    let t23;
-    let switch10;
-    let updating_checked_10;
-    let t24;
-    let switch11;
-    let updating_checked_11;
-    let t25;
-    let div8_transition;
-    let current;
-    let mounted;
-    let dispose;
-    let if_block0 = (
-      /*$_current_domain*/
-      ctx[9] == "kp.m-team.cc" && create_if_block_8$2(ctx)
-    );
-    function switch0_checked_binding(value) {
-      ctx[27](value);
-    }
-    let switch0_props = {
-      title_fixed: "显示模式",
-      title_green: "瀑布流",
-      title_red: "原始表格",
-      label: "原始表格模式仅支持点击图片显示iframe和加载下一页",
-      func: (
-        /*func*/
-        ctx[26]
-      )
-    };
-    if (
-      /*$_show_mode*/
-      ctx[4] !== void 0
-    ) {
-      switch0_props.checked = /*$_show_mode*/
-      ctx[4];
-    }
-    switch0 = new Switch({ props: switch0_props });
-    binding_callbacks.push(() => bind(switch0, "checked", switch0_checked_binding));
-    function switch1_checked_binding(value) {
-      ctx[28](value);
-    }
-    let switch1_props = {
-      title_fixed: "加载下一页方式",
-      title_green: "按钮(默认)",
-      title_red: "滚动(谨慎使用)",
-      label: "滚动模式下 MT 等网站频繁使用可能会导致 120",
-      green_state: false
-    };
-    if (
-      /*$_turnPage*/
-      ctx[2] !== void 0
-    ) {
-      switch1_props.checked = /*$_turnPage*/
-      ctx[2];
-    }
-    switch1 = new Switch({ props: switch1_props });
-    binding_callbacks.push(() => bind(switch1, "checked", switch1_checked_binding));
-    function switch2_checked_binding(value) {
-      ctx[29](value);
-    }
-    let switch2_props = {
-      title_fixed: "侧边栏debug按钮",
-      title_green: "隐藏(默认)",
-      title_red: "显示(开发用)",
-      green_state: false
-    };
-    if (
-      /*$_show_debug_btn*/
-      ctx[8] !== void 0
-    ) {
-      switch2_props.checked = /*$_show_debug_btn*/
-      ctx[8];
-    }
-    switch2 = new Switch({ props: switch2_props });
-    binding_callbacks.push(() => bind(switch2, "checked", switch2_checked_binding));
-    function switch3_checked_binding(value) {
-      ctx[30](value);
-    }
-    let switch3_props = {
-      title_fixed: "悬浮预览大图",
-      title_green: "默认开启",
-      title_red: "核心功能->确定不用再关"
-    };
-    if (
-      /*$_show_nexus_pic*/
-      ctx[11] !== void 0
-    ) {
-      switch3_props.checked = /*$_show_nexus_pic*/
-      ctx[11];
-    }
-    switch3 = new Switch({ props: switch3_props });
-    binding_callbacks.push(() => bind(switch3, "checked", switch3_checked_binding));
-    let if_block1 = (
-      /*$_show_nexus_pic*/
-      ctx[11] && create_if_block_7$2(ctx)
-    );
-    function switch4_checked_binding(value) {
-      ctx[35](value);
-    }
-    let switch4_props = {
-      title_fixed: "卡片信息",
-      title_green: "显示下方所选信息(精简)",
-      title_red: "显示所有信息(较乱)",
-      green_state: false
-    };
-    if (
-      /*$_CARD_SHOW*/
-      ctx[3].all !== void 0
-    ) {
-      switch4_props.checked = /*$_CARD_SHOW*/
-      ctx[3].all;
-    }
-    switch4 = new Switch({ props: switch4_props });
-    binding_callbacks.push(() => bind(switch4, "checked", switch4_checked_binding));
-    switch4.$on(
-      "click",
-      /*sortMasonryBundle*/
-      ctx[20]
-    );
-    function switch5_checked_binding(value) {
-      ctx[36](value);
-    }
-    let switch5_props = { title_fixed: "显示种子名称" };
-    if (
-      /*$_CARD_SHOW*/
-      ctx[3].title !== void 0
-    ) {
-      switch5_props.checked = /*$_CARD_SHOW*/
-      ctx[3].title;
-    }
-    switch5 = new Switch({ props: switch5_props });
-    binding_callbacks.push(() => bind(switch5, "checked", switch5_checked_binding));
-    function switch6_checked_binding(value) {
-      ctx[37](value);
-    }
-    let switch6_props = { title_fixed: "显示置顶和免费" };
-    if (
-      /*$_CARD_SHOW*/
-      ctx[3].free !== void 0
-    ) {
-      switch6_props.checked = /*$_CARD_SHOW*/
-      ctx[3].free;
-    }
-    switch6 = new Switch({ props: switch6_props });
-    binding_callbacks.push(() => bind(switch6, "checked", switch6_checked_binding));
-    function switch7_checked_binding(value) {
-      ctx[38](value);
-    }
-    let switch7_props = { title_fixed: "显示副标题" };
-    if (
-      /*$_CARD_SHOW*/
-      ctx[3].sub_title !== void 0
-    ) {
-      switch7_props.checked = /*$_CARD_SHOW*/
-      ctx[3].sub_title;
-    }
-    switch7 = new Switch({ props: switch7_props });
-    binding_callbacks.push(() => bind(switch7, "checked", switch7_checked_binding));
-    function switch8_checked_binding(value) {
-      ctx[39](value);
-    }
-    let switch8_props = { title_fixed: "显示标签" };
-    if (
-      /*$_CARD_SHOW*/
-      ctx[3].tags !== void 0
-    ) {
-      switch8_props.checked = /*$_CARD_SHOW*/
-      ctx[3].tags;
-    }
-    switch8 = new Switch({ props: switch8_props });
-    binding_callbacks.push(() => bind(switch8, "checked", switch8_checked_binding));
-    function switch9_checked_binding(value) {
-      ctx[40](value);
-    }
-    let switch9_props = { title_fixed: "显示 [大小/下载/收藏]" };
-    if (
-      /*$_CARD_SHOW*/
-      ctx[3].size_download_collect !== void 0
-    ) {
-      switch9_props.checked = /*$_CARD_SHOW*/
-      ctx[3].size_download_collect;
-    }
-    switch9 = new Switch({ props: switch9_props });
-    binding_callbacks.push(() => bind(switch9, "checked", switch9_checked_binding));
-    function switch10_checked_binding(value) {
-      ctx[41](value);
-    }
-    let switch10_props = { title_fixed: "显示上传时间" };
-    if (
-      /*$_CARD_SHOW*/
-      ctx[3].upload_time !== void 0
-    ) {
-      switch10_props.checked = /*$_CARD_SHOW*/
-      ctx[3].upload_time;
-    }
-    switch10 = new Switch({ props: switch10_props });
-    binding_callbacks.push(() => bind(switch10, "checked", switch10_checked_binding));
-    function switch11_checked_binding(value) {
-      ctx[42](value);
-    }
-    let switch11_props = { title_fixed: "显示 [评论/上传/下载/完成]" };
-    if (
-      /*$_CARD_SHOW*/
-      ctx[3].statistics !== void 0
-    ) {
-      switch11_props.checked = /*$_CARD_SHOW*/
-      ctx[3].statistics;
-    }
-    switch11 = new Switch({ props: switch11_props });
-    binding_callbacks.push(() => bind(switch11, "checked", switch11_checked_binding));
-    return {
-      c() {
-        div8 = element("div");
-        div7 = element("div");
-        div0 = element("div");
-        p = element("p");
-        p.textContent = "详细配置面板";
-        t1 = space();
-        button0 = element("button");
-        button0.innerHTML = `<svg class="feather feather-x" fill="none" height="28" width="28" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24"><line x1="20" x2="6" y1="6" y2="20"></line><line x1="6" x2="20" y1="6" y2="20"></line></svg>`;
-        t2 = space();
-        if (if_block0)
-          if_block0.c();
-        t3 = space();
-        div2 = element("div");
-        h10 = element("h1");
-        h10.textContent = "常用配置";
-        t5 = space();
-        div1 = element("div");
-        create_component(switch0.$$.fragment);
-        t6 = space();
-        create_component(switch1.$$.fragment);
-        t7 = space();
-        create_component(switch2.$$.fragment);
-        t8 = space();
-        create_component(switch3.$$.fragment);
-        t9 = space();
-        if (if_block1)
-          if_block1.c();
-        t10 = space();
-        button1 = element("button");
-        button1.textContent = "切换宽度(开发中)";
-        t12 = space();
-        t13 = space();
-        div6 = element("div");
-        h11 = element("h1");
-        h11.textContent = "卡片信息";
-        t15 = space();
-        div3 = element("div");
-        create_component(switch4.$$.fragment);
-        t16 = space();
-        div5 = element("div");
-        h3 = element("h3");
-        h3.textContent = "配置常驻卡片信息";
-        t18 = space();
-        div4 = element("div");
-        create_component(switch5.$$.fragment);
-        t19 = space();
-        create_component(switch6.$$.fragment);
-        t20 = space();
-        create_component(switch7.$$.fragment);
-        t21 = space();
-        create_component(switch8.$$.fragment);
-        t22 = space();
-        create_component(switch9.$$.fragment);
-        t23 = space();
-        create_component(switch10.$$.fragment);
-        t24 = space();
-        create_component(switch11.$$.fragment);
-        t25 = space();
-        attr(div0, "class", "configP_title svelte-mdsgbd");
-        attr(h10, "class", "s_title");
-        attr(button1, "class", "sideP__btn svelte-mdsgbd");
-        attr(div1, "class", "s_panel");
-        attr(div2, "class", "section svelte-mdsgbd");
-        attr(h11, "class", "s_title");
-        attr(div3, "class", "s_panel");
-        attr(h3, "class", "s_title");
-        attr(div4, "class", "s_panel");
-        attr(div5, "class", "section svelte-mdsgbd");
-        attr(div6, "class", "section svelte-mdsgbd");
-        attr(div7, "class", "configP_holder svelte-mdsgbd");
-        attr(div8, "class", "configP svelte-mdsgbd");
-      },
-      m(target, anchor) {
-        insert(target, div8, anchor);
-        append(div8, div7);
-        append(div7, div0);
-        append(div0, p);
-        append(div0, t1);
-        append(div0, button0);
-        append(div7, t2);
-        if (if_block0)
-          if_block0.m(div7, null);
-        append(div7, t3);
-        append(div7, div2);
-        append(div2, h10);
-        append(div2, t5);
-        append(div2, div1);
-        mount_component(switch0, div1, null);
-        append(div1, t6);
-        mount_component(switch1, div1, null);
-        append(div1, t7);
-        mount_component(switch2, div1, null);
-        append(div1, t8);
-        mount_component(switch3, div1, null);
-        append(div1, t9);
-        if (if_block1)
-          if_block1.m(div1, null);
-        append(div1, t10);
-        append(div1, button1);
-        append(div1, t12);
-        append(div7, t13);
-        append(div7, div6);
-        append(div6, h11);
-        append(div6, t15);
-        append(div6, div3);
-        mount_component(switch4, div3, null);
-        append(div6, t16);
-        append(div6, div5);
-        append(div5, h3);
-        append(div5, t18);
-        append(div5, div4);
-        mount_component(switch5, div4, null);
-        append(div4, t19);
-        mount_component(switch6, div4, null);
-        append(div4, t20);
-        mount_component(switch7, div4, null);
-        append(div4, t21);
-        mount_component(switch8, div4, null);
-        append(div4, t22);
-        mount_component(switch9, div4, null);
-        append(div4, t23);
-        mount_component(switch10, div4, null);
-        append(div4, t24);
-        mount_component(switch11, div4, null);
-        append(div4, t25);
-        current = true;
-        if (!mounted) {
-          dispose = [
-            listen(
-              button0,
-              "click",
-              /*click_handler_1*/
-              ctx[24]
-            ),
-            listen(
-              button1,
-              "click",
-              /*config_changeWidth*/
-              ctx[16]
-            ),
-            listen(div8, "click", self(
-              /*click_handler_5*/
-              ctx[57]
-            ))
-          ];
-          mounted = true;
-        }
-      },
-      p(ctx2, dirty) {
-        if (
-          /*$_current_domain*/
-          ctx2[9] == "kp.m-team.cc"
-        ) {
-          if (if_block0) {
-            if_block0.p(ctx2, dirty);
-            if (dirty[0] & /*$_current_domain*/
-            512) {
-              transition_in(if_block0, 1);
+        if (changed) {
+          for (const cb of [...subs]) {
+            try {
+              cb(value);
+            } catch (e) {
             }
-          } else {
-            if_block0 = create_if_block_8$2(ctx2);
-            if_block0.c();
-            transition_in(if_block0, 1);
-            if_block0.m(div7, t3);
-          }
-        } else if (if_block0) {
-          group_outros();
-          transition_out(if_block0, 1, 1, () => {
-            if_block0 = null;
-          });
-          check_outros();
-        }
-        const switch0_changes = {};
-        if (!updating_checked && dirty[0] & /*$_show_mode*/
-        16) {
-          updating_checked = true;
-          switch0_changes.checked = /*$_show_mode*/
-          ctx2[4];
-          add_flush_callback(() => updating_checked = false);
-        }
-        switch0.$set(switch0_changes);
-        const switch1_changes = {};
-        if (!updating_checked_1 && dirty[0] & /*$_turnPage*/
-        4) {
-          updating_checked_1 = true;
-          switch1_changes.checked = /*$_turnPage*/
-          ctx2[2];
-          add_flush_callback(() => updating_checked_1 = false);
-        }
-        switch1.$set(switch1_changes);
-        const switch2_changes = {};
-        if (!updating_checked_2 && dirty[0] & /*$_show_debug_btn*/
-        256) {
-          updating_checked_2 = true;
-          switch2_changes.checked = /*$_show_debug_btn*/
-          ctx2[8];
-          add_flush_callback(() => updating_checked_2 = false);
-        }
-        switch2.$set(switch2_changes);
-        const switch3_changes = {};
-        if (!updating_checked_3 && dirty[0] & /*$_show_nexus_pic*/
-        2048) {
-          updating_checked_3 = true;
-          switch3_changes.checked = /*$_show_nexus_pic*/
-          ctx2[11];
-          add_flush_callback(() => updating_checked_3 = false);
-        }
-        switch3.$set(switch3_changes);
-        if (
-          /*$_show_nexus_pic*/
-          ctx2[11]
-        ) {
-          if (if_block1) {
-            if_block1.p(ctx2, dirty);
-            if (dirty[0] & /*$_show_nexus_pic*/
-            2048) {
-              transition_in(if_block1, 1);
-            }
-          } else {
-            if_block1 = create_if_block_7$2(ctx2);
-            if_block1.c();
-            transition_in(if_block1, 1);
-            if_block1.m(div1, t10);
-          }
-        } else if (if_block1) {
-          group_outros();
-          transition_out(if_block1, 1, 1, () => {
-            if_block1 = null;
-          });
-          check_outros();
-        }
-        const switch4_changes = {};
-        if (!updating_checked_4 && dirty[0] & /*$_CARD_SHOW*/
-        8) {
-          updating_checked_4 = true;
-          switch4_changes.checked = /*$_CARD_SHOW*/
-          ctx2[3].all;
-          add_flush_callback(() => updating_checked_4 = false);
-        }
-        switch4.$set(switch4_changes);
-        const switch5_changes = {};
-        if (!updating_checked_5 && dirty[0] & /*$_CARD_SHOW*/
-        8) {
-          updating_checked_5 = true;
-          switch5_changes.checked = /*$_CARD_SHOW*/
-          ctx2[3].title;
-          add_flush_callback(() => updating_checked_5 = false);
-        }
-        switch5.$set(switch5_changes);
-        const switch6_changes = {};
-        if (!updating_checked_6 && dirty[0] & /*$_CARD_SHOW*/
-        8) {
-          updating_checked_6 = true;
-          switch6_changes.checked = /*$_CARD_SHOW*/
-          ctx2[3].free;
-          add_flush_callback(() => updating_checked_6 = false);
-        }
-        switch6.$set(switch6_changes);
-        const switch7_changes = {};
-        if (!updating_checked_7 && dirty[0] & /*$_CARD_SHOW*/
-        8) {
-          updating_checked_7 = true;
-          switch7_changes.checked = /*$_CARD_SHOW*/
-          ctx2[3].sub_title;
-          add_flush_callback(() => updating_checked_7 = false);
-        }
-        switch7.$set(switch7_changes);
-        const switch8_changes = {};
-        if (!updating_checked_8 && dirty[0] & /*$_CARD_SHOW*/
-        8) {
-          updating_checked_8 = true;
-          switch8_changes.checked = /*$_CARD_SHOW*/
-          ctx2[3].tags;
-          add_flush_callback(() => updating_checked_8 = false);
-        }
-        switch8.$set(switch8_changes);
-        const switch9_changes = {};
-        if (!updating_checked_9 && dirty[0] & /*$_CARD_SHOW*/
-        8) {
-          updating_checked_9 = true;
-          switch9_changes.checked = /*$_CARD_SHOW*/
-          ctx2[3].size_download_collect;
-          add_flush_callback(() => updating_checked_9 = false);
-        }
-        switch9.$set(switch9_changes);
-        const switch10_changes = {};
-        if (!updating_checked_10 && dirty[0] & /*$_CARD_SHOW*/
-        8) {
-          updating_checked_10 = true;
-          switch10_changes.checked = /*$_CARD_SHOW*/
-          ctx2[3].upload_time;
-          add_flush_callback(() => updating_checked_10 = false);
-        }
-        switch10.$set(switch10_changes);
-        const switch11_changes = {};
-        if (!updating_checked_11 && dirty[0] & /*$_CARD_SHOW*/
-        8) {
-          updating_checked_11 = true;
-          switch11_changes.checked = /*$_CARD_SHOW*/
-          ctx2[3].statistics;
-          add_flush_callback(() => updating_checked_11 = false);
-        }
-        switch11.$set(switch11_changes);
-      },
-      i(local) {
-        if (current)
-          return;
-        transition_in(if_block0);
-        transition_in(switch0.$$.fragment, local);
-        transition_in(switch1.$$.fragment, local);
-        transition_in(switch2.$$.fragment, local);
-        transition_in(switch3.$$.fragment, local);
-        transition_in(if_block1);
-        transition_in(switch4.$$.fragment, local);
-        transition_in(switch5.$$.fragment, local);
-        transition_in(switch6.$$.fragment, local);
-        transition_in(switch7.$$.fragment, local);
-        transition_in(switch8.$$.fragment, local);
-        transition_in(switch9.$$.fragment, local);
-        transition_in(switch10.$$.fragment, local);
-        transition_in(switch11.$$.fragment, local);
-        add_render_callback(() => {
-          if (!current)
-            return;
-          if (!div8_transition)
-            div8_transition = create_bidirectional_transition(div8, fade, { duration: 100 }, true);
-          div8_transition.run(1);
-        });
-        current = true;
-      },
-      o(local) {
-        transition_out(if_block0);
-        transition_out(switch0.$$.fragment, local);
-        transition_out(switch1.$$.fragment, local);
-        transition_out(switch2.$$.fragment, local);
-        transition_out(switch3.$$.fragment, local);
-        transition_out(if_block1);
-        transition_out(switch4.$$.fragment, local);
-        transition_out(switch5.$$.fragment, local);
-        transition_out(switch6.$$.fragment, local);
-        transition_out(switch7.$$.fragment, local);
-        transition_out(switch8.$$.fragment, local);
-        transition_out(switch9.$$.fragment, local);
-        transition_out(switch10.$$.fragment, local);
-        transition_out(switch11.$$.fragment, local);
-        if (!div8_transition)
-          div8_transition = create_bidirectional_transition(div8, fade, { duration: 100 }, false);
-        div8_transition.run(0);
-        current = false;
-      },
-      d(detaching) {
-        if (detaching)
-          detach(div8);
-        if (if_block0)
-          if_block0.d();
-        destroy_component(switch0);
-        destroy_component(switch1);
-        destroy_component(switch2);
-        destroy_component(switch3);
-        if (if_block1)
-          if_block1.d();
-        destroy_component(switch4);
-        destroy_component(switch5);
-        destroy_component(switch6);
-        destroy_component(switch7);
-        destroy_component(switch8);
-        destroy_component(switch9);
-        destroy_component(switch10);
-        destroy_component(switch11);
-        if (detaching && div8_transition)
-          div8_transition.end();
-        mounted = false;
-        run_all(dispose);
-      }
-    };
-  }
-  function create_if_block_8$2(ctx) {
-    let div1;
-    let h1;
-    let t1;
-    let div0;
-    let switch_1;
-    let updating_checked;
-    let current;
-    function switch_1_checked_binding(value) {
-      ctx[25](value);
-    }
-    let switch_1_props = {
-      title_fixed: "隐藏Gay分区卡片",
-      title_green: "隐藏(默认)",
-      title_red: "显示(狠人)"
-    };
-    if (
-      /*$_SITE_SETTING*/
-      ctx[10].mt.hide_gay !== void 0
-    ) {
-      switch_1_props.checked = /*$_SITE_SETTING*/
-      ctx[10].mt.hide_gay;
-    }
-    switch_1 = new Switch({ props: switch_1_props });
-    binding_callbacks.push(() => bind(switch_1, "checked", switch_1_checked_binding));
-    return {
-      c() {
-        div1 = element("div");
-        h1 = element("h1");
-        h1.textContent = "MT专用配置";
-        t1 = space();
-        div0 = element("div");
-        create_component(switch_1.$$.fragment);
-        attr(h1, "class", "s_title");
-        attr(div0, "class", "s_panel");
-        attr(div1, "class", "section svelte-mdsgbd");
-      },
-      m(target, anchor) {
-        insert(target, div1, anchor);
-        append(div1, h1);
-        append(div1, t1);
-        append(div1, div0);
-        mount_component(switch_1, div0, null);
-        current = true;
-      },
-      p(ctx2, dirty) {
-        const switch_1_changes = {};
-        if (!updating_checked && dirty[0] & /*$_SITE_SETTING*/
-        1024) {
-          updating_checked = true;
-          switch_1_changes.checked = /*$_SITE_SETTING*/
-          ctx2[10].mt.hide_gay;
-          add_flush_callback(() => updating_checked = false);
-        }
-        switch_1.$set(switch_1_changes);
-      },
-      i(local) {
-        if (current)
-          return;
-        transition_in(switch_1.$$.fragment, local);
-        current = true;
-      },
-      o(local) {
-        transition_out(switch_1.$$.fragment, local);
-        current = false;
-      },
-      d(detaching) {
-        if (detaching)
-          detach(div1);
-        destroy_component(switch_1);
-      }
-    };
-  }
-  function create_if_block_7$2(ctx) {
-    let switch_1;
-    let current;
-    switch_1 = new Switch({
-      props: {
-        title_fixed: `悬浮预览延迟${/*$_delay_nexus_pic*/
-      ctx[12] ? ":" + /*$_delay_nexus_pic*/
-      ctx[12] + "ms" : ""}`,
-        title_red: `${/*$_delay_nexus_pic*/
-      ctx[12] ? "" : "无延迟"}`,
-        label: "防止无意滑动时大图打开妨碍预览",
-        type: "range",
-        $$slots: { default: [create_default_slot] },
-        $$scope: { ctx }
-      }
-    });
-    return {
-      c() {
-        create_component(switch_1.$$.fragment);
-      },
-      m(target, anchor) {
-        mount_component(switch_1, target, anchor);
-        current = true;
-      },
-      p(ctx2, dirty) {
-        const switch_1_changes = {};
-        if (dirty[0] & /*$_delay_nexus_pic*/
-        4096)
-          switch_1_changes.title_fixed = `悬浮预览延迟${/*$_delay_nexus_pic*/
-        ctx2[12] ? ":" + /*$_delay_nexus_pic*/
-        ctx2[12] + "ms" : ""}`;
-        if (dirty[0] & /*$_delay_nexus_pic*/
-        4096)
-          switch_1_changes.title_red = `${/*$_delay_nexus_pic*/
-        ctx2[12] ? "" : "无延迟"}`;
-        if (dirty[0] & /*$_delay_nexus_pic*/
-        4096 | dirty[2] & /*$$scope*/
-        32) {
-          switch_1_changes.$$scope = { dirty, ctx: ctx2 };
-        }
-        switch_1.$set(switch_1_changes);
-      },
-      i(local) {
-        if (current)
-          return;
-        transition_in(switch_1.$$.fragment, local);
-        current = true;
-      },
-      o(local) {
-        transition_out(switch_1.$$.fragment, local);
-        current = false;
-      },
-      d(detaching) {
-        destroy_component(switch_1, detaching);
-      }
-    };
-  }
-  function create_default_slot(ctx) {
-    let input;
-    let mounted;
-    let dispose;
-    return {
-      c() {
-        input = element("input");
-        attr(input, "type", "range");
-        attr(input, "min", "0");
-        attr(input, "max", "1500");
-        attr(input, "step", "100");
-        attr(input, "list", "values");
-      },
-      m(target, anchor) {
-        insert(target, input, anchor);
-        set_input_value(
-          input,
-          /*$_delay_nexus_pic*/
-          ctx[12]
-        );
-        if (!mounted) {
-          dispose = [
-            listen(
-              input,
-              "change",
-              /*input_change_input_handler*/
-              ctx[31]
-            ),
-            listen(
-              input,
-              "input",
-              /*input_change_input_handler*/
-              ctx[31]
-            )
-          ];
-          mounted = true;
-        }
-      },
-      p(ctx2, dirty) {
-        if (dirty[0] & /*$_delay_nexus_pic*/
-        4096) {
-          set_input_value(
-            input,
-            /*$_delay_nexus_pic*/
-            ctx2[12]
-          );
-        }
-      },
-      d(detaching) {
-        if (detaching)
-          detach(input);
-        mounted = false;
-        run_all(dispose);
-      }
-    };
-  }
-  function create_fragment$5(ctx) {
-    let div4;
-    let div0;
-    let t0;
-    let div3;
-    let button0;
-    let t1;
-    let button1;
-    let t5;
-    let t6;
-    let t7;
-    let div5;
-    let current;
-    let mounted;
-    let dispose;
-    function select_block_type(ctx2, dirty) {
-      if (
-        /*$_show_mode*/
-        ctx2[4]
-      )
-        return create_if_block_10$2;
-      return create_else_block_4;
-    }
-    let current_block_type = select_block_type(ctx);
-    let if_block0 = current_block_type(ctx);
-    let if_block1 = (
-      /*$_show_debug_btn*/
-      ctx[8] && create_if_block_9$2(ctx)
-    );
-    let if_block2 = (
-      /*$_show_configPanel*/
-      ctx[7] && create_if_block$5(ctx)
-    );
-    return {
-      c() {
-        div4 = element("div");
-        div0 = element("div");
-        t0 = space();
-        div3 = element("div");
-        button0 = element("button");
-        if_block0.c();
-        t1 = space();
-        button1 = element("button");
-        button1.innerHTML = `<div><svg width="24" height="24" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><defs><style>.cls-1 {
-                fill: none;
-                stroke: #fff;
-                stroke-linecap: round;
-                stroke-linejoin: round;
-                stroke-width: 2px;
-              }
-            </style></defs><title></title><g data-name="80-setting" id="_80-setting"><circle class="cls-1" cx="10" cy="6" r="3"></circle><circle class="cls-1" cx="22" cy="16" r="3"></circle><circle class="cls-1" cx="10" cy="26" r="3"></circle><line class="cls-1" x1="7" x2="1" y1="6" y2="6"></line><line class="cls-1" x1="15" x2="1" y1="16" y2="16"></line><line class="cls-1" x1="7" x2="1" y1="26" y2="26"></line><line class="cls-1" x1="31" x2="17" y1="26" y2="26"></line><line class="cls-1" x1="31" x2="25" y1="16" y2="16"></line><line class="cls-1" x1="31" x2="17" y1="6" y2="6"></line></g></svg></div> 
-      <div>详细配置</div>`;
-        t5 = space();
-        if (if_block1)
-          if_block1.c();
-        t6 = space();
-        if (if_block2)
-          if_block2.c();
-        t7 = space();
-        div5 = element("div");
-        div5.textContent = "重置瀑布流配置边栏位置";
-        attr(div0, "class", "sideP__title svelte-mdsgbd");
-        attr(button0, "class", "sideP__btn svelte-mdsgbd");
-        attr(button1, "class", "sideP__btn svelte-mdsgbd");
-        attr(div3, "class", "sideP__out svelte-mdsgbd");
-        attr(div4, "class", "sideP svelte-mdsgbd");
-        set_style(
-          div4,
-          "top",
-          /*$_panelPos*/
-          ctx[5].y + "px"
-        );
-        set_style(
-          div4,
-          "left",
-          /*$_panelPos*/
-          ctx[5].x + "px"
-        );
-        set_style(
-          div4,
-          "background-color",
-          /*$_current_bgColor*/
-          ctx[6]
-        );
-        attr(div5, "id", "reset_panel_pos");
-        attr(div5, "class", "svelte-mdsgbd");
-      },
-      m(target, anchor) {
-        insert(target, div4, anchor);
-        append(div4, div0);
-        append(div4, t0);
-        append(div4, div3);
-        append(div3, button0);
-        if_block0.m(button0, null);
-        append(div3, t1);
-        append(div3, button1);
-        append(div3, t5);
-        if (if_block1)
-          if_block1.m(div3, null);
-        ctx[23](div4);
-        insert(target, t6, anchor);
-        if (if_block2)
-          if_block2.m(target, anchor);
-        insert(target, t7, anchor);
-        insert(target, div5, anchor);
-        current = true;
-        if (!mounted) {
-          dispose = [
-            listen(
-              div0,
-              "mousedown",
-              /*onMouseDown*/
-              ctx[13]
-            ),
-            listen(
-              button0,
-              "click",
-              /*__show_originTable*/
-              ctx[15]
-            ),
-            listen(
-              button1,
-              "click",
-              /*click_handler*/
-              ctx[22]
-            ),
-            listen(
-              div5,
-              "click",
-              /*resetPanelPos*/
-              ctx[14]
-            )
-          ];
-          mounted = true;
-        }
-      },
-      p(ctx2, dirty) {
-        if (current_block_type !== (current_block_type = select_block_type(ctx2))) {
-          if_block0.d(1);
-          if_block0 = current_block_type(ctx2);
-          if (if_block0) {
-            if_block0.c();
-            if_block0.m(button0, null);
           }
         }
-        if (
-          /*$_show_debug_btn*/
-          ctx2[8]
-        ) {
-          if (if_block1) {
-            if_block1.p(ctx2, dirty);
-          } else {
-            if_block1 = create_if_block_9$2(ctx2);
-            if_block1.c();
-            if_block1.m(div3, null);
-          }
-        } else if (if_block1) {
-          if_block1.d(1);
-          if_block1 = null;
-        }
-        if (!current || dirty[0] & /*$_panelPos*/
-        32) {
-          set_style(
-            div4,
-            "top",
-            /*$_panelPos*/
-            ctx2[5].y + "px"
-          );
-        }
-        if (!current || dirty[0] & /*$_panelPos*/
-        32) {
-          set_style(
-            div4,
-            "left",
-            /*$_panelPos*/
-            ctx2[5].x + "px"
-          );
-        }
-        if (!current || dirty[0] & /*$_current_bgColor*/
-        64) {
-          set_style(
-            div4,
-            "background-color",
-            /*$_current_bgColor*/
-            ctx2[6]
-          );
-        }
-        if (
-          /*$_show_configPanel*/
-          ctx2[7]
-        ) {
-          if (if_block2) {
-            if_block2.p(ctx2, dirty);
-            if (dirty[0] & /*$_show_configPanel*/
-            128) {
-              transition_in(if_block2, 1);
-            }
-          } else {
-            if_block2 = create_if_block$5(ctx2);
-            if_block2.c();
-            transition_in(if_block2, 1);
-            if_block2.m(t7.parentNode, t7);
-          }
-        } else if (if_block2) {
-          group_outros();
-          transition_out(if_block2, 1, 1, () => {
-            if_block2 = null;
-          });
-          check_outros();
-        }
+        return v;
       },
-      i(local) {
-        if (current)
-          return;
-        transition_in(if_block2);
-        current = true;
+      subscribe(cb) {
+        subs.add(cb);
+        try {
+          cb(value);
+        } catch (e) {
+        }
+        return function() {
+          subs.delete(cb);
+        };
       },
-      o(local) {
-        transition_out(if_block2);
-        current = false;
-      },
-      d(detaching) {
-        if (detaching)
-          detach(div4);
-        if_block0.d();
-        if (if_block1)
-          if_block1.d();
-        ctx[23](null);
-        if (detaching)
-          detach(t6);
-        if (if_block2)
-          if_block2.d(detaching);
-        if (detaching)
-          detach(t7);
-        if (detaching)
-          detach(div5);
-        mounted = false;
-        run_all(dispose);
+      update(fn) {
+        return store.set(fn(value));
       }
     };
+    return store;
   }
-  function posRangeIn(target, min, max) {
-    if (target <= min)
-      target = min;
-    if (target >= max)
-      target = max;
-    return target;
+  function __storeVal(s) {
+    return s.get();
   }
-  function instance$5($$self, $$props, $$invalidate) {
-    let $_iframe_switch;
-    let $_turnPage;
-    let $_CARD_SHOW;
-    let $_card_width;
-    let $_show_mode;
-    let $_panelPos;
-    let $_current_bgColor;
-    let $_show_configPanel;
-    let $_show_debug_btn;
-    let $_current_domain;
-    let $_SITE_SETTING;
-    let $_show_nexus_pic;
-    let $_delay_nexus_pic;
-    component_subscribe($$self, _iframe_switch, ($$value) => $$invalidate(61, $_iframe_switch = $$value));
-    component_subscribe($$self, _turnPage, ($$value) => $$invalidate(2, $_turnPage = $$value));
-    component_subscribe($$self, _CARD_SHOW, ($$value) => $$invalidate(3, $_CARD_SHOW = $$value));
-    component_subscribe($$self, _card_width, ($$value) => $$invalidate(62, $_card_width = $$value));
-    component_subscribe($$self, _Global_Masonry, ($$value) => $$invalidate(63, $$value));
-    component_subscribe($$self, _show_mode, ($$value) => $$invalidate(4, $_show_mode = $$value));
-    component_subscribe($$self, _panelPos, ($$value) => $$invalidate(5, $_panelPos = $$value));
-    component_subscribe($$self, _current_bgColor, ($$value) => $$invalidate(6, $_current_bgColor = $$value));
-    component_subscribe($$self, _show_configPanel, ($$value) => $$invalidate(7, $_show_configPanel = $$value));
-    component_subscribe($$self, _show_debug_btn, ($$value) => $$invalidate(8, $_show_debug_btn = $$value));
-    component_subscribe($$self, _current_domain, ($$value) => $$invalidate(9, $_current_domain = $$value));
-    component_subscribe($$self, _SITE_SETTING, ($$value) => $$invalidate(10, $_SITE_SETTING = $$value));
-    component_subscribe($$self, _show_nexus_pic, ($$value) => $$invalidate(11, $_show_nexus_pic = $$value));
-    component_subscribe($$self, _delay_nexus_pic, ($$value) => $$invalidate(12, $_delay_nexus_pic = $$value));
-    let sideDom;
-    let isMouseDown = false;
-    let offsetX = 0;
-    let offsetY = 0;
-    const onMouseDown = (e) => {
-      e.preventDefault();
-      isMouseDown = true;
-      offsetX = e.clientX - sideDom.getBoundingClientRect().left;
-      offsetY = e.clientY - sideDom.getBoundingClientRect().top;
-    };
-    const onMouseMove = (e) => {
-      if (!isMouseDown)
-        return;
-      const res_X = posRangeIn(e.clientX - offsetX, 0, window.innerWidth - (sideDom.getBoundingClientRect().width + 5));
-      const res_Y = posRangeIn(e.clientY - offsetY, 0, window.innerHeight - (sideDom.getBoundingClientRect().height + 5));
-      set_store_value(_panelPos, $_panelPos = { x: res_X, y: res_Y }, $_panelPos);
-    };
-    const onMouseUp = () => {
-      isMouseDown = false;
-    };
-    function resetPanelPos() {
-      if ($_panelPos.x == 0 && $_panelPos.y == 0)
-        alert("无需重置瀑布流边栏位置");
-      set_store_value(_panelPos, $_panelPos = { x: 0, y: 0 }, $_panelPos);
+  const __readIds = __mkLocalStore("_read_ids", []);
+  const __hideReadCards = __mkLocalStore("_hide_read_cards", false);
+  const __hideHistoryRead = __mkLocalStore("_hide_history_read", false);
+  const __showInfoOnPicFail = __mkLocalStore("_showInfoOnPicFail", 1);
+  const __stateHoverPic = __mkLocalStore("_state_hover_pic", false);
+  const __bTags = __mkLocalStore("_blocked_tags", []);
+  const __aTags = __mkLocalStore("_all_tags", []);
+  const __nameFilter = __mkLocalStore("_name_filter_keywords", []);
+  {
+    const _old = __storeVal(__nameFilter);
+    if (!Array.isArray(_old)) {
+      __nameFilter.set(
+        typeof _old === "string" ? _old.trim().split(/\s+/).filter(Boolean) : []
+      );
     }
-    let { originTable } = $$props;
-    function __show_originTable() {
-      set_store_value(_show_mode, $_show_mode = !$_show_mode, $_show_mode);
-      window.CHANGE_CARD_LAYOUT();
+  }
+  let __historyReadSnapshot = [];
+  let __wdvCfgInit = null;
+  try {
+    const __s = GM_getValue("pt_wdv_cfg", null);
+    __wdvCfgInit = __s ? JSON.parse(__s) : null;
+  } catch (e) {
+  }
+  if (!__wdvCfgInit || typeof __wdvCfgInit !== "object") {
+    try {
+      const __raw = JSON.parse(localStorage.getItem("Kesa:Masonry") || "{}");
+      __wdvCfgInit = __raw._webdav_config || null;
+    } catch (e) {
     }
-    function config_changeWidth() {
-      set_store_value(_card_width, $_card_width = $_card_width == 300 ? 200 : 300, $_card_width);
-      console.log(`[debug]$card_width: ${$_card_width}`);
-      sortMasonryBundle();
-    }
-    function config_showAllDetails() {
-      set_store_value(_CARD_SHOW, $_CARD_SHOW.all = !$_CARD_SHOW.all, $_CARD_SHOW);
-      sortMasonryBundle();
-    }
-    let label_switchMode = $_turnPage ? "滚动加载" : "按钮加载";
-    function config_switchMode() {
-      set_store_value(_turnPage, $_turnPage = !$_turnPage, $_turnPage);
-      $$invalidate(1, label_switchMode = $_turnPage ? "滚动加载" : "按钮加载");
-    }
-    function config_changeLoadMode() {
-      set_store_value(_iframe_switch, $_iframe_switch = $_iframe_switch == 0 ? 1 : 0, $_iframe_switch);
-    }
-    function sortMasonryBundle() {
-      sortMasonry("fast");
-      sortMasonry("fast");
-      sortMasonry();
-      sortMasonry();
-    }
-    onMount(() => {
-      window.addEventListener("mousemove", onMouseMove);
-      window.addEventListener("mouseup", onMouseUp);
-      return () => {
-        window.removeEventListener("mousemove", onMouseMove);
-        window.removeEventListener("mouseup", onMouseUp);
+  }
+  let __wdvCfgValue = Object.assign({ url: "", user: "", pass: "", path: "PT_Masonry_ReadIds.json" }, __wdvCfgInit || {});
+  const __wdvCfgSubs = /* @__PURE__ */ new Set();
+  const __wdvCfg = {
+    get() {
+      return __wdvCfgValue;
+    },
+    set(v) {
+      const changed = v !== __wdvCfgValue;
+      __wdvCfgValue = v;
+      try {
+        GM_setValue("pt_wdv_cfg", JSON.stringify(v));
+      } catch (e) {
+      }
+      if (changed) {
+        for (const cb of [...__wdvCfgSubs]) {
+          try {
+            cb(__wdvCfgValue);
+          } catch (e) {
+          }
+        }
+      }
+      return v;
+    },
+    subscribe(cb) {
+      __wdvCfgSubs.add(cb);
+      return function() {
+        __wdvCfgSubs.delete(cb);
       };
+    },
+    update(fn) {
+      return __wdvCfg.set(fn(__wdvCfgValue));
+    }
+  };
+  function __markRead(id) {
+    const cur = __storeVal(__readIds);
+    if (!cur.includes(id)) {
+      __readIds.set([...cur, id]);
+    }
+  }
+  function __applyHideReadCards() {
+    const hide = __storeVal(__hideReadCards), hideHist = __storeVal(__hideHistoryRead);
+    document.querySelectorAll(".card.pt-read").forEach((el) => {
+      const id = __extractId(el);
+      const isHist = hideHist && id && __historyReadSnapshot.includes(id);
+      el.style.display = hide || isHist ? "none" : "";
     });
-    const click_handler = () => {
-      set_store_value(_show_configPanel, $_show_configPanel = !$_show_configPanel, $_show_configPanel);
-    };
-    function div4_binding($$value) {
-      binding_callbacks[$$value ? "unshift" : "push"](() => {
-        sideDom = $$value;
-        $$invalidate(0, sideDom);
+    if (hide || hideHist) {
+      document.querySelectorAll(".card:not(.pt-read)").forEach((el) => {
+        if (el.style.display === "none")
+          el.style.display = "";
       });
     }
-    const click_handler_1 = () => set_store_value(_show_configPanel, $_show_configPanel = false, $_show_configPanel);
-    function switch_1_checked_binding(value) {
-      if ($$self.$$.not_equal($_SITE_SETTING.mt.hide_gay, value)) {
-        $_SITE_SETTING.mt.hide_gay = value;
-        _SITE_SETTING.set($_SITE_SETTING);
-      }
-    }
-    const func2 = () => {
-      window.CHANGE_CARD_LAYOUT();
-    };
-    function switch0_checked_binding(value) {
-      $_show_mode = value;
-      _show_mode.set($_show_mode);
-    }
-    function switch1_checked_binding(value) {
-      $_turnPage = value;
-      _turnPage.set($_turnPage);
-    }
-    function switch2_checked_binding(value) {
-      $_show_debug_btn = value;
-      _show_debug_btn.set($_show_debug_btn);
-    }
-    function switch3_checked_binding(value) {
-      $_show_nexus_pic = value;
-      _show_nexus_pic.set($_show_nexus_pic);
-    }
-    function input_change_input_handler() {
-      $_delay_nexus_pic = to_number(this.value);
-      _delay_nexus_pic.set($_delay_nexus_pic);
-    }
-    const click_handler_2 = () => {
-      set_store_value(_show_debug_btn, $_show_debug_btn = !$_show_debug_btn, $_show_debug_btn);
-    };
-    const click_handler_3 = () => {
-      set_store_value(_show_nexus_pic, $_show_nexus_pic = !$_show_nexus_pic, $_show_nexus_pic);
-    };
-    const click_handler_4 = () => {
-      set_store_value(_delay_nexus_pic, $_delay_nexus_pic = $_delay_nexus_pic == 0 ? 600 : 0, $_delay_nexus_pic);
-    };
-    function switch4_checked_binding(value) {
-      if ($$self.$$.not_equal($_CARD_SHOW.all, value)) {
-        $_CARD_SHOW.all = value;
-        _CARD_SHOW.set($_CARD_SHOW);
-      }
-    }
-    function switch5_checked_binding(value) {
-      if ($$self.$$.not_equal($_CARD_SHOW.title, value)) {
-        $_CARD_SHOW.title = value;
-        _CARD_SHOW.set($_CARD_SHOW);
-      }
-    }
-    function switch6_checked_binding(value) {
-      if ($$self.$$.not_equal($_CARD_SHOW.free, value)) {
-        $_CARD_SHOW.free = value;
-        _CARD_SHOW.set($_CARD_SHOW);
-      }
-    }
-    function switch7_checked_binding(value) {
-      if ($$self.$$.not_equal($_CARD_SHOW.sub_title, value)) {
-        $_CARD_SHOW.sub_title = value;
-        _CARD_SHOW.set($_CARD_SHOW);
-      }
-    }
-    function switch8_checked_binding(value) {
-      if ($$self.$$.not_equal($_CARD_SHOW.tags, value)) {
-        $_CARD_SHOW.tags = value;
-        _CARD_SHOW.set($_CARD_SHOW);
-      }
-    }
-    function switch9_checked_binding(value) {
-      if ($$self.$$.not_equal($_CARD_SHOW.size_download_collect, value)) {
-        $_CARD_SHOW.size_download_collect = value;
-        _CARD_SHOW.set($_CARD_SHOW);
-      }
-    }
-    function switch10_checked_binding(value) {
-      if ($$self.$$.not_equal($_CARD_SHOW.upload_time, value)) {
-        $_CARD_SHOW.upload_time = value;
-        _CARD_SHOW.set($_CARD_SHOW);
-      }
-    }
-    function switch11_checked_binding(value) {
-      if ($$self.$$.not_equal($_CARD_SHOW.statistics, value)) {
-        $_CARD_SHOW.statistics = value;
-        _CARD_SHOW.set($_CARD_SHOW);
-      }
-    }
-    function input0_change_handler() {
-      $_CARD_SHOW.title = this.checked;
-      _CARD_SHOW.set($_CARD_SHOW);
-    }
-    const change_handler = () => {
-      sortMasonry();
-    };
-    function input1_change_handler() {
-      $_CARD_SHOW.free = this.checked;
-      _CARD_SHOW.set($_CARD_SHOW);
-    }
-    const change_handler_1 = () => {
-      sortMasonry();
-    };
-    function input2_change_handler() {
-      $_CARD_SHOW.sub_title = this.checked;
-      _CARD_SHOW.set($_CARD_SHOW);
-    }
-    const change_handler_2 = () => {
-      sortMasonry();
-    };
-    function input3_change_handler() {
-      $_CARD_SHOW.tags = this.checked;
-      _CARD_SHOW.set($_CARD_SHOW);
-    }
-    const change_handler_3 = () => {
-      sortMasonry();
-    };
-    function input4_change_handler() {
-      $_CARD_SHOW.size_download_collect = this.checked;
-      _CARD_SHOW.set($_CARD_SHOW);
-    }
-    const change_handler_4 = () => {
-      sortMasonry();
-    };
-    function input5_change_handler() {
-      $_CARD_SHOW.upload_time = this.checked;
-      _CARD_SHOW.set($_CARD_SHOW);
-    }
-    const change_handler_5 = () => {
-      sortMasonry();
-    };
-    function input6_change_handler() {
-      $_CARD_SHOW.statistics = this.checked;
-      _CARD_SHOW.set($_CARD_SHOW);
-    }
-    const change_handler_6 = () => {
-      sortMasonry();
-    };
-    const click_handler_5 = () => set_store_value(_show_configPanel, $_show_configPanel = false, $_show_configPanel);
-    $$self.$$set = ($$props2) => {
-      if ("originTable" in $$props2)
-        $$invalidate(21, originTable = $$props2.originTable);
-    };
-    return [
-      sideDom,
-      label_switchMode,
-      $_turnPage,
-      $_CARD_SHOW,
-      $_show_mode,
-      $_panelPos,
-      $_current_bgColor,
-      $_show_configPanel,
-      $_show_debug_btn,
-      $_current_domain,
-      $_SITE_SETTING,
-      $_show_nexus_pic,
-      $_delay_nexus_pic,
-      onMouseDown,
-      resetPanelPos,
-      __show_originTable,
-      config_changeWidth,
-      config_showAllDetails,
-      config_switchMode,
-      config_changeLoadMode,
-      sortMasonryBundle,
-      originTable,
-      click_handler,
-      div4_binding,
-      click_handler_1,
-      switch_1_checked_binding,
-      func2,
-      switch0_checked_binding,
-      switch1_checked_binding,
-      switch2_checked_binding,
-      switch3_checked_binding,
-      input_change_input_handler,
-      click_handler_2,
-      click_handler_3,
-      click_handler_4,
-      switch4_checked_binding,
-      switch5_checked_binding,
-      switch6_checked_binding,
-      switch7_checked_binding,
-      switch8_checked_binding,
-      switch9_checked_binding,
-      switch10_checked_binding,
-      switch11_checked_binding,
-      input0_change_handler,
-      change_handler,
-      input1_change_handler,
-      change_handler_1,
-      input2_change_handler,
-      change_handler_2,
-      input3_change_handler,
-      change_handler_3,
-      input4_change_handler,
-      change_handler_4,
-      input5_change_handler,
-      change_handler_5,
-      input6_change_handler,
-      change_handler_6,
-      click_handler_5
-    ];
   }
-  class Sidepanel extends SvelteComponent {
-    constructor(options) {
-      super();
-      init(this, options, instance$5, create_fragment$5, safe_not_equal, { originTable: 21 }, null, [-1, -1, -1]);
+  function __cardName(el) {
+    const a = el.querySelector(".card-title a.two-lines");
+    if (a)
+      return (a.textContent || "").trim();
+    const t = el.querySelector(".card-title");
+    if (t)
+      return (t.textContent || "").trim();
+    return "";
+  }
+  function __applyHideNameFilter() {
+    const kws = (__storeVal(__nameFilter) || []).filter((k) => (k || "").trim());
+    document.querySelectorAll(".card").forEach((el) => {
+      if (!kws.length) {
+        if (el.__nameFiltered) {
+          el.style.display = "";
+          el.__nameFiltered = false;
+        }
+        return;
+      }
+      const name = __cardName(el).toLowerCase();
+      const hit = kws.some((k) => name.indexOf(String(k).toLowerCase()) !== -1);
+      el.style.display = hit ? "none" : "";
+      el.__nameFiltered = hit;
+    });
+  }
+  function __extractId(card) {
+    const link = card.querySelector('a[href*="details.php"],a[href*="/detail/"]');
+    if (!link)
+      return null;
+    var m = link.href.match(/[?&]id=(\d+)/);
+    if (m)
+      return m[1];
+    m = link.href.match(/\/detail\/(\d+)/);
+    if (m)
+      return m[1];
+    return null;
+  }
+  function __applyReadClasses() {
+    const readSet = __storeVal(__readIds);
+    document.querySelectorAll(".card").forEach((el) => {
+      const id = __extractId(el);
+      el.classList.toggle("pt-read", !!(id && readSet.includes(id)));
+    });
+    __applyHideReadCards();
+  }
+  function __initReadTracking() {
+    if (document.getElementById("pt-read-style"))
+      return;
+    __historyReadSnapshot = [...__storeVal(__readIds)];
+    const s = document.createElement("style");
+    s.id = "pt-read-style";
+    s.textContent = ".card.pt-read{opacity:0.55!important;filter:grayscale(0.6)!important;transition:opacity .3s ease,filter .3s ease!important}.card.pt-read:hover{opacity:0.75!important;filter:grayscale(0.3)!important}";
+    document.head.appendChild(s);
+    __applyReadClasses();
+    function markRead(e) {
+      const card = e.target.closest(".card");
+      if (!card)
+        return;
+      const id = __extractId(card);
+      if (!id)
+        return;
+      const cur = __storeVal(__readIds);
+      if (cur.includes(id))
+        return;
+      __readIds.set([...cur, id]);
+    }
+    document.addEventListener("click", markRead, true);
+    document.addEventListener(
+      "auxclick",
+      function(e) {
+        if (e.button === 1)
+          markRead(e);
+      },
+      true
+    );
+    let timer2;
+    const obs = new MutationObserver(function(muts) {
+      const hasCard = muts.some(
+        (mu) => Array.from(mu.addedNodes).concat(Array.from(mu.removedNodes)).some((n) => {
+          if (!n || n.nodeType !== 1)
+            return false;
+          return n.classList && n.classList.contains("card") || n.querySelector && n.querySelector(".card");
+        })
+      );
+      if (!hasCard)
+        return;
+      clearTimeout(timer2);
+      timer2 = setTimeout(function() {
+        __applyReadClasses();
+        __applyHideNameFilter();
+      }, 200);
+    });
+    obs.observe(document.body, { childList: true, subtree: true });
+    const url = window.location.href;
+    var m = url.match(/[?&]id=(\d+)/);
+    if (m) {
+      const cur = __storeVal(__readIds);
+      if (!cur.includes(m[1]))
+        __readIds.set([...cur, m[1]]);
     }
   }
+  function __mkSwitch(checked, onChange) {
+    const w = document.createElement("div");
+    w.className = "s_switch svelte-2vaqag svelte-2vaqag";
+    const inp = document.createElement("input");
+    inp.type = "checkbox";
+    inp.className = "svelte-2vaqag svelte-2vaqag";
+    inp.checked = !!checked;
+    const id = "_kesa_sw_" + Math.random().toString(36).slice(2, 10);
+    inp.id = id;
+    const lb = document.createElement("label");
+    lb.className = "svelte-2vaqag svelte-2vaqag";
+    lb.setAttribute("for", id);
+    inp.addEventListener("change", function() {
+      onChange(inp.checked);
+    });
+    w.appendChild(inp);
+    w.appendChild(lb);
+    return w;
+  }
+  function __mkSwitchRow(labelText, checked, onChange, desc) {
+    const row = document.createElement("div");
+    row.className = "switch svelte-2vaqag svelte-2vaqag";
+    const lb = document.createElement("div");
+    lb.className = "s_title svelte-2vaqag";
+    lb.textContent = labelText;
+    if (desc)
+      lb.title = desc;
+    const sw = __mkSwitch(checked, function(v) {
+      onChange(v);
+    });
+    row.appendChild(lb);
+    row.appendChild(sw);
+    return row;
+  }
+  function __fillReadSection(container) {
+    const h1 = document.createElement("h1");
+    h1.className = "s_title";
+    h1.textContent = "已读标记";
+    container.appendChild(h1);
+    const hint = document.createElement("div");
+    hint.style.cssText = "color:#999;font-size:11px;margin:0 0 6px 0;padding:0 10px;";
+    hint.textContent = "点击卡片标记已读，再次点击取消";
+    container.appendChild(hint);
+    const panel = document.createElement("div");
+    panel.className = "s_panel";
+    panel.style.cssText = "display:flex;flex-wrap:wrap;gap:4px;";
+    container.appendChild(panel);
+    const row = document.createElement("div");
+    row.style.cssText = "display:flex;gap:4px;padding:8px 10px 0;";
+    const clearBtn = document.createElement("button");
+    clearBtn.textContent = "清除所有已读标记";
+    clearBtn.style.cssText = "border:none;background:#e55;color:#fff;border-radius:4px;cursor:pointer;padding:4px 12px;font-size:12px;";
+    row.appendChild(clearBtn);
+    container.appendChild(row);
+    const countLabel = document.createElement("div");
+    countLabel.style.cssText = "color:#999;font-size:11px;padding:4px 10px 0;";
+    container.appendChild(countLabel);
+    clearBtn.onclick = () => {
+      __readIds.set([]);
+    };
+    const ua = __readIds.subscribe((v) => {
+      countLabel.textContent = `已标记 ${v.length} 个种子`;
+      __applyReadClasses();
+    });
+    return () => {
+      ua();
+    };
+  }
+  function __fillTagSection(container) {
+    const h1 = document.createElement("h1");
+    h1.className = "s_title";
+    h1.textContent = "TAG 过滤";
+    container.appendChild(h1);
+    const hint = document.createElement("div");
+    hint.style.cssText = "color:#999;font-size:11px;margin:0 0 6px 0;padding:0 10px;";
+    hint.textContent = "点击标签切换屏蔽(红=已屏蔽)，改后刷新页面生效";
+    container.appendChild(hint);
+    const panel = document.createElement("div");
+    panel.className = "s_panel";
+    panel.style.cssText = "display:flex;flex-direction:row;flex-wrap:wrap;justify-content:flex-start;align-items:flex-start;align-content:flex-start;gap:6px;width:100%;";
+    container.appendChild(panel);
+    const row = document.createElement("div");
+    row.style.cssText = "display:flex;gap:4px;padding:8px 10px 0;";
+    const inp = document.createElement("input");
+    inp.placeholder = "手动添加屏蔽TAG";
+    inp.style.cssText = "flex:1;border:1px solid #ccc;border-radius:4px;padding:3px 6px;font-size:12px;";
+    const addBtn = document.createElement("button");
+    addBtn.textContent = "+";
+    addBtn.style.cssText = "border:none;background:#3fa7d6;color:#fff;border-radius:4px;cursor:pointer;padding:0 10px;";
+    row.appendChild(inp);
+    row.appendChild(addBtn);
+    container.appendChild(row);
+    let _a = [], _b = [];
+    function render() {
+      panel.innerHTML = "";
+      if (_a.length === 0 && _b.length === 0) {
+        const e = document.createElement("span");
+        e.style.cssText = "color:#bbb;font-size:11px;";
+        e.textContent = "暂无标签，加载种子后显示";
+        panel.appendChild(e);
+        return;
+      }
+      const merged = [.../* @__PURE__ */ new Set([..._a, ..._b])];
+      merged.forEach((tg) => {
+        const on = _b.includes(tg);
+        const c = document.createElement("span");
+        c.textContent = tg;
+        c.style.cssText = "display:inline-block;padding:3px 10px;border-radius:8px;cursor:pointer;font-size:12px;line-height:1.4;white-space:nowrap;border:1px solid " + (on ? "#e55" : "#9ac6ff") + ";background:" + (on ? "#fde8e8" : "#eef4ff") + ";color:" + (on ? "#c00" : "#1a4b8f") + ";";
+        c.title = on ? "点击取消屏蔽" : "点击屏蔽此TAG";
+        c.onclick = () => {
+          const cur = __storeVal(__bTags);
+          if (cur.includes(tg))
+            __bTags.set(cur.filter((x) => x !== tg));
+          else
+            __bTags.set([...cur, tg]);
+        };
+        panel.appendChild(c);
+      });
+    }
+    addBtn.onclick = () => {
+      const v = inp.value.trim();
+      if (!v)
+        return;
+      const cur = __storeVal(__bTags);
+      if (!cur.includes(v))
+        __bTags.set([...cur, v]);
+      inp.value = "";
+    };
+    inp.addEventListener("keydown", (e) => {
+      if (e.key === "Enter")
+        addBtn.click();
+    });
+    const ua = __aTags.subscribe((v) => {
+      _a = v;
+      render();
+    });
+    const ub = __bTags.subscribe((v) => {
+      _b = v;
+      render();
+    });
+    return () => {
+      ua();
+      ub();
+    };
+  }
+  function __fillCardInfoSectionObserver() {
+    let swReadInp = null, swHistInp = null;
+    function build() {
+      const panel = function() {
+        const holder = document.querySelector(".configP_holder");
+        if (!holder)
+          return null;
+        const sections = holder.querySelectorAll(".section");
+        for (let i = 0; i < sections.length; i++) {
+          const h1 = sections[i].querySelector("h1.s_title");
+          if (h1 && h1.textContent === "卡片信息") {
+            const sub = sections[i].querySelector("h3.s_title");
+            const subSec = sub && sub.parentElement;
+            if (subSec && subSec.textContent.indexOf("配置常驻卡片信息") !== -1) {
+              const p = subSec.querySelector(":scope > .s_panel");
+              if (p)
+                return p;
+            }
+          }
+        }
+        return null;
+      }();
+      if (!panel || panel.querySelector(".kesaHideReadRows"))
+        return null;
+      const wrap = document.createElement("div");
+      wrap.className = "kesaHideReadRows";
+      wrap.style.cssText = "border-top:1px solid #eee;margin-top:4px;padding-top:2px;";
+      const swRead = __mkSwitchRow(
+        "隐藏已读卡片",
+        __storeVal(__hideReadCards),
+        function(v) {
+          if (v)
+            __hideHistoryRead.set(false);
+          __hideReadCards.set(v);
+        },
+        "隐藏所有已读卡片(与隐藏历史观看互斥)"
+      );
+      const swHist = __mkSwitchRow(
+        "隐藏历史观看",
+        __storeVal(__hideHistoryRead),
+        function(v) {
+          if (v)
+            __hideReadCards.set(false);
+          __hideHistoryRead.set(v);
+        },
+        "隐藏刷新前已观看的卡片, 刷新后新看的只变灰(与隐藏已读卡片互斥)"
+      );
+      swReadInp = swRead.querySelector("input");
+      swHistInp = swHist.querySelector("input");
+      wrap.appendChild(swRead);
+      wrap.appendChild(swHist);
+      panel.appendChild(wrap);
+      return wrap;
+    }
+    function tryFill() {
+      if (!build())
+        return;
+      const u1 = __hideReadCards.subscribe((v) => {
+        if (swReadInp)
+          swReadInp.checked = v;
+        __applyHideReadCards();
+      });
+      const u2 = __hideHistoryRead.subscribe((v) => {
+        if (swHistInp)
+          swHistInp.checked = v;
+        __applyHideReadCards();
+      });
+      window.__kesaHideReadCleanup = function() {
+        u1();
+        u2();
+      };
+    }
+    try {
+      tryFill();
+    } catch (e) {
+    }
+    const mo = new MutationObserver(function() {
+      try {
+        tryFill();
+      } catch (e) {
+      }
+    });
+    mo.observe(document.body, { childList: true, subtree: true });
+  }
+  function __fillNameFilterSection(container) {
+    const h1 = document.createElement("h1");
+    h1.className = "s_title";
+    h1.textContent = "名称过滤";
+    container.appendChild(h1);
+    const hint = document.createElement("div");
+    hint.style.cssText = "color:#999;font-size:11px;margin:0 0 6px 0;padding:0 10px;";
+    hint.textContent = "输入文字后回车(或点添加)生成气泡，命中任一气泡即隐藏卡片；气泡可删除，空格作为匹配字符";
+    container.appendChild(hint);
+    const chipBox = document.createElement("div");
+    chipBox.className = "s_panel";
+    chipBox.style.cssText = "display:flex;flex-wrap:wrap;gap:6px;width:100%;box-sizing:border-box;";
+    container.appendChild(chipBox);
+    const row = document.createElement("div");
+    row.style.cssText = "display:flex;gap:4px;padding:8px 10px 0;width:100%;box-sizing:border-box;";
+    const inp = document.createElement("input");
+    inp.type = "text";
+    inp.placeholder = "输入关键词后回车添加";
+    inp.style.cssText = "flex:1;min-width:0;border:1px solid #ccc;border-radius:4px;padding:5px 8px;font-size:12px;box-sizing:border-box;";
+    const addBtn = document.createElement("button");
+    addBtn.textContent = "添加";
+    addBtn.style.cssText = "border:none;background:#5b9cf6;color:#fff;border-radius:4px;cursor:pointer;padding:4px 12px;font-size:12px;flex:none;";
+    const clearBtn = document.createElement("button");
+    clearBtn.textContent = "清空";
+    clearBtn.style.cssText = "border:none;background:#e55;color:#fff;border-radius:4px;cursor:pointer;padding:4px 12px;font-size:12px;flex:none;";
+    row.appendChild(inp);
+    row.appendChild(addBtn);
+    row.appendChild(clearBtn);
+    container.appendChild(row);
+    const countLabel = document.createElement("div");
+    countLabel.style.cssText = "color:#999;font-size:11px;padding:4px 10px 0;";
+    container.appendChild(countLabel);
+    function renderChips() {
+      chipBox.textContent = "";
+      const kws = __storeVal(__nameFilter) || [];
+      kws.forEach((kw, idx) => {
+        if (!(kw || "").trim())
+          return;
+        const chip = document.createElement("span");
+        chip.style.cssText = "display:inline-flex;align-items:center;gap:4px;background:#e8f1ff;border:1px solid #b9d5ff;color:#2b5bb0;border-radius:12px;padding:2px 8px;font-size:12px;max-width:100%;";
+        const label = document.createElement("span");
+        label.textContent = kw;
+        label.style.cssText = "overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;";
+        const x = document.createElement("button");
+        x.textContent = "×";
+        x.title = "移除该关键词";
+        x.style.cssText = "border:none;background:none;color:#2b5bb0;cursor:pointer;font-size:14px;line-height:1;padding:0 2px;";
+        x.onclick = () => {
+          const cur = __storeVal(__nameFilter) || [];
+          cur.splice(idx, 1);
+          __nameFilter.set(cur.slice());
+        };
+        chip.appendChild(label);
+        chip.appendChild(x);
+        chipBox.appendChild(chip);
+      });
+      if (!chipBox.childNodes.length) {
+        const empty2 = document.createElement("span");
+        empty2.style.cssText = "color:#bbb;font-size:11px;padding:2px 4px;";
+        empty2.textContent = "暂无过滤关键词";
+        chipBox.appendChild(empty2);
+      }
+    }
+    function addKeyword() {
+      const v = inp.value.trim();
+      if (!v)
+        return;
+      const cur = __storeVal(__nameFilter) || [];
+      if (!cur.includes(v))
+        cur.push(v);
+      __nameFilter.set(cur.slice());
+      inp.value = "";
+      inp.focus();
+    }
+    function apply() {
+      __applyHideNameFilter();
+      renderChips();
+      const kws = (__storeVal(__nameFilter) || []).filter((k) => (k || "").trim());
+      const total = document.querySelectorAll(".card").length;
+      const hidden = document.querySelectorAll(".card[style*='display: none']").length;
+      countLabel.textContent = kws.length ? `已隐藏 ${hidden} / 共 ${total} 个卡片(命中任一关键词)` : `共 ${total} 个卡片`;
+    }
+    inp.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        addKeyword();
+      }
+    });
+    addBtn.onclick = addKeyword;
+    clearBtn.onclick = () => {
+      __nameFilter.set([]);
+      inp.value = "";
+      inp.focus();
+    };
+    const un = __nameFilter.subscribe(() => apply());
+    return () => {
+      un();
+    };
+  }
+  function __fillWebDAVSection(container) {
+    const h1 = document.createElement("h1");
+    h1.className = "s_title";
+    h1.textContent = "同步 (WebDAV)";
+    container.appendChild(h1);
+    const hint = document.createElement("div");
+    hint.style.cssText = "color:#999;font-size:11px;margin:0 0 6px 0;padding:0 10px;";
+    hint.textContent = "配置全局共用(换站不丢); 已读标记/设置按站点、页码全部站点, 均存入同一个统一文件并整体同步(自动合并)。打开站点自动下载、关闭页面自动上传, 已做流量优化; 也可手动点击下方按钮。侧边栏黄色'最大N页'按钮一键跳转到历史最大页码";
+    container.appendChild(hint);
+    const panel = document.createElement("div");
+    panel.className = "s_panel";
+    panel.style.cssText = "display:flex;flex-direction:column;gap:6px;width:100%;";
+    container.appendChild(panel);
+    function mkRow(label, key, type) {
+      const c = __storeVal(__wdvCfg);
+      const w = document.createElement("div");
+      w.style.cssText = "display:flex;align-items:center;gap:6px;width:100%;";
+      const lb = document.createElement("span");
+      lb.style.cssText = "width:64px;font-size:12px;color:#333;flex-shrink:0;";
+      lb.textContent = label;
+      const inp = document.createElement("input");
+      inp.type = type || "text";
+      inp.value = c[key] || "";
+      inp.style.cssText = "flex:1;min-width:0;border:1px solid #ccc;border-radius:4px;padding:3px 6px;font-size:12px;";
+      inp.onchange = () => {
+        const cur = __storeVal(__wdvCfg);
+        cur[key] = inp.value.trim();
+        __wdvCfg.set(cur);
+      };
+      w.appendChild(lb);
+      w.appendChild(inp);
+      panel.appendChild(w);
+      return inp;
+    }
+    mkRow("服务器地址", "url", "text");
+    mkRow("账号", "user", "text");
+    mkRow("密码", "pass", "password");
+    mkRow("文件路径", "path", "text");
+    const status = document.createElement("div");
+    status.style.cssText = "color:#3a7;font-size:12px;padding:2px 10px;min-height:16px;word-break:break-all;";
+    status.textContent = "";
+    container.appendChild(status);
+    const btnRow = document.createElement("div");
+    btnRow.style.cssText = "display:flex;gap:8px;padding:4px 10px;";
+    function mkBtn(text2, fn) {
+      const b = document.createElement("button");
+      b.textContent = text2;
+      b.style.cssText = "flex:1;border:none;border-radius:8px;background:#3fa7d6;color:#fff;cursor:pointer;padding:6px 0;font-size:12px;";
+      b.onclick = async () => {
+        status.style.color = "#d90";
+        status.textContent = text2 + "中...";
+        try {
+          status.textContent = await fn();
+          status.style.color = "#3a7";
+        } catch (e) {
+          status.style.color = "#c00";
+          status.textContent = e.message;
+        }
+      };
+      btnRow.appendChild(b);
+      return b;
+    }
+    mkBtn("上传到服务器", function() {
+      return __wdvUpload(true);
+    });
+    mkBtn("下载并合并", __wdvDownload);
+    container.appendChild(btnRow);
+    const clearRow = document.createElement("div");
+    clearRow.style.cssText = "display:flex;gap:8px;padding:4px 10px;";
+    const clearBtn = document.createElement("button");
+    clearBtn.textContent = "清除历史页码记录";
+    clearBtn.style.cssText = "flex:1;border:none;border-radius:8px;background:#e55;color:#fff;cursor:pointer;padding:6px 0;font-size:12px;";
+    clearBtn.onclick = async () => {
+      status.style.color = "#d90";
+      status.textContent = "清除中...";
+      try {
+        if (typeof window.__kesaPageSync === "function")
+          window.__kesaPageSync("clearLocal");
+        await __wdvUpload(true);
+        status.style.color = "#3a7";
+        status.textContent = "已清空页码并上传(本地+服务器)";
+      } catch (e) {
+        status.style.color = "#c00";
+        status.textContent = e.message;
+      }
+    };
+    clearRow.appendChild(clearBtn);
+    container.appendChild(clearRow);
+  }
+  function __wdvUrl() {
+    const c = __storeVal(__wdvCfg);
+    let p = (c.path || "").trim().replace(/^\/+|\/+$/g, "");
+    if (!p)
+      p = "PT_Masonry_Sync.json";
+    if (!/\.[^/]+$/.test(p))
+      p += "/PT_Masonry_Sync.json";
+    else
+      p = p.replace(/[^/]+$/, "PT_Masonry_Sync.json");
+    return (c.url || "").replace(/\/+$/, "") + "/" + p;
+  }
+  async function __wdvReadFull() {
+    const c = __storeVal(__wdvCfg);
+    if (!c.url)
+      return { version: 2, sites: {}, pages: {} };
+    const r = await __wdvFetch(__wdvUrl(), "GET", null);
+    if (r.status === 404) {
+      const legacy = { sites: {}, pages: {} };
+      const base = (c.url || "").replace(/\/+$/, "");
+      async function fetchLegacy(name, parse) {
+        try {
+          const gr = await __wdvFetch(base + "/" + name, "GET", null);
+          if (gr.status >= 200 && gr.status < 300)
+            return parse(JSON.parse(gr.responseText || "{}"));
+        } catch (e) {
+        }
+        return null;
+      }
+      const host = location.hostname;
+      const gj = await fetchLegacy(host + ".json", function(j) {
+        const so = {};
+        if (Array.isArray(j.ids))
+          so.readIds = j.ids;
+        if (j.config && typeof j.config.masonry === "string")
+          so.config = j.config;
+        return so.readIds || so.config ? so : null;
+      });
+      if (gj)
+        legacy.sites[host] = gj;
+      const pj = await fetchLegacy("PT_Masonry_PageMax.json", function(j) {
+        return j && typeof j === "object" ? j : {};
+      });
+      if (pj)
+        legacy.pages = pj;
+      return Object.assign({ version: 2, sites: {}, pages: {} }, legacy);
+    }
+    if (r.status >= 200 && r.status < 300) {
+      let j = {};
+      try {
+        j = JSON.parse(r.responseText || "{}") || {};
+      } catch (e) {
+        j = {};
+      }
+      if (!j.sites || typeof j.sites !== "object")
+        j.sites = {};
+      if (!j.pages || typeof j.pages !== "object")
+        j.pages = {};
+      return j;
+    }
+    throw new Error("读取同步文件失败 HTTP " + r.status);
+  }
+  async function __wdvWriteFull(full) {
+    const r = await __wdvFetch(__wdvUrl(), "PUT", JSON.stringify(full));
+    if (r.status < 200 || r.status >= 300)
+      throw new Error("上传失败 HTTP " + r.status);
+  }
+  function __wdvAuth() {
+    const c = __storeVal(__wdvCfg);
+    return "Basic " + btoa(unescape(encodeURIComponent((c.user || "") + ":" + (c.pass || ""))));
+  }
+  function __wdvFetch(url, method, body) {
+    const auth = __wdvAuth();
+    return new Promise(function(resolve, reject) {
+      if (typeof GM_xmlhttpRequest === "function") {
+        GM_xmlhttpRequest({
+          method,
+          url,
+          headers: { Authorization: auth, "Content-Type": "application/json" },
+          data: body || void 0,
+          timeout: 3e4,
+          onload: function(r) {
+            resolve(r);
+          },
+          onerror: function() {
+            reject(new Error("网络错误(目标服务器不可达或未开跨域)"));
+          },
+          ontimeout: function() {
+            reject(new Error("请求超时(30s)"));
+          }
+        });
+      } else {
+        fetch(url, {
+          method,
+          headers: { Authorization: auth, "Content-Type": "application/json" },
+          body
+        }).then(
+          function(r) {
+            r.text().then(function(t) {
+              resolve({ status: r.status, responseText: t });
+            });
+          },
+          function(e) {
+            reject(e);
+          }
+        );
+      }
+    });
+  }
+  async function __wdvUpload(force) {
+    const c = __storeVal(__wdvCfg);
+    if (!c.url || !c.pass)
+      throw new Error("请先填写 WebDAV 配置");
+    const host = location.hostname;
+    const ids = [...__storeVal(__readIds)];
+    const cfgStr = localStorage.getItem("Kesa:Masonry") || "{}";
+    const fallStr = localStorage.getItem("Kesa:Fall") || "{}";
+    const idsLocalKey = ids.join(",");
+    const snapIds = GM_getValue("pt_sync_idsSnap", "");
+    const snapCfg = GM_getValue("pt_sync_cfgSnap", "");
+    const snapFall = GM_getValue("pt_sync_cfgFallSnap", "");
+    if (!force && idsLocalKey === snapIds && cfgStr === snapCfg && fallStr === snapFall) {
+      const pagesDirty = typeof window.__kesaPageSync === "function" && window.__kesaPageSync("isDirty");
+      if (!pagesDirty)
+        return "无变化, 跳过上传(节省流量)";
+    }
+    const full = await __wdvReadFull();
+    const sites = full.sites || {};
+    const st = sites[host] || {};
+    const stIds = Array.isArray(st.readIds) ? st.readIds : [];
+    const merged = [.../* @__PURE__ */ new Set([...stIds, ...ids])];
+    sites[host] = {
+      readIds: merged,
+      config: { masonry: cfgStr, fall: fallStr }
+    };
+    full.sites = sites;
+    if (typeof window.__kesaPageSync === "function") {
+      const pg = window.__kesaPageSync("get");
+      if (pg && typeof pg === "object")
+        full.pages = pg;
+    }
+    full.updated = Date.now();
+    await __wdvWriteFull(full);
+    if (merged.length !== __storeVal(__readIds).length) {
+      __readIds.set(merged);
+      __applyReadClasses();
+    }
+    GM_setValue("pt_sync_idsSnap", merged.join(","));
+    GM_setValue("pt_sync_cfgSnap", cfgStr);
+    GM_setValue("pt_sync_cfgFallSnap", fallStr);
+    if (typeof window.__kesaPageSync === "function")
+      window.__kesaPageSync("setDirty", false);
+    return "已上传 " + merged.length + " 条已读标记 + 页码";
+  }
+  async function __wdvDownload(updateHistSnapshot) {
+    const c = __storeVal(__wdvCfg);
+    if (!c.url || !c.pass)
+      throw new Error("请先填写 WebDAV 配置");
+    const host = location.hostname;
+    const full = await __wdvReadFull();
+    const st = (full.sites || {})[host] || {};
+    const remote = Array.isArray(st.readIds) ? st.readIds : [];
+    const merged = [.../* @__PURE__ */ new Set([...__storeVal(__readIds), ...remote])];
+    if (updateHistSnapshot)
+      __historyReadSnapshot = [...merged];
+    __readIds.set(merged);
+    __applyReadClasses();
+    let cfgMsg = "";
+    if (st.config && typeof st.config.masonry === "string") {
+      try {
+        const far = JSON.parse(st.config.masonry);
+        const local = JSON.parse(localStorage.getItem("Kesa:Masonry") || "{}");
+        let changed = false;
+        for (const k in far) {
+          if (local[k] === void 0) {
+            local[k] = far[k];
+            changed = true;
+          }
+        }
+        if (changed) {
+          localStorage.setItem("Kesa:Masonry", JSON.stringify(local));
+          cfgMsg = "，配置已同步(刷新后生效)";
+        }
+      } catch (e) {
+      }
+    }
+    let pageMsg = "";
+    if (typeof window.__kesaPageSync === "function" && full.pages && typeof full.pages === "object") {
+      pageMsg = window.__kesaPageSync("merge", full.pages) || "";
+    }
+    return "已下载并合并, 共 " + merged.length + " 条已读标记" + cfgMsg + (pageMsg ? "，" + pageMsg : "");
+  }
+  function __wdvAutoRun(fn, tag) {
+    try {
+      const c = __storeVal(__wdvCfg);
+      if (!c.url || !c.pass)
+        return;
+      fn().then(function(m) {
+        console.log("[WebDAV] " + tag + ":", m);
+      }).catch(function(e) {
+        console.warn("[WebDAV] " + tag + "失败:", e.message);
+      });
+    } catch (e) {
+    }
+  }
+  function __wdvAutoSync() {
+    const last = parseInt(GM_getValue("pt_sync_lastGetIds", "0"), 10) || 0;
+    if (Date.now() - last < 10 * 6e4)
+      return;
+    GM_setValue("pt_sync_lastGetIds", String(Date.now()));
+    __wdvAutoRun(function() {
+      return __wdvDownload(true);
+    }, "打开页面自动同步");
+  }
+  function __wdvAutoPush() {
+    __wdvAutoRun(function() {
+      return __wdvUpload(false);
+    }, "关闭页面自动上传");
+  }
+  window.__kesaWdSync = function(action) {
+    try {
+      if (action === "upload")
+        return __wdvUpload(true);
+      if (action === "autopush")
+        return __wdvUpload(false);
+      if (action === "download")
+        return __wdvDownload();
+    } catch (e) {
+      return Promise.reject(e);
+    }
+    return Promise.resolve("未操作");
+  };
+  function __kesaStateKey() {
+    return "__kesaState_" + location.hostname;
+  }
+  function __kesaSavePageState(n) {
+    try {
+      if (window.__kesaRestoring)
+        return;
+      const key = __kesaStateKey();
+      const st = JSON.parse(localStorage.getItem(key) || "null") || {};
+      st.page = n || 1;
+      const u = new URL(location.href);
+      u.searchParams.delete("page");
+      u.searchParams.delete("pageNumber");
+      st.url = u.toString();
+      st.ts = Date.now();
+      localStorage.setItem(key, JSON.stringify(st));
+      try {
+        sessionStorage.setItem("__kesa_lastUrl", location.href);
+      } catch (e2) {
+      }
+    } catch (e) {
+    }
+  }
+  function __kesaRestorePage() {
+    try {
+      let navType = "";
+      try {
+        const nav = performance.getEntriesByType("navigation")[0];
+        navType = nav ? nav.type : "";
+      } catch (e) {
+      }
+      if (navType && navType !== "reload") {
+        try {
+          sessionStorage.setItem("__kesa_lastUrl", location.href);
+        } catch (e2) {
+        }
+        return;
+      }
+      const st = JSON.parse(localStorage.getItem(__kesaStateKey()) || "null");
+      if (!st || !st.page || st.page < 1)
+        return;
+      const last = sessionStorage.getItem("__kesa_lastUrl");
+      if (!last) {
+        try {
+          sessionStorage.setItem("__kesa_lastUrl", location.href);
+        } catch (e2) {
+        }
+        return;
+      }
+      const base = (u2) => {
+        const x = new URL(u2);
+        x.searchParams.delete("page");
+        x.searchParams.delete("pageNumber");
+        return x.toString();
+      };
+      if (base(location.href) !== base(last)) {
+        try {
+          sessionStorage.setItem("__kesa_lastUrl", location.href);
+        } catch (e2) {
+        }
+        return;
+      }
+      const isNX = __kesaIsNX();
+      const u = new URL(location.href);
+      const cur = Number(u.searchParams.get(isNX ? "page" : "pageNumber")) || 1;
+      if (cur === st.page)
+        return;
+      const target = new URL(st.url || location.href);
+      target.searchParams.set(isNX ? "page" : "pageNumber", st.page);
+      console.log("[恢复页码] 刷新后跳转:", target.toString(), "saved=", st.page, "cur=", cur);
+      window.__kesaRestoring = true;
+      location.replace(target.toString());
+    } catch (e) {
+    }
+  }
+  function __kesaIsNX() {
+    return /\.php/i.test(location.pathname);
+  }
+  function __kesaCurPage() {
+    try {
+      const sp = new URLSearchParams(location.search);
+      const v = parseInt(sp.get("page") || sp.get("pageNumber") || sp.get("p") || "", 10);
+      return isNaN(v) || v < 1 ? 1 : v;
+    } catch (e) {
+      return 1;
+    }
+  }
+  function __kesaPageUrl(n) {
+    try {
+      const u = new URL(location.href);
+      u.searchParams.delete("page");
+      u.searchParams.delete("pageNumber");
+      u.searchParams.set(__kesaIsNX() ? "page" : "pageNumber", n);
+      return u.toString();
+    } catch (e) {
+      return location.href;
+    }
+  }
+  function __kesaPageInd(n) {
+    try {
+      if (!document.getElementById("__kesaPageCss")) {
+        const st = document.createElement("style");
+        st.id = "__kesaPageCss";
+        st.textContent = ".kesaPageGo{display:block;text-align:center;font-size:11px;font-weight:600;color:#fff;background:rgba(64,64,64,.85);border-radius:8px;padding:3px 6px;margin:4px 6px;line-height:1.5;cursor:pointer}.kesaPageGo:hover{background:#0054b0}";
+        (document.head || document.documentElement).appendChild(st);
+      }
+      const cur = n || __kesaCurPage();
+      __kesaSavePageState(cur);
+      const sb = document.querySelector(".sideP");
+      if (!sb)
+        return;
+      let el = document.querySelector(".kesaPageGo");
+      if (!el) {
+        el = document.createElement("div");
+        el.className = "kesaPageGo";
+        el.addEventListener("click", () => {
+          const pg = parseInt(el.dataset.page, 10) || 1;
+          __kesaSavePageState(pg);
+          location.href = __kesaPageUrl(pg);
+        });
+        sb.appendChild(el);
+      }
+      el.dataset.page = String(cur);
+      el.textContent = "第 " + cur + " 页";
+    } catch (e) {
+    }
+  }
+  (function() {
+    function __pmGet() {
+      try {
+        return JSON.parse(GM_getValue("pt_pagemax", "null")) || {};
+      } catch (e) {
+        return {};
+      }
+    }
+    function __pmSet(st) {
+      try {
+        GM_setValue("pt_pagemax", JSON.stringify(st));
+      } catch (e) {
+      }
+    }
+    function __pmNormKey(u) {
+      try {
+        const x = new URL(u);
+        x.searchParams.delete("page");
+        x.searchParams.delete("pageNumber");
+        if (x.searchParams.get("inclbookmarked") === "0")
+          x.searchParams.delete("inclbookmarked");
+        if (x.searchParams.get("spstate") === "0")
+          x.searchParams.delete("spstate");
+        if (x.searchParams.get("incldead") === "1")
+          x.searchParams.delete("incldead");
+        return x.toString();
+      } catch (e) {
+        return u;
+      }
+    }
+    function __pmKey() {
+      return __pmNormKey(location.href);
+    }
+    function __pmMigrate() {
+      try {
+        const st = __pmGet();
+        let changed = false;
+        for (const k in st) {
+          const nk = __pmNormKey(k);
+          if (nk !== k) {
+            if (!st[nk] || st[k].max > st[nk].max)
+              st[nk] = st[k];
+            delete st[k];
+            changed = true;
+          }
+        }
+        if (changed)
+          __pmSet(st);
+      } catch (e) {
+      }
+    }
+    function __pmMaxFor(key) {
+      const e = __pmGet()[key];
+      return e && e.max ? e.max : 0;
+    }
+    let __pmDirty = false;
+    function __pmRecord(pg) {
+      try {
+        const host = __pmKey();
+        const st = __pmGet();
+        const cur = st[host];
+        if (!cur || pg > (cur.max || 0)) {
+          st[host] = { max: pg };
+          __pmSet(st);
+          __pmDirty = true;
+        }
+      } catch (e) {
+      }
+    }
+    window.__kesaPageSync = function(action, data) {
+      try {
+        if (action === "get")
+          return __pmGet();
+        if (action === "merge" && data && typeof data === "object") {
+          const st = __pmGet();
+          let changed = false;
+          let maxCur = 0;
+          for (const h in data) {
+            const rv = data[h] && data[h].max || 0;
+            const lv = st[h] && st[h].max || 0;
+            if (rv > lv) {
+              st[h] = { max: rv };
+              changed = true;
+            }
+            if (rv > maxCur)
+              maxCur = rv;
+          }
+          if (changed)
+            __pmSet(st);
+          return changed ? "已合并页码(当前站最大 " + maxCur + " 页)" : "";
+        }
+        if (action === "isDirty")
+          return !!__pmDirty;
+        if (action === "setDirty") {
+          __pmDirty = !!data;
+          return;
+        }
+        if (action === "clearLocal") {
+          __pmSet({});
+          __pmDirty = true;
+          return;
+        }
+      } catch (e) {
+      }
+      return void 0;
+    };
+    function __pmCurrentPage() {
+      try {
+        const go = document.querySelector(".kesaPageGo");
+        if (go) {
+          const n = parseInt(go.dataset.page, 10);
+          if (!isNaN(n) && n >= 1)
+            return n;
+        }
+      } catch (e) {
+      }
+      try {
+        const u = new URL(location.href);
+        const isNX = /\.php/i.test(location.pathname);
+        const n = parseInt(u.searchParams.get(isNX ? "page" : "pageNumber"), 10);
+        return isNaN(n) ? 1 : n;
+      } catch (e) {
+        return 1;
+      }
+    }
+    function __pmUrlForPage(pg) {
+      try {
+        const u = new URL(location.href);
+        u.searchParams.delete("page");
+        u.searchParams.delete("pageNumber");
+        u.searchParams.set(/\.php/i.test(location.pathname) ? "page" : "pageNumber", String(Math.max(1, pg)));
+        return u.toString();
+      } catch (e) {
+        return location.href;
+      }
+    }
+    function __pmBtn() {
+      try {
+        const sb = document.querySelector(".sideP");
+        if (!sb)
+          return;
+        let el = document.querySelector(".kesaPageMaxGo");
+        if (!el) {
+          el = document.createElement("div");
+          el.className = "kesaPageMaxGo";
+          el.title = "打开本PT站历史最大页码(多设备WebDAV同步)";
+          el.addEventListener("click", function() {
+            const m2 = __pmMaxFor(__pmKey());
+            if (m2 < 1) {
+              el.textContent = "暂无页码记录";
+              setTimeout(function() {
+                if (el.isConnected)
+                  el.textContent = "最大页码: -";
+              }, 1500);
+              return;
+            }
+            el.textContent = "正在打开第 " + m2 + " 页...";
+            location.href = __pmUrlForPage(m2);
+          });
+          sb.appendChild(el);
+        }
+        const m = __pmMaxFor(__pmKey());
+        el.textContent = m >= 1 ? "最大 " + m + " 页" : "最大页码: -";
+      } catch (e) {
+      }
+    }
+    let __pmSelLog = 0;
+    function __pmPageSel() {
+      try {
+        const old = document.getElementById("kesaMtPageSel");
+        if (old) {
+          const c = __pmCurrentPage();
+          const curEl = document.getElementById("kesaMtPageSelCur");
+          if (curEl)
+            curEl.textContent = "第 " + c + " 页";
+          const prevBtn = document.getElementById("kesaMtPageSelPrev");
+          if (prevBtn)
+            prevBtn.disabled = c <= 1;
+          return;
+        }
+        let btn = document.getElementById("turnPage");
+        if (!btn) {
+          const all = document.querySelectorAll("button");
+          for (let i = 0; i < all.length; i++) {
+            if (all[i].textContent.indexOf("加载下一页") >= 0) {
+              btn = all[i];
+              break;
+            }
+          }
+        }
+        let wrap = null;
+        let afterWf = false;
+        if (btn) {
+          wrap = btn.parentElement || btn.parentNode;
+        } else {
+          const wf = document.querySelector("div.waterfall");
+          if (wf && wf.parentNode) {
+            afterWf = true;
+            wrap = wf;
+          }
+          if (!wrap) {
+            if (__pmSelLog++ < 3)
+              console.log("[kesa] 页码选择器: 未找到可注入位置");
+            return;
+          }
+        }
+        if (!wrap)
+          return;
+        const box = document.createElement("div");
+        box.id = "kesaMtPageSel";
+        box.style.cssText = "display:flex;align-items:center;gap:6px;justify-content:center;margin-top:8px;flex-wrap:wrap;";
+        const btnStyle = "border:none;background:#3fa7d6;color:#fff;border-radius:4px;padding:4px 12px;font-size:12px;cursor:pointer;";
+        const prev = document.createElement("button");
+        prev.id = "kesaMtPageSelPrev";
+        prev.textContent = "◀ 上一页";
+        prev.style.cssText = btnStyle;
+        prev.onclick = function() {
+          location.href = __pmUrlForPage(__pmCurrentPage() - 1);
+        };
+        const cur = document.createElement("span");
+        cur.id = "kesaMtPageSelCur";
+        cur.style.cssText = "color:#333;font-size:12px;font-weight:600;min-width:52px;text-align:center;";
+        cur.textContent = "第 " + __pmCurrentPage() + " 页";
+        const next = document.createElement("button");
+        next.textContent = "下一页 ▶";
+        next.style.cssText = btnStyle;
+        next.onclick = function() {
+          location.href = __pmUrlForPage(__pmCurrentPage() + 1);
+        };
+        const inp = document.createElement("input");
+        inp.type = "number";
+        inp.min = "1";
+        inp.placeholder = "N";
+        inp.style.cssText = "width:56px;border:1px solid #ccc;border-radius:4px;padding:2px 6px;font-size:12px;text-align:center;";
+        const go = document.createElement("button");
+        go.textContent = "跳转";
+        go.style.cssText = btnStyle;
+        go.onclick = function() {
+          const n = parseInt(inp.value, 10);
+          if (!n || n < 1)
+            return;
+          location.href = __pmUrlForPage(n);
+        };
+        inp.addEventListener("keydown", function(e) {
+          if (e.key === "Enter")
+            go.onclick();
+        });
+        box.appendChild(prev);
+        box.appendChild(cur);
+        box.appendChild(next);
+        box.appendChild(inp);
+        box.appendChild(go);
+        if (afterWf)
+          wrap.insertAdjacentElement("afterend", box);
+        else
+          wrap.appendChild(box);
+        prev.disabled = __pmCurrentPage() <= 1;
+        console.log("[kesa] 页码选择器已注入");
+      } catch (e) {
+      }
+    }
+    try {
+      if (!document.getElementById("__kesaPageMaxCss")) {
+        const st = document.createElement("style");
+        st.id = "__kesaPageMaxCss";
+        st.textContent = ".kesaPageMaxGo{display:block;text-align:center;font-size:11px;font-weight:600;color:#ff0;background:rgba(64,64,64,.85);border-radius:8px;padding:3px 6px;margin:4px 6px;line-height:1.5;cursor:pointer}.kesaPageMaxGo:hover{background:#6531ff}";
+        (document.head || document.documentElement).appendChild(st);
+      }
+    } catch (e) {
+    }
+    let __pmLastPage = 0;
+    __pmMigrate();
+    setTimeout(function() {
+      __pmPageSel();
+      __pmBtn();
+    }, 1e3);
+    setInterval(function() {
+      try {
+        const pg = __pmCurrentPage();
+        if (pg !== __pmLastPage) {
+          __pmLastPage = pg;
+          __pmRecord(pg);
+        }
+        __pmMigrate();
+        __pmBtn();
+        __pmPageSel();
+      } catch (e) {
+      }
+    }, 2e3);
+  })();
+  window.__kesaRead = {
+    readIds: __readIds,
+    hideReadCards: __hideReadCards,
+    hideHistoryRead: __hideHistoryRead,
+    historyReadSnapshot: __historyReadSnapshot,
+    markRead: __markRead,
+    applyReadClasses: __applyReadClasses,
+    applyHideReadCards: __applyHideReadCards,
+    applyHideNameFilter: __applyHideNameFilter,
+    initReadTracking: __initReadTracking,
+    extractId: __extractId
+  };
+  window.__kesaWd = {
+    cfg: __wdvCfg,
+    nameFilter: __nameFilter,
+    bTags: __bTags,
+    aTags: __aTags,
+    showInfoOnPicFail: __showInfoOnPicFail,
+    stateHoverPic: __stateHoverPic,
+    upload: __wdvUpload,
+    download: __wdvDownload,
+    autoSync: __wdvAutoSync,
+    autoPush: __wdvAutoPush
+  };
+  window.__kesaPage = {
+    stateKey: __kesaStateKey,
+    savePageState: __kesaSavePageState,
+    restorePage: __kesaRestorePage,
+    isNX: __kesaIsNX,
+    curPage: __kesaCurPage,
+    pageUrl: __kesaPageUrl,
+    pageInd: __kesaPageInd,
+    mkSwitchRow: __mkSwitchRow,
+    fillWebDAVSection: __fillWebDAVSection,
+    fillReadSection: __fillReadSection,
+    fillNameFilterSection: __fillNameFilterSection,
+    fillTagSection: __fillTagSection,
+    fillCardInfoSectionObserver: __fillCardInfoSectionObserver
+  };
   const CONFIG$1 = {
     /** 默认的种子表格 dom selector */
     torrentListTable: "table.torrents",
@@ -4906,7 +4823,8 @@
     Iframe_Width: 1260,
     /** NOTE: 站点特殊操作 */
     special: function() {
-      $("ksearchboxmain") ? $("ksearchboxmain").style.display = "none" : null;
+      const _box = typeof $ === "function" && $("ksearchboxmain") || document.getElementById("ksearchboxmain");
+      _box ? _box.style.display = "none" : null;
       const link = document.querySelector('a[href="?sort=7&type=asc&seeders_begin=1"]');
       link ? link.childNodes[0].style.color = "black" : null;
       let np = document.querySelector("img#nexus-preview");
@@ -4938,6 +4856,11 @@
       const category = categoryImg ? categoryImg.alt : "";
       if (!category)
         return;
+      const _all = get_store_value(__aTags);
+      if (!_all.includes(category))
+        __aTags.set([..._all, category]);
+      if (get_store_value(__bTags).includes(category))
+        return;
       const categoryLinkDOM = categoryImg.parentNode;
       const categoryLink = categoryLinkDOM.href;
       const categoryNumber = categoryLink.slice(-3);
@@ -4947,14 +4870,17 @@
       const torrentNameLink = row.querySelector(".torrentname a");
       const torrentName = torrentNameLink ? torrentNameLink.textContent.trim() : "";
       const torrentLink = torrentNameLink.href;
-      const pattern = /id=(\d+)&hit/;
+      const pattern = /id=(\d+)/;
       const match = torrentLink.match(pattern);
       const torrentId = match ? parseInt(match[1]) : null;
-      const picLink = row.querySelector(".torrentname img").getAttribute("data-src");
+      const _picImg = row.querySelector(".torrentname img");
+      const picLink = _picImg ? _picImg.getAttribute("data-src") || "" : "";
       const desCell = row.querySelector(".torrentname td:nth-child(2)");
+      if (!desCell)
+        return;
       const length = desCell.childNodes.length - 1;
       const desDom = desCell.childNodes[length];
-      const description = desDom.nodeName == "#text" ? desDom.textContent.trim() : "";
+      const description = desDom && desDom.nodeName == "#text" ? desDom.textContent.trim() : "";
       const place_at_the_top = row.querySelectorAll(".torrentname img.sticky");
       const pattMsg = place_at_the_top[0] ? place_at_the_top[0].title : "";
       const tempTagDom = Array.from(row.querySelectorAll(".torrentname font"));
@@ -4973,7 +4899,7 @@
       const downloadLink = `download.php?id=${torrentId}`;
       const collectLink = `javascript: bookmark(${torrentId},${torrentIndex});`;
       const collectDOM = row.querySelector(".torrentname a[id^='bookmark']");
-      const collectState = collectDOM.children[0].alt;
+      const collectState = collectDOM && collectDOM.children && collectDOM.children[0] ? collectDOM.children[0].alt : "";
       const commentsLink = row.querySelector("td.rowfollow:nth-child(3) a");
       const comments = commentsLink ? parseInt(commentsLink.textContent) : 0;
       const uploadDateSpan = row.querySelector("td:nth-child(4) span");
@@ -5215,10 +5141,192 @@
     });
     return data;
   }
-  const SITE = {
-    "kamept.com": CONFIG$1,
-    "kp.m-team.cc": CONFIG
+  const __isPTT = /pttime\.org|nicept\.net|ptfans\.cc/i.test(location.hostname);
+  function __ksDetailUrl(it) {
+    if (__isPTT)
+      return it && it.torrentLink || "/details.php?id=" + it.id + "&hit=1";
+    return "/detail/" + it.id;
+  }
+  const __PTT_CAT_MAP = {
+    "100": "100",
+    "401": "401",
+    "402": "402",
+    "403": "407",
+    "404": "408",
+    "405": "450",
+    "406": "404",
+    "407": "405",
+    "408": "405",
+    "409": "423",
+    "411": "406",
+    "412": "449",
+    "420": "443",
+    "421": "450",
+    "422": "422",
+    "423": "450",
+    "430": "450"
   };
+  function __pttParseSize(s) {
+    s = (s || "").trim().toUpperCase();
+    const m = s.match(/([\d.]+)\s*(B|KB|MB|GB|TB)/);
+    if (!m)
+      return 0;
+    const mult = { B: 1, KB: 1024, MB: 1048576, GB: 1073741824, TB: 1099511627776 }[m[2]] || 1;
+    return Math.round(parseFloat(m[1]) * mult);
+  }
+  function __pttParseCreated(s) {
+    s = (s || "").trim();
+    let d = /* @__PURE__ */ new Date();
+    let yr = s.match(/(\d+)\s*年/), mo = s.match(/(\d+)\s*月/), wk = s.match(/(\d+)\s*周/), dy = s.match(/(\d+)\s*天/), hr = s.match(/(\d+)\s*时/);
+    if (yr)
+      d.setFullYear(d.getFullYear() - parseInt(yr[1]));
+    if (mo)
+      d.setMonth(d.getMonth() - parseInt(mo[1]));
+    if (wk)
+      d.setDate(d.getDate() - parseInt(wk[1]) * 7);
+    if (dy)
+      d.setDate(d.getDate() - parseInt(dy[1]));
+    if (hr)
+      d.setHours(d.getHours() - parseInt(hr[1]));
+    return d.toISOString();
+  }
+  const __NX_CFG = {
+    "pttime.org": { table: "#torrenttable", cSize: 10, cSeeders: 11, cLeechers: 12, cCompleted: 13, cComments: 7, cCreated: 9, discFont: true },
+    "nicept.net": { table: "table.torrents", cSize: 7, cSeeders: 8, cLeechers: 9, cCompleted: 10, cComments: 5, cCreated: 6, discFont: false },
+    "ptfans.cc": { table: "table.torrents", cSize: 8, cSeeders: 9, cLeechers: 10, cCompleted: 11, cComments: 6, cCreated: 7, discFont: false }
+  };
+  function __nxHost() {
+    return location.hostname.replace(/^www\./, "");
+  }
+  function __pttParse(doc) {
+    const d = doc || document;
+    const cfg = __NX_CFG[__nxHost()] || { table: "#torrenttable", cSize: 10, cSeeders: 11, cLeechers: 12, cCompleted: 13, cComments: 7, cCreated: 9, discFont: true };
+    const table = d.querySelector(cfg.table) || d.getElementById("torrenttable") || d.querySelector("table.torrents");
+    if (!table)
+      return [];
+    const rows = Array.from(table.querySelectorAll("tr"));
+    const out = [];
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      const cells = Array.from(row.querySelectorAll("td"));
+      if (cells.length < 12)
+        continue;
+      const detailLink = Array.from(row.querySelectorAll('a[href*="details.php"]')).find(
+        (a) => !/userdetails/i.test(a.href) && /details\.php\?id=/.test(a.href)
+      );
+      if (!detailLink)
+        continue;
+      try {
+        const href = detailLink.href;
+        const idM = href.match(/id=(\d+)/);
+        const id = idM ? idM[1] : "";
+        const name = (detailLink.textContent || "").trim();
+        let category = "";
+        const catA = cells[0] && cells[0].querySelector('a[href*="cat="]');
+        if (catA) {
+          const cm = catA.href.match(/cat=(\d+)/);
+          if (cm)
+            category = __PTT_CAT_MAP[cm[1]] || cm[1];
+        }
+        let imageList = [];
+        try {
+          const imgs = row.querySelectorAll("td.torrentimg img, img.nexus-lazy-load, img.lazy-image, td.torrentimg a img");
+          for (let k = 0; k < imgs.length; k++) {
+            const im = imgs[k];
+            let s = im.getAttribute("data-src") || im.getAttribute("src") || im.getAttribute("data-original") || "";
+            if (!s)
+              continue;
+            if (/pic\/|trans\.gif|spacer|noimage|noposter|blank\.|loading\.gif/i.test(s))
+              continue;
+            if (s.startsWith("//"))
+              s = location.protocol + s;
+            else if (s.startsWith("/"))
+              s = location.origin + s;
+            else if (!/^https?:/i.test(s))
+              s = location.origin + "/" + s;
+            if (s) {
+              imageList = [s];
+              break;
+            }
+          }
+        } catch (e) {
+        }
+        if (!imageList.length && /ptfans\.cc/i.test(location.hostname)) {
+          try {
+            if ((window.__kesaImgDiag = (window.__kesaImgDiag || 0) + 1) <= 3) {
+              console.log("[封面诊断] ptfans 无图行HTML:", (row.outerHTML || "").slice(0, 400));
+            }
+          } catch (e2) {
+          }
+        }
+        const size = __pttParseSize(cells[cfg.cSize] ? cells[cfg.cSize].textContent : "");
+        const seeders = parseInt((cells[cfg.cSeeders] ? cells[cfg.cSeeders].textContent : "") || "0") || 0;
+        const leechers = parseInt((cells[cfg.cLeechers] ? cells[cfg.cLeechers].textContent : "") || "0") || 0;
+        const completed = parseInt((cells[cfg.cCompleted] ? cells[cfg.cCompleted].textContent : "") || "0") || 0;
+        const comments = parseInt((cells[cfg.cComments] ? cells[cfg.cComments].textContent : "") || "0") || 0;
+        let discount = "NORMAL";
+        if (cfg.discFont) {
+          const pEl = row.querySelector("font.promotion");
+          const pTxt = pEl ? pEl.textContent.trim() : "";
+          discount = pTxt.includes("免费") ? "FREE" : pTxt.includes("50") || pTxt.includes("半") ? "PERCENT_50" : "NORMAL";
+        } else {
+          if (row.querySelector("img.pro_free, img.pro_free2up"))
+            discount = "FREE";
+          else if (row.querySelector("img.pro_2xfree"))
+            discount = "2XFree";
+          else if (row.querySelector("img.pro_50pctdown, img.pro_50pctup"))
+            discount = "PERCENT_50";
+        }
+        let smallDescr = "";
+        const subEl = detailLink.parentElement ? detailLink.parentElement.querySelector("font:not(.promotion)") : null;
+        if (subEl)
+          smallDescr = subEl.textContent.trim();
+        let labels = 0;
+        row.querySelectorAll("span.tags").forEach((t) => {
+          const txt = t.textContent;
+          if (txt.includes("DIY"))
+            labels |= 1;
+          if (txt.includes("国配"))
+            labels |= 2;
+          if (txt.includes("中字"))
+            labels |= 4;
+        });
+        const createdDate = __pttParseCreated(cells[cfg.cCreated] ? cells[cfg.cCreated].textContent : "");
+        out.push({
+          name,
+          id,
+          size,
+          smallDescr,
+          labels,
+          category,
+          torrentLink: href,
+          imageList,
+          collection: false,
+          status: { seeders, leechers, comments, discount, toppingLevel: 0, createdDate, discountEndTime: null }
+        });
+      } catch (e) {
+      }
+    }
+    return out;
+  }
+  const SITE = {
+    // ---- M-Team NEW_MT 站 (mteamHijack.js 劫持路由) ----
+    "kp.m-team.cc": CONFIG,
+    "xp.m-team.cc": CONFIG,
+    "ap.m-team.cc": CONFIG,
+    "test2.m-team.cc": CONFIG,
+    // ---- NexusPHP DOM 站 (ptt.js 的 __pttParse 逻辑) ----
+    "kamept.com": CONFIG$1,
+    "pttime.org": { ...CONFIG$1, torrentListTable: "#torrenttable" },
+    "www.pttime.org": { ...CONFIG$1, torrentListTable: "#torrenttable" },
+    "nicept.net": { ...CONFIG$1, torrentListTable: "table.torrents" },
+    "ptfans.cc": { ...CONFIG$1, torrentListTable: "table.torrents" },
+    // mua.xloli.cc 为 NexusPHP(torrents.php), 列结构与 kamept 一致
+    "mua.xloli.cc": CONFIG$1
+  };
+  function IS_MT(domain) {
+    return /(?:^|\.)m-team\.cc$/i.test(domain || "") || /\.m-team\.cc/i.test(domain || "");
+  }
   function GET_CURRENT_PT_DOMAIN() {
     const domain = window.location.hostname;
     return domain;
@@ -5231,6 +5339,2347 @@
     const res = ((_a = SITE[domain]) == null ? void 0 : _a.torrentListTable) ?? null;
     console.log("|-> 站点selector:", res);
     return res;
+  }
+  function create_else_block_4(ctx) {
+    let div0;
+    let t1;
+    let div1;
+    return {
+      c() {
+        div0 = element("div");
+        div0.innerHTML = `<svg viewBox="0 0 32 32" width="24" height="24" xmlns="http://www.w3.org/2000/svg"><defs><style>.cls-1 {
+                  fill: none;
+                  stroke: #000;
+                  stroke-linecap: round;
+                  stroke-linejoin: round;
+                  stroke-width: 2px;
+                }
+              </style></defs><title></title><g data-name="43-browser" id="_43-browser"><rect class="cls-1" height="30" width="30" x="1" y="1"></rect><line class="cls-1" x1="1" x2="31" y1="9" y2="9"></line><line class="cls-1" x1="5" x2="7" y1="5" y2="5"></line><line class="cls-1" x1="11" x2="13" y1="5" y2="5"></line><line class="cls-1" x1="9" x2="25" y1="16" y2="16"></line><line class="cls-1" x1="7" x2="25" y1="20" y2="20"></line><line class="cls-1" x1="7" x2="25" y1="24" y2="24"></line></g></svg>`;
+        t1 = space();
+        div1 = element("div");
+        div1.textContent = "原有列表";
+      },
+      m(target, anchor) {
+        insert(target, div0, anchor);
+        insert(target, t1, anchor);
+        insert(target, div1, anchor);
+      },
+      d(detaching) {
+        if (detaching)
+          detach(div0);
+        if (detaching)
+          detach(t1);
+        if (detaching)
+          detach(div1);
+      }
+    };
+  }
+  function create_if_block_10(ctx) {
+    let div0;
+    let t0;
+    let div1;
+    return {
+      c() {
+        div0 = element("div");
+        div0.innerHTML = `<svg enable-background="new 0 0 64 64" width="24" height="24" id="Layer_1" version="1.1" viewBox="0 0 64 64"><path d="M19,2.875H3.5c-0.829,0-1.5,0.671-1.5,1.5v19.979c0,0.829,0.671,1.5,1.5,1.5H19c0.829,0,1.5-0.671,1.5-1.5V4.375  C20.5,3.546,19.829,2.875,19,2.875z M17.5,22.854H5V5.875h12.5V22.854z" fill="white"></path><path d="M19,28.773H3.5c-0.829,0-1.5,0.671-1.5,1.5v6.166c0,0.828,0.671,1.5,1.5,1.5H19c0.829,0,1.5-0.672,1.5-1.5v-6.166  C20.5,29.445,19.829,28.773,19,28.773z M17.5,34.939H5v-3.166h12.5V34.939z" fill="white"></path><path d="M19,40.859H3.5c-0.829,0-1.5,0.672-1.5,1.5v17.266c0,0.828,0.671,1.5,1.5,1.5H19c0.829,0,1.5-0.672,1.5-1.5V42.359  C20.5,41.531,19.829,40.859,19,40.859z M17.5,58.125H5V43.859h12.5V58.125z" fill="white"></path><path d="M40,2.875H24.5c-0.829,0-1.5,0.671-1.5,1.5v14.25c0,0.829,0.671,1.5,1.5,1.5H40c0.828,0,1.5-0.671,1.5-1.5V4.375  C41.5,3.546,40.828,2.875,40,2.875z M38.5,17.125H26V5.875h12.5V17.125z" fill="white"></path><path d="M40,23.125H24.5c-0.829,0-1.5,0.671-1.5,1.5V46.5c0,0.828,0.671,1.5,1.5,1.5H40c0.828,0,1.5-0.672,1.5-1.5V24.625  C41.5,23.796,40.828,23.125,40,23.125z M38.5,45H26V26.125h12.5V45z" fill="white"></path><path d="M40,51H24.5c-0.829,0-1.5,0.672-1.5,1.5v7.125c0,0.828,0.671,1.5,1.5,1.5H40c0.828,0,1.5-0.672,1.5-1.5V52.5  C41.5,51.672,40.828,51,40,51z M38.5,58.125H26V54h12.5V58.125z" fill="white"></path><path d="M60.5,2.875H45c-0.828,0-1.5,0.671-1.5,1.5v35.171c0,0.828,0.672,1.5,1.5,1.5h15.5c0.828,0,1.5-0.672,1.5-1.5V4.375  C62,3.546,61.328,2.875,60.5,2.875z M59,38.046H46.5V5.875H59V38.046z" fill="white"></path><path d="M60.5,44.346H45c-0.828,0-1.5,0.672-1.5,1.5v13.779c0,0.828,0.672,1.5,1.5,1.5h15.5c0.828,0,1.5-0.672,1.5-1.5V45.846  C62,45.018,61.328,44.346,60.5,44.346z M59,58.125H46.5V47.346H59V58.125z" fill="white"></path></svg>`;
+        t0 = space();
+        div1 = element("div");
+        div1.textContent = "瀑布流";
+      },
+      m(target, anchor) {
+        insert(target, div0, anchor);
+        insert(target, t0, anchor);
+        insert(target, div1, anchor);
+      },
+      d(detaching) {
+        if (detaching)
+          detach(div0);
+        if (detaching)
+          detach(t0);
+        if (detaching)
+          detach(div1);
+      }
+    };
+  }
+  function create_if_block_9$1(ctx) {
+    let button0;
+    let t1;
+    let button1;
+    let t3;
+    let button2;
+    let t4;
+    let t5;
+    let t6;
+    let button3;
+    let mounted;
+    let dispose;
+    return {
+      c() {
+        button0 = element("button");
+        button0.textContent = "[d]切换宽度";
+        t1 = space();
+        button1 = element("button");
+        button1.textContent = "[d]显示详情";
+        t3 = space();
+        button2 = element("button");
+        t4 = text("[d]");
+        t5 = text(
+          /*label_switchMode*/
+          ctx[1]
+        );
+        t6 = space();
+        button3 = element("button");
+        button3.textContent = "[d]iframe";
+        attr(button0, "class", "sideP__btn svelte-mdsgbd");
+        attr(button1, "class", "sideP__btn svelte-mdsgbd");
+        attr(button2, "class", "sideP__btn svelte-mdsgbd");
+        attr(button3, "class", "sideP__btn svelte-mdsgbd");
+      },
+      m(target, anchor) {
+        insert(target, button0, anchor);
+        insert(target, t1, anchor);
+        insert(target, button1, anchor);
+        insert(target, t3, anchor);
+        insert(target, button2, anchor);
+        append(button2, t4);
+        append(button2, t5);
+        insert(target, t6, anchor);
+        insert(target, button3, anchor);
+        if (!mounted) {
+          dispose = [
+            listen(
+              button0,
+              "click",
+              /*config_changeWidth*/
+              ctx[23]
+            ),
+            listen(
+              button1,
+              "click",
+              /*config_showAllDetails*/
+              ctx[24]
+            ),
+            listen(
+              button2,
+              "click",
+              /*config_switchMode*/
+              ctx[25]
+            ),
+            listen(
+              button3,
+              "click",
+              /*config_changeLoadMode*/
+              ctx[26]
+            )
+          ];
+          mounted = true;
+        }
+      },
+      p(ctx2, dirty) {
+        if (dirty[0] & /*label_switchMode*/
+        2)
+          set_data(
+            t5,
+            /*label_switchMode*/
+            ctx2[1]
+          );
+      },
+      d(detaching) {
+        if (detaching)
+          detach(button0);
+        if (detaching)
+          detach(t1);
+        if (detaching)
+          detach(button1);
+        if (detaching)
+          detach(t3);
+        if (detaching)
+          detach(button2);
+        if (detaching)
+          detach(t6);
+        if (detaching)
+          detach(button3);
+        mounted = false;
+        run_all(dispose);
+      }
+    };
+  }
+  function create_if_block$4(ctx) {
+    let div14;
+    let div13;
+    let div0;
+    let p;
+    let t1;
+    let button;
+    let t2;
+    let show_if = /m-team\.cc/i.test(
+      /*$_current_domain*/
+      ctx[9]
+    );
+    let t3;
+    let div2;
+    let h10;
+    let t5;
+    let div1;
+    let switch0;
+    let updating_checked;
+    let t6;
+    let switch1;
+    let updating_checked_1;
+    let t7;
+    let switch2;
+    let updating_checked_2;
+    let t8;
+    let switch3;
+    let updating_checked_3;
+    let t9;
+    let switch4;
+    let updating_checked_4;
+    let t10;
+    let t11;
+    let switch5;
+    let t12;
+    let switch6;
+    let updating_checked_5;
+    let t13;
+    let switch7;
+    let updating_checked_6;
+    let t14;
+    let t15;
+    let div4;
+    let h11;
+    let t17;
+    let div3;
+    let switch8;
+    let t18;
+    let switch9;
+    let t19;
+    let switch10;
+    let t20;
+    let switch11;
+    let t21;
+    let switch12;
+    let t22;
+    let div8;
+    let h12;
+    let t24;
+    let div5;
+    let switch13;
+    let updating_checked_7;
+    let t25;
+    let div7;
+    let h3;
+    let t27;
+    let div6;
+    let switch14;
+    let updating_checked_8;
+    let t28;
+    let switch15;
+    let updating_checked_9;
+    let t29;
+    let switch16;
+    let updating_checked_10;
+    let t30;
+    let switch17;
+    let updating_checked_11;
+    let t31;
+    let switch18;
+    let updating_checked_12;
+    let t32;
+    let switch19;
+    let updating_checked_13;
+    let t33;
+    let switch20;
+    let updating_checked_14;
+    let t34;
+    let t35;
+    let div9;
+    let t36;
+    let div10;
+    let t37;
+    let div11;
+    let t38;
+    let div12;
+    let div14_transition;
+    let current;
+    let mounted;
+    let dispose;
+    let if_block0 = show_if && create_if_block_8$1(ctx);
+    function switch0_checked_binding(value) {
+      ctx[34](value);
+    }
+    let switch0_props = {
+      title_fixed: "显示模式",
+      title_green: "瀑布流",
+      title_red: "原始表格",
+      label: "原始表格模式仅支持点击图片显示iframe和加载下一页",
+      func: (
+        /*func*/
+        ctx[33]
+      )
+    };
+    if (
+      /*$_show_mode*/
+      ctx[4] !== void 0
+    ) {
+      switch0_props.checked = /*$_show_mode*/
+      ctx[4];
+    }
+    switch0 = new Switch({ props: switch0_props });
+    binding_callbacks.push(() => bind(switch0, "checked", switch0_checked_binding));
+    function switch1_checked_binding(value) {
+      ctx[35](value);
+    }
+    let switch1_props = {
+      title_fixed: "加载下一页方式",
+      title_green: "按钮(默认)",
+      title_red: "滚动(谨慎使用)",
+      label: "滚动模式下 MT 等网站频繁使用可能会导致 120",
+      green_state: false
+    };
+    if (
+      /*$_turnPage*/
+      ctx[2] !== void 0
+    ) {
+      switch1_props.checked = /*$_turnPage*/
+      ctx[2];
+    }
+    switch1 = new Switch({ props: switch1_props });
+    binding_callbacks.push(() => bind(switch1, "checked", switch1_checked_binding));
+    function switch2_checked_binding(value) {
+      ctx[36](value);
+    }
+    let switch2_props = {
+      title_fixed: "卡片移动动画",
+      title_green: "开启",
+      title_red: "关闭",
+      label: "开启关闭瀑布流卡片高度变化时的缓动动画"
+    };
+    if (
+      /*$_animated*/
+      ctx[11] !== void 0
+    ) {
+      switch2_props.checked = /*$_animated*/
+      ctx[11];
+    }
+    switch2 = new Switch({ props: switch2_props });
+    binding_callbacks.push(() => bind(switch2, "checked", switch2_checked_binding));
+    function switch3_checked_binding(value) {
+      ctx[37](value);
+    }
+    let switch3_props = {
+      title_fixed: "侧边栏debug按钮",
+      title_green: "隐藏(默认)",
+      title_red: "显示(开发用)",
+      label: "显示/隐藏侧边栏上的调试按钮(开发用)",
+      green_state: false
+    };
+    if (
+      /*$_show_debug_btn*/
+      ctx[8] !== void 0
+    ) {
+      switch3_props.checked = /*$_show_debug_btn*/
+      ctx[8];
+    }
+    switch3 = new Switch({ props: switch3_props });
+    binding_callbacks.push(() => bind(switch3, "checked", switch3_checked_binding));
+    function switch4_checked_binding(value) {
+      ctx[38](value);
+    }
+    let switch4_props = {
+      title_fixed: "悬浮预览大图",
+      title_green: "默认开启",
+      title_red: "核心功能->确定不用再关",
+      label: "鼠标悬浮到种子图片时显示大图预览"
+    };
+    if (
+      /*$_show_nexus_pic*/
+      ctx[12] !== void 0
+    ) {
+      switch4_props.checked = /*$_show_nexus_pic*/
+      ctx[12];
+    }
+    switch4 = new Switch({ props: switch4_props });
+    binding_callbacks.push(() => bind(switch4, "checked", switch4_checked_binding));
+    let if_block1 = (
+      /*$_show_nexus_pic*/
+      ctx[12] && create_if_block_7$1(ctx)
+    );
+    switch5 = new Switch({
+      props: {
+        title_fixed: `悬浮预览延迟${/*$_delay_nexus_pic*/
+      ctx[14] ? ":" + /*$_delay_nexus_pic*/
+      ctx[14] + "ms" : ""}`,
+        title_red: `${/*$_delay_nexus_pic*/
+      ctx[14] ? "" : "无延迟"}`,
+        label: "防止无意滑动时大图打开妨碍预览",
+        type: "range",
+        $$slots: { default: [create_default_slot_5] },
+        $$scope: { ctx }
+      }
+    });
+    function switch6_checked_binding(value) {
+      ctx[41](value);
+    }
+    let switch6_props = {
+      title_fixed: "图片加载失败时显示标题",
+      title_green: "显示标题",
+      title_red: "仅提示加载失败",
+      label: "图片加载失败时在卡片上显示种子标题",
+      green_state: false
+    };
+    if (
+      /*$_pic_failed_showInfo*/
+      ctx[15] !== void 0
+    ) {
+      switch6_props.checked = /*$_pic_failed_showInfo*/
+      ctx[15];
+    }
+    switch6 = new Switch({ props: switch6_props });
+    binding_callbacks.push(() => bind(switch6, "checked", switch6_checked_binding));
+    function switch7_checked_binding(value) {
+      ctx[42](value);
+    }
+    let switch7_props = {
+      title_fixed: "预览大图默认状态",
+      title_green: "铺满(contain)",
+      title_red: "尽量原图大小",
+      label: "开启=铺满(contain); 关闭=尽量原图大小(scale-down)",
+      green_state: false
+    };
+    if (
+      /*$_state_hover_pic*/
+      ctx[16] !== void 0
+    ) {
+      switch7_props.checked = /*$_state_hover_pic*/
+      ctx[16];
+    }
+    switch7 = new Switch({ props: switch7_props });
+    binding_callbacks.push(() => bind(switch7, "checked", switch7_checked_binding));
+    switch8 = new Switch({
+      props: {
+        title_fixed: `卡片列数: ${/*$_card_layout*/
+      ctx[17].column}`,
+        label: "范围: 2~7 列",
+        type: "range",
+        $$slots: { default: [create_default_slot_4] },
+        $$scope: { ctx }
+      }
+    });
+    switch9 = new Switch({
+      props: {
+        title_fixed: `卡片间距: ${/*$_card_layout*/
+      ctx[17].gap}px`,
+        label: "范围: 2~100 px",
+        type: "range",
+        $$slots: { default: [create_default_slot_3] },
+        $$scope: { ctx }
+      }
+    });
+    switch10 = new Switch({
+      props: {
+        title_fixed: `浏览器边距: ${/*$_card_layout*/
+      ctx[17].margin ?? 20}px`,
+        label: "范围: 0~500 px(可输入)",
+        type: "range",
+        $$slots: { default: [create_default_slot_2] },
+        $$scope: { ctx }
+      }
+    });
+    switch11 = new Switch({
+      props: {
+        title_fixed: `预览窗口宽度: ${/*$_previewWidth*/
+      ctx[18] > 0 ? (
+        /*$_previewWidth*/
+        ctx[18]
+      ) : SITE[
+        /*$_current_domain*/
+        ctx[9]
+      ] ? SITE[
+        /*$_current_domain*/
+        ctx[9]
+      ].Iframe_Width : 1e3}px`,
+        label: "范围: 400~2000 px(0=站点默认)",
+        type: "range",
+        $$slots: { default: [create_default_slot_1] },
+        $$scope: { ctx }
+      }
+    });
+    switch12 = new Switch({
+      props: {
+        title_fixed: `预览窗口高度: ${/*$_previewHeight*/
+      ctx[19] > 0 ? (
+        /*$_previewHeight*/
+        ctx[19]
+      ) : 96}%`,
+        label: "范围: 40~100 %(0=默认)",
+        type: "range",
+        $$slots: { default: [create_default_slot] },
+        $$scope: { ctx }
+      }
+    });
+    function switch13_checked_binding(value) {
+      ctx[56](value);
+    }
+    let switch13_props = {
+      title_fixed: "卡片信息",
+      title_green: "显示下方所选信息(精简)",
+      title_red: "显示所有信息(较乱)",
+      green_state: false
+    };
+    if (
+      /*$_CARD_SHOW*/
+      ctx[3].all !== void 0
+    ) {
+      switch13_props.checked = /*$_CARD_SHOW*/
+      ctx[3].all;
+    }
+    switch13 = new Switch({ props: switch13_props });
+    binding_callbacks.push(() => bind(switch13, "checked", switch13_checked_binding));
+    switch13.$on(
+      "click",
+      /*sortMasonryBundle*/
+      ctx[27]
+    );
+    function switch14_checked_binding(value) {
+      ctx[57](value);
+    }
+    let switch14_props = { title_fixed: "显示种子名称" };
+    if (
+      /*$_CARD_SHOW*/
+      ctx[3].title !== void 0
+    ) {
+      switch14_props.checked = /*$_CARD_SHOW*/
+      ctx[3].title;
+    }
+    switch14 = new Switch({ props: switch14_props });
+    binding_callbacks.push(() => bind(switch14, "checked", switch14_checked_binding));
+    function switch15_checked_binding(value) {
+      ctx[58](value);
+    }
+    let switch15_props = { title_fixed: "显示置顶和免费" };
+    if (
+      /*$_CARD_SHOW*/
+      ctx[3].free !== void 0
+    ) {
+      switch15_props.checked = /*$_CARD_SHOW*/
+      ctx[3].free;
+    }
+    switch15 = new Switch({ props: switch15_props });
+    binding_callbacks.push(() => bind(switch15, "checked", switch15_checked_binding));
+    function switch16_checked_binding(value) {
+      ctx[59](value);
+    }
+    let switch16_props = { title_fixed: "显示副标题" };
+    if (
+      /*$_CARD_SHOW*/
+      ctx[3].sub_title !== void 0
+    ) {
+      switch16_props.checked = /*$_CARD_SHOW*/
+      ctx[3].sub_title;
+    }
+    switch16 = new Switch({ props: switch16_props });
+    binding_callbacks.push(() => bind(switch16, "checked", switch16_checked_binding));
+    function switch17_checked_binding(value) {
+      ctx[60](value);
+    }
+    let switch17_props = { title_fixed: "显示标签" };
+    if (
+      /*$_CARD_SHOW*/
+      ctx[3].tags !== void 0
+    ) {
+      switch17_props.checked = /*$_CARD_SHOW*/
+      ctx[3].tags;
+    }
+    switch17 = new Switch({ props: switch17_props });
+    binding_callbacks.push(() => bind(switch17, "checked", switch17_checked_binding));
+    function switch18_checked_binding(value) {
+      ctx[61](value);
+    }
+    let switch18_props = { title_fixed: "显示 [大小/下载/收藏]" };
+    if (
+      /*$_CARD_SHOW*/
+      ctx[3].size_download_collect !== void 0
+    ) {
+      switch18_props.checked = /*$_CARD_SHOW*/
+      ctx[3].size_download_collect;
+    }
+    switch18 = new Switch({ props: switch18_props });
+    binding_callbacks.push(() => bind(switch18, "checked", switch18_checked_binding));
+    function switch19_checked_binding(value) {
+      ctx[62](value);
+    }
+    let switch19_props = { title_fixed: "显示上传时间" };
+    if (
+      /*$_CARD_SHOW*/
+      ctx[3].upload_time !== void 0
+    ) {
+      switch19_props.checked = /*$_CARD_SHOW*/
+      ctx[3].upload_time;
+    }
+    switch19 = new Switch({ props: switch19_props });
+    binding_callbacks.push(() => bind(switch19, "checked", switch19_checked_binding));
+    function switch20_checked_binding(value) {
+      ctx[63](value);
+    }
+    let switch20_props = { title_fixed: "显示 [评论/上传/下载/完成]" };
+    if (
+      /*$_CARD_SHOW*/
+      ctx[3].statistics !== void 0
+    ) {
+      switch20_props.checked = /*$_CARD_SHOW*/
+      ctx[3].statistics;
+    }
+    switch20 = new Switch({ props: switch20_props });
+    binding_callbacks.push(() => bind(switch20, "checked", switch20_checked_binding));
+    return {
+      c() {
+        div14 = element("div");
+        div13 = element("div");
+        div0 = element("div");
+        p = element("p");
+        p.textContent = "详细配置面板";
+        t1 = space();
+        button = element("button");
+        button.innerHTML = `<svg class="feather feather-x" fill="none" height="28" width="28" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24"><line x1="20" x2="6" y1="6" y2="20"></line><line x1="6" x2="20" y1="6" y2="20"></line></svg>`;
+        t2 = space();
+        if (if_block0)
+          if_block0.c();
+        t3 = space();
+        div2 = element("div");
+        h10 = element("h1");
+        h10.textContent = "常用配置";
+        t5 = space();
+        div1 = element("div");
+        create_component(switch0.$$.fragment);
+        t6 = space();
+        create_component(switch1.$$.fragment);
+        t7 = space();
+        create_component(switch2.$$.fragment);
+        t8 = space();
+        create_component(switch3.$$.fragment);
+        t9 = space();
+        create_component(switch4.$$.fragment);
+        t10 = space();
+        if (if_block1)
+          if_block1.c();
+        t11 = space();
+        create_component(switch5.$$.fragment);
+        t12 = space();
+        create_component(switch6.$$.fragment);
+        t13 = space();
+        create_component(switch7.$$.fragment);
+        t14 = space();
+        t15 = space();
+        div4 = element("div");
+        h11 = element("h1");
+        h11.textContent = "卡片布局";
+        t17 = space();
+        div3 = element("div");
+        create_component(switch8.$$.fragment);
+        t18 = space();
+        create_component(switch9.$$.fragment);
+        t19 = space();
+        create_component(switch10.$$.fragment);
+        t20 = space();
+        create_component(switch11.$$.fragment);
+        t21 = space();
+        create_component(switch12.$$.fragment);
+        t22 = space();
+        div8 = element("div");
+        h12 = element("h1");
+        h12.textContent = "卡片信息";
+        t24 = space();
+        div5 = element("div");
+        create_component(switch13.$$.fragment);
+        t25 = space();
+        div7 = element("div");
+        h3 = element("h3");
+        h3.textContent = "配置常驻卡片信息";
+        t27 = space();
+        div6 = element("div");
+        create_component(switch14.$$.fragment);
+        t28 = space();
+        create_component(switch15.$$.fragment);
+        t29 = space();
+        create_component(switch16.$$.fragment);
+        t30 = space();
+        create_component(switch17.$$.fragment);
+        t31 = space();
+        create_component(switch18.$$.fragment);
+        t32 = space();
+        create_component(switch19.$$.fragment);
+        t33 = space();
+        create_component(switch20.$$.fragment);
+        t34 = space();
+        t35 = space();
+        div9 = element("div");
+        t36 = space();
+        div10 = element("div");
+        t37 = space();
+        div11 = element("div");
+        t38 = space();
+        div12 = element("div");
+        attr(div0, "class", "configP_title svelte-mdsgbd");
+        attr(h10, "class", "s_title");
+        attr(div1, "class", "s_panel");
+        attr(div2, "class", "section svelte-mdsgbd");
+        attr(h11, "class", "s_title");
+        attr(div3, "class", "s_panel");
+        attr(div4, "class", "section svelte-mdsgbd");
+        attr(h12, "class", "s_title");
+        attr(div5, "class", "s_panel");
+        attr(h3, "class", "s_title");
+        attr(div6, "class", "s_panel");
+        attr(div7, "class", "section svelte-mdsgbd");
+        attr(div8, "class", "section svelte-mdsgbd");
+        attr(div9, "class", "section svelte-mdsgbd");
+        attr(div9, "id", "kesaPanelWebdav");
+        attr(div10, "class", "section svelte-mdsgbd");
+        attr(div10, "id", "kesaPanelRead");
+        attr(div11, "class", "section svelte-mdsgbd");
+        attr(div11, "id", "kesaPanelTag");
+        attr(div12, "class", "section svelte-mdsgbd");
+        attr(div12, "id", "kesaPanelName");
+        attr(div13, "class", "configP_holder svelte-mdsgbd");
+        attr(div14, "class", "configP svelte-mdsgbd");
+      },
+      m(target, anchor) {
+        insert(target, div14, anchor);
+        append(div14, div13);
+        append(div13, div0);
+        append(div0, p);
+        append(div0, t1);
+        append(div0, button);
+        append(div13, t2);
+        if (if_block0)
+          if_block0.m(div13, null);
+        append(div13, t3);
+        append(div13, div2);
+        append(div2, h10);
+        append(div2, t5);
+        append(div2, div1);
+        mount_component(switch0, div1, null);
+        append(div1, t6);
+        mount_component(switch1, div1, null);
+        append(div1, t7);
+        mount_component(switch2, div1, null);
+        append(div1, t8);
+        mount_component(switch3, div1, null);
+        append(div1, t9);
+        mount_component(switch4, div1, null);
+        append(div1, t10);
+        if (if_block1)
+          if_block1.m(div1, null);
+        append(div1, t11);
+        mount_component(switch5, div1, null);
+        append(div1, t12);
+        mount_component(switch6, div1, null);
+        append(div1, t13);
+        mount_component(switch7, div1, null);
+        append(div1, t14);
+        append(div13, t15);
+        append(div13, div4);
+        append(div4, h11);
+        append(div4, t17);
+        append(div4, div3);
+        mount_component(switch8, div3, null);
+        append(div3, t18);
+        mount_component(switch9, div3, null);
+        append(div3, t19);
+        mount_component(switch10, div3, null);
+        append(div3, t20);
+        mount_component(switch11, div3, null);
+        append(div3, t21);
+        mount_component(switch12, div3, null);
+        append(div13, t22);
+        append(div13, div8);
+        append(div8, h12);
+        append(div8, t24);
+        append(div8, div5);
+        mount_component(switch13, div5, null);
+        append(div8, t25);
+        append(div8, div7);
+        append(div7, h3);
+        append(div7, t27);
+        append(div7, div6);
+        mount_component(switch14, div6, null);
+        append(div6, t28);
+        mount_component(switch15, div6, null);
+        append(div6, t29);
+        mount_component(switch16, div6, null);
+        append(div6, t30);
+        mount_component(switch17, div6, null);
+        append(div6, t31);
+        mount_component(switch18, div6, null);
+        append(div6, t32);
+        mount_component(switch19, div6, null);
+        append(div6, t33);
+        mount_component(switch20, div6, null);
+        append(div6, t34);
+        append(div13, t35);
+        append(div13, div9);
+        append(div13, t36);
+        append(div13, div10);
+        append(div13, t37);
+        append(div13, div11);
+        append(div13, t38);
+        append(div13, div12);
+        current = true;
+        if (!mounted) {
+          dispose = [
+            listen(
+              button,
+              "click",
+              /*click_handler_1*/
+              ctx[31]
+            ),
+            listen(div14, "click", self(
+              /*click_handler_5*/
+              ctx[78]
+            ))
+          ];
+          mounted = true;
+        }
+      },
+      p(ctx2, dirty) {
+        if (dirty[0] & /*$_current_domain*/
+        512)
+          show_if = /m-team\.cc/i.test(
+            /*$_current_domain*/
+            ctx2[9]
+          );
+        if (show_if) {
+          if (if_block0) {
+            if_block0.p(ctx2, dirty);
+            if (dirty[0] & /*$_current_domain*/
+            512) {
+              transition_in(if_block0, 1);
+            }
+          } else {
+            if_block0 = create_if_block_8$1(ctx2);
+            if_block0.c();
+            transition_in(if_block0, 1);
+            if_block0.m(div13, t3);
+          }
+        } else if (if_block0) {
+          group_outros();
+          transition_out(if_block0, 1, 1, () => {
+            if_block0 = null;
+          });
+          check_outros();
+        }
+        const switch0_changes = {};
+        if (!updating_checked && dirty[0] & /*$_show_mode*/
+        16) {
+          updating_checked = true;
+          switch0_changes.checked = /*$_show_mode*/
+          ctx2[4];
+          add_flush_callback(() => updating_checked = false);
+        }
+        switch0.$set(switch0_changes);
+        const switch1_changes = {};
+        if (!updating_checked_1 && dirty[0] & /*$_turnPage*/
+        4) {
+          updating_checked_1 = true;
+          switch1_changes.checked = /*$_turnPage*/
+          ctx2[2];
+          add_flush_callback(() => updating_checked_1 = false);
+        }
+        switch1.$set(switch1_changes);
+        const switch2_changes = {};
+        if (!updating_checked_2 && dirty[0] & /*$_animated*/
+        2048) {
+          updating_checked_2 = true;
+          switch2_changes.checked = /*$_animated*/
+          ctx2[11];
+          add_flush_callback(() => updating_checked_2 = false);
+        }
+        switch2.$set(switch2_changes);
+        const switch3_changes = {};
+        if (!updating_checked_3 && dirty[0] & /*$_show_debug_btn*/
+        256) {
+          updating_checked_3 = true;
+          switch3_changes.checked = /*$_show_debug_btn*/
+          ctx2[8];
+          add_flush_callback(() => updating_checked_3 = false);
+        }
+        switch3.$set(switch3_changes);
+        const switch4_changes = {};
+        if (!updating_checked_4 && dirty[0] & /*$_show_nexus_pic*/
+        4096) {
+          updating_checked_4 = true;
+          switch4_changes.checked = /*$_show_nexus_pic*/
+          ctx2[12];
+          add_flush_callback(() => updating_checked_4 = false);
+        }
+        switch4.$set(switch4_changes);
+        if (
+          /*$_show_nexus_pic*/
+          ctx2[12]
+        ) {
+          if (if_block1) {
+            if_block1.p(ctx2, dirty);
+            if (dirty[0] & /*$_show_nexus_pic*/
+            4096) {
+              transition_in(if_block1, 1);
+            }
+          } else {
+            if_block1 = create_if_block_7$1(ctx2);
+            if_block1.c();
+            transition_in(if_block1, 1);
+            if_block1.m(div1, t11);
+          }
+        } else if (if_block1) {
+          group_outros();
+          transition_out(if_block1, 1, 1, () => {
+            if_block1 = null;
+          });
+          check_outros();
+        }
+        const switch5_changes = {};
+        if (dirty[0] & /*$_delay_nexus_pic*/
+        16384)
+          switch5_changes.title_fixed = `悬浮预览延迟${/*$_delay_nexus_pic*/
+        ctx2[14] ? ":" + /*$_delay_nexus_pic*/
+        ctx2[14] + "ms" : ""}`;
+        if (dirty[0] & /*$_delay_nexus_pic*/
+        16384)
+          switch5_changes.title_red = `${/*$_delay_nexus_pic*/
+        ctx2[14] ? "" : "无延迟"}`;
+        if (dirty[0] & /*$_delay_nexus_pic*/
+        16384 | dirty[2] & /*$$scope*/
+        67108864) {
+          switch5_changes.$$scope = { dirty, ctx: ctx2 };
+        }
+        switch5.$set(switch5_changes);
+        const switch6_changes = {};
+        if (!updating_checked_5 && dirty[0] & /*$_pic_failed_showInfo*/
+        32768) {
+          updating_checked_5 = true;
+          switch6_changes.checked = /*$_pic_failed_showInfo*/
+          ctx2[15];
+          add_flush_callback(() => updating_checked_5 = false);
+        }
+        switch6.$set(switch6_changes);
+        const switch7_changes = {};
+        if (!updating_checked_6 && dirty[0] & /*$_state_hover_pic*/
+        65536) {
+          updating_checked_6 = true;
+          switch7_changes.checked = /*$_state_hover_pic*/
+          ctx2[16];
+          add_flush_callback(() => updating_checked_6 = false);
+        }
+        switch7.$set(switch7_changes);
+        const switch8_changes = {};
+        if (dirty[0] & /*$_card_layout*/
+        131072)
+          switch8_changes.title_fixed = `卡片列数: ${/*$_card_layout*/
+        ctx2[17].column}`;
+        if (dirty[0] & /*$_card_layout*/
+        131072 | dirty[2] & /*$$scope*/
+        67108864) {
+          switch8_changes.$$scope = { dirty, ctx: ctx2 };
+        }
+        switch8.$set(switch8_changes);
+        const switch9_changes = {};
+        if (dirty[0] & /*$_card_layout*/
+        131072)
+          switch9_changes.title_fixed = `卡片间距: ${/*$_card_layout*/
+        ctx2[17].gap}px`;
+        if (dirty[0] & /*$_card_layout*/
+        131072 | dirty[2] & /*$$scope*/
+        67108864) {
+          switch9_changes.$$scope = { dirty, ctx: ctx2 };
+        }
+        switch9.$set(switch9_changes);
+        const switch10_changes = {};
+        if (dirty[0] & /*$_card_layout*/
+        131072)
+          switch10_changes.title_fixed = `浏览器边距: ${/*$_card_layout*/
+        ctx2[17].margin ?? 20}px`;
+        if (dirty[0] & /*$_card_layout*/
+        131072 | dirty[2] & /*$$scope*/
+        67108864) {
+          switch10_changes.$$scope = { dirty, ctx: ctx2 };
+        }
+        switch10.$set(switch10_changes);
+        const switch11_changes = {};
+        if (dirty[0] & /*$_previewWidth, $_current_domain*/
+        262656)
+          switch11_changes.title_fixed = `预览窗口宽度: ${/*$_previewWidth*/
+        ctx2[18] > 0 ? (
+          /*$_previewWidth*/
+          ctx2[18]
+        ) : SITE[
+          /*$_current_domain*/
+          ctx2[9]
+        ] ? SITE[
+          /*$_current_domain*/
+          ctx2[9]
+        ].Iframe_Width : 1e3}px`;
+        if (dirty[0] & /*$_previewWidth, $_current_domain*/
+        262656 | dirty[2] & /*$$scope*/
+        67108864) {
+          switch11_changes.$$scope = { dirty, ctx: ctx2 };
+        }
+        switch11.$set(switch11_changes);
+        const switch12_changes = {};
+        if (dirty[0] & /*$_previewHeight*/
+        524288)
+          switch12_changes.title_fixed = `预览窗口高度: ${/*$_previewHeight*/
+        ctx2[19] > 0 ? (
+          /*$_previewHeight*/
+          ctx2[19]
+        ) : 96}%`;
+        if (dirty[0] & /*$_previewHeight*/
+        524288 | dirty[2] & /*$$scope*/
+        67108864) {
+          switch12_changes.$$scope = { dirty, ctx: ctx2 };
+        }
+        switch12.$set(switch12_changes);
+        const switch13_changes = {};
+        if (!updating_checked_7 && dirty[0] & /*$_CARD_SHOW*/
+        8) {
+          updating_checked_7 = true;
+          switch13_changes.checked = /*$_CARD_SHOW*/
+          ctx2[3].all;
+          add_flush_callback(() => updating_checked_7 = false);
+        }
+        switch13.$set(switch13_changes);
+        const switch14_changes = {};
+        if (!updating_checked_8 && dirty[0] & /*$_CARD_SHOW*/
+        8) {
+          updating_checked_8 = true;
+          switch14_changes.checked = /*$_CARD_SHOW*/
+          ctx2[3].title;
+          add_flush_callback(() => updating_checked_8 = false);
+        }
+        switch14.$set(switch14_changes);
+        const switch15_changes = {};
+        if (!updating_checked_9 && dirty[0] & /*$_CARD_SHOW*/
+        8) {
+          updating_checked_9 = true;
+          switch15_changes.checked = /*$_CARD_SHOW*/
+          ctx2[3].free;
+          add_flush_callback(() => updating_checked_9 = false);
+        }
+        switch15.$set(switch15_changes);
+        const switch16_changes = {};
+        if (!updating_checked_10 && dirty[0] & /*$_CARD_SHOW*/
+        8) {
+          updating_checked_10 = true;
+          switch16_changes.checked = /*$_CARD_SHOW*/
+          ctx2[3].sub_title;
+          add_flush_callback(() => updating_checked_10 = false);
+        }
+        switch16.$set(switch16_changes);
+        const switch17_changes = {};
+        if (!updating_checked_11 && dirty[0] & /*$_CARD_SHOW*/
+        8) {
+          updating_checked_11 = true;
+          switch17_changes.checked = /*$_CARD_SHOW*/
+          ctx2[3].tags;
+          add_flush_callback(() => updating_checked_11 = false);
+        }
+        switch17.$set(switch17_changes);
+        const switch18_changes = {};
+        if (!updating_checked_12 && dirty[0] & /*$_CARD_SHOW*/
+        8) {
+          updating_checked_12 = true;
+          switch18_changes.checked = /*$_CARD_SHOW*/
+          ctx2[3].size_download_collect;
+          add_flush_callback(() => updating_checked_12 = false);
+        }
+        switch18.$set(switch18_changes);
+        const switch19_changes = {};
+        if (!updating_checked_13 && dirty[0] & /*$_CARD_SHOW*/
+        8) {
+          updating_checked_13 = true;
+          switch19_changes.checked = /*$_CARD_SHOW*/
+          ctx2[3].upload_time;
+          add_flush_callback(() => updating_checked_13 = false);
+        }
+        switch19.$set(switch19_changes);
+        const switch20_changes = {};
+        if (!updating_checked_14 && dirty[0] & /*$_CARD_SHOW*/
+        8) {
+          updating_checked_14 = true;
+          switch20_changes.checked = /*$_CARD_SHOW*/
+          ctx2[3].statistics;
+          add_flush_callback(() => updating_checked_14 = false);
+        }
+        switch20.$set(switch20_changes);
+      },
+      i(local) {
+        if (current)
+          return;
+        transition_in(if_block0);
+        transition_in(switch0.$$.fragment, local);
+        transition_in(switch1.$$.fragment, local);
+        transition_in(switch2.$$.fragment, local);
+        transition_in(switch3.$$.fragment, local);
+        transition_in(switch4.$$.fragment, local);
+        transition_in(if_block1);
+        transition_in(switch5.$$.fragment, local);
+        transition_in(switch6.$$.fragment, local);
+        transition_in(switch7.$$.fragment, local);
+        transition_in(switch8.$$.fragment, local);
+        transition_in(switch9.$$.fragment, local);
+        transition_in(switch10.$$.fragment, local);
+        transition_in(switch11.$$.fragment, local);
+        transition_in(switch12.$$.fragment, local);
+        transition_in(switch13.$$.fragment, local);
+        transition_in(switch14.$$.fragment, local);
+        transition_in(switch15.$$.fragment, local);
+        transition_in(switch16.$$.fragment, local);
+        transition_in(switch17.$$.fragment, local);
+        transition_in(switch18.$$.fragment, local);
+        transition_in(switch19.$$.fragment, local);
+        transition_in(switch20.$$.fragment, local);
+        add_render_callback(() => {
+          if (!current)
+            return;
+          if (!div14_transition)
+            div14_transition = create_bidirectional_transition(div14, fade, { duration: 100 }, true);
+          div14_transition.run(1);
+        });
+        current = true;
+      },
+      o(local) {
+        transition_out(if_block0);
+        transition_out(switch0.$$.fragment, local);
+        transition_out(switch1.$$.fragment, local);
+        transition_out(switch2.$$.fragment, local);
+        transition_out(switch3.$$.fragment, local);
+        transition_out(switch4.$$.fragment, local);
+        transition_out(if_block1);
+        transition_out(switch5.$$.fragment, local);
+        transition_out(switch6.$$.fragment, local);
+        transition_out(switch7.$$.fragment, local);
+        transition_out(switch8.$$.fragment, local);
+        transition_out(switch9.$$.fragment, local);
+        transition_out(switch10.$$.fragment, local);
+        transition_out(switch11.$$.fragment, local);
+        transition_out(switch12.$$.fragment, local);
+        transition_out(switch13.$$.fragment, local);
+        transition_out(switch14.$$.fragment, local);
+        transition_out(switch15.$$.fragment, local);
+        transition_out(switch16.$$.fragment, local);
+        transition_out(switch17.$$.fragment, local);
+        transition_out(switch18.$$.fragment, local);
+        transition_out(switch19.$$.fragment, local);
+        transition_out(switch20.$$.fragment, local);
+        if (!div14_transition)
+          div14_transition = create_bidirectional_transition(div14, fade, { duration: 100 }, false);
+        div14_transition.run(0);
+        current = false;
+      },
+      d(detaching) {
+        if (detaching)
+          detach(div14);
+        if (if_block0)
+          if_block0.d();
+        destroy_component(switch0);
+        destroy_component(switch1);
+        destroy_component(switch2);
+        destroy_component(switch3);
+        destroy_component(switch4);
+        if (if_block1)
+          if_block1.d();
+        destroy_component(switch5);
+        destroy_component(switch6);
+        destroy_component(switch7);
+        destroy_component(switch8);
+        destroy_component(switch9);
+        destroy_component(switch10);
+        destroy_component(switch11);
+        destroy_component(switch12);
+        destroy_component(switch13);
+        destroy_component(switch14);
+        destroy_component(switch15);
+        destroy_component(switch16);
+        destroy_component(switch17);
+        destroy_component(switch18);
+        destroy_component(switch19);
+        destroy_component(switch20);
+        if (detaching && div14_transition)
+          div14_transition.end();
+        mounted = false;
+        run_all(dispose);
+      }
+    };
+  }
+  function create_if_block_8$1(ctx) {
+    let div1;
+    let h1;
+    let t1;
+    let div0;
+    let switch_1;
+    let updating_checked;
+    let current;
+    function switch_1_checked_binding(value) {
+      ctx[32](value);
+    }
+    let switch_1_props = {
+      title_fixed: "隐藏Gay分区卡片",
+      title_green: "隐藏(默认)",
+      title_red: "显示(狠人)"
+    };
+    if (
+      /*$_SITE_SETTING*/
+      ctx[10].mt.hide_gay !== void 0
+    ) {
+      switch_1_props.checked = /*$_SITE_SETTING*/
+      ctx[10].mt.hide_gay;
+    }
+    switch_1 = new Switch({ props: switch_1_props });
+    binding_callbacks.push(() => bind(switch_1, "checked", switch_1_checked_binding));
+    return {
+      c() {
+        div1 = element("div");
+        h1 = element("h1");
+        h1.textContent = "MT专用配置";
+        t1 = space();
+        div0 = element("div");
+        create_component(switch_1.$$.fragment);
+        attr(h1, "class", "s_title");
+        attr(div0, "class", "s_panel");
+        attr(div1, "class", "section svelte-mdsgbd");
+      },
+      m(target, anchor) {
+        insert(target, div1, anchor);
+        append(div1, h1);
+        append(div1, t1);
+        append(div1, div0);
+        mount_component(switch_1, div0, null);
+        current = true;
+      },
+      p(ctx2, dirty) {
+        const switch_1_changes = {};
+        if (!updating_checked && dirty[0] & /*$_SITE_SETTING*/
+        1024) {
+          updating_checked = true;
+          switch_1_changes.checked = /*$_SITE_SETTING*/
+          ctx2[10].mt.hide_gay;
+          add_flush_callback(() => updating_checked = false);
+        }
+        switch_1.$set(switch_1_changes);
+      },
+      i(local) {
+        if (current)
+          return;
+        transition_in(switch_1.$$.fragment, local);
+        current = true;
+      },
+      o(local) {
+        transition_out(switch_1.$$.fragment, local);
+        current = false;
+      },
+      d(detaching) {
+        if (detaching)
+          detach(div1);
+        destroy_component(switch_1);
+      }
+    };
+  }
+  function create_if_block_7$1(ctx) {
+    let switch_1;
+    let updating_checked;
+    let current;
+    function switch_1_checked_binding_1(value) {
+      ctx[39](value);
+    }
+    let switch_1_props = {
+      title_fixed: "预览大图方式",
+      title_green: "局部悬浮预览区域",
+      title_red: "全图悬浮预览",
+      label: "开发中 <br> 为优化用户预览大图体验 <br> 鼠标放到图片上就显示大图会遮挡信息 <br> 指定在图片的局部 区域放大"
+    };
+    if (
+      /*$_preview_style*/
+      ctx[13] !== void 0
+    ) {
+      switch_1_props.checked = /*$_preview_style*/
+      ctx[13];
+    }
+    switch_1 = new Switch({ props: switch_1_props });
+    binding_callbacks.push(() => bind(switch_1, "checked", switch_1_checked_binding_1));
+    return {
+      c() {
+        create_component(switch_1.$$.fragment);
+      },
+      m(target, anchor) {
+        mount_component(switch_1, target, anchor);
+        current = true;
+      },
+      p(ctx2, dirty) {
+        const switch_1_changes = {};
+        if (!updating_checked && dirty[0] & /*$_preview_style*/
+        8192) {
+          updating_checked = true;
+          switch_1_changes.checked = /*$_preview_style*/
+          ctx2[13];
+          add_flush_callback(() => updating_checked = false);
+        }
+        switch_1.$set(switch_1_changes);
+      },
+      i(local) {
+        if (current)
+          return;
+        transition_in(switch_1.$$.fragment, local);
+        current = true;
+      },
+      o(local) {
+        transition_out(switch_1.$$.fragment, local);
+        current = false;
+      },
+      d(detaching) {
+        destroy_component(switch_1, detaching);
+      }
+    };
+  }
+  function create_default_slot_5(ctx) {
+    let input;
+    let mounted;
+    let dispose;
+    return {
+      c() {
+        input = element("input");
+        attr(input, "type", "range");
+        attr(input, "min", "0");
+        attr(input, "max", "1500");
+        attr(input, "step", "100");
+        attr(input, "list", "values");
+      },
+      m(target, anchor) {
+        insert(target, input, anchor);
+        set_input_value(
+          input,
+          /*$_delay_nexus_pic*/
+          ctx[14]
+        );
+        if (!mounted) {
+          dispose = [
+            listen(
+              input,
+              "change",
+              /*input_change_input_handler*/
+              ctx[40]
+            ),
+            listen(
+              input,
+              "input",
+              /*input_change_input_handler*/
+              ctx[40]
+            )
+          ];
+          mounted = true;
+        }
+      },
+      p(ctx2, dirty) {
+        if (dirty[0] & /*$_delay_nexus_pic*/
+        16384) {
+          set_input_value(
+            input,
+            /*$_delay_nexus_pic*/
+            ctx2[14]
+          );
+        }
+      },
+      d(detaching) {
+        if (detaching)
+          detach(input);
+        mounted = false;
+        run_all(dispose);
+      }
+    };
+  }
+  function create_default_slot_4(ctx) {
+    let input;
+    let mounted;
+    let dispose;
+    return {
+      c() {
+        input = element("input");
+        attr(input, "type", "range");
+        attr(input, "min", "2");
+        attr(input, "max", "7");
+        attr(input, "step", "1");
+        attr(input, "list", "values");
+      },
+      m(target, anchor) {
+        insert(target, input, anchor);
+        set_input_value(
+          input,
+          /*$_card_layout*/
+          ctx[17].column
+        );
+        if (!mounted) {
+          dispose = [
+            listen(
+              input,
+              "change",
+              /*input_change_input_handler_1*/
+              ctx[46]
+            ),
+            listen(
+              input,
+              "input",
+              /*input_change_input_handler_1*/
+              ctx[46]
+            ),
+            listen(
+              input,
+              "change",
+              /*change_handler*/
+              ctx[47]
+            )
+          ];
+          mounted = true;
+        }
+      },
+      p(ctx2, dirty) {
+        if (dirty[0] & /*$_card_layout*/
+        131072) {
+          set_input_value(
+            input,
+            /*$_card_layout*/
+            ctx2[17].column
+          );
+        }
+      },
+      d(detaching) {
+        if (detaching)
+          detach(input);
+        mounted = false;
+        run_all(dispose);
+      }
+    };
+  }
+  function create_default_slot_3(ctx) {
+    let input;
+    let mounted;
+    let dispose;
+    return {
+      c() {
+        input = element("input");
+        attr(input, "type", "range");
+        attr(input, "min", "2");
+        attr(input, "max", "100");
+        attr(input, "step", "1");
+        attr(input, "list", "values");
+      },
+      m(target, anchor) {
+        insert(target, input, anchor);
+        set_input_value(
+          input,
+          /*$_card_layout*/
+          ctx[17].gap
+        );
+        if (!mounted) {
+          dispose = [
+            listen(
+              input,
+              "change",
+              /*input_change_input_handler_2*/
+              ctx[48]
+            ),
+            listen(
+              input,
+              "input",
+              /*input_change_input_handler_2*/
+              ctx[48]
+            ),
+            listen(
+              input,
+              "change",
+              /*change_handler_1*/
+              ctx[49]
+            )
+          ];
+          mounted = true;
+        }
+      },
+      p(ctx2, dirty) {
+        if (dirty[0] & /*$_card_layout*/
+        131072) {
+          set_input_value(
+            input,
+            /*$_card_layout*/
+            ctx2[17].gap
+          );
+        }
+      },
+      d(detaching) {
+        if (detaching)
+          detach(input);
+        mounted = false;
+        run_all(dispose);
+      }
+    };
+  }
+  function create_default_slot_2(ctx) {
+    let input;
+    let mounted;
+    let dispose;
+    return {
+      c() {
+        input = element("input");
+        attr(input, "type", "range");
+        attr(input, "min", "0");
+        attr(input, "max", "500");
+        attr(input, "step", "1");
+        attr(input, "list", "values");
+      },
+      m(target, anchor) {
+        insert(target, input, anchor);
+        set_input_value(
+          input,
+          /*$_card_layout*/
+          ctx[17].margin
+        );
+        if (!mounted) {
+          dispose = [
+            listen(
+              input,
+              "change",
+              /*input_change_input_handler_3*/
+              ctx[50]
+            ),
+            listen(
+              input,
+              "input",
+              /*input_change_input_handler_3*/
+              ctx[50]
+            ),
+            listen(
+              input,
+              "change",
+              /*change_handler_2*/
+              ctx[51]
+            )
+          ];
+          mounted = true;
+        }
+      },
+      p(ctx2, dirty) {
+        if (dirty[0] & /*$_card_layout*/
+        131072) {
+          set_input_value(
+            input,
+            /*$_card_layout*/
+            ctx2[17].margin
+          );
+        }
+      },
+      d(detaching) {
+        if (detaching)
+          detach(input);
+        mounted = false;
+        run_all(dispose);
+      }
+    };
+  }
+  function create_default_slot_1(ctx) {
+    let input;
+    let input_value_value;
+    let mounted;
+    let dispose;
+    return {
+      c() {
+        input = element("input");
+        attr(input, "type", "range");
+        attr(input, "min", "400");
+        attr(input, "max", "2000");
+        attr(input, "step", "10");
+        attr(input, "list", "values");
+        input.value = input_value_value = /*$_previewWidth*/
+        ctx[18] > 0 ? (
+          /*$_previewWidth*/
+          ctx[18]
+        ) : SITE[
+          /*$_current_domain*/
+          ctx[9]
+        ] ? SITE[
+          /*$_current_domain*/
+          ctx[9]
+        ].Iframe_Width : 1e3;
+      },
+      m(target, anchor) {
+        insert(target, input, anchor);
+        if (!mounted) {
+          dispose = [
+            listen(
+              input,
+              "input",
+              /*input_handler*/
+              ctx[52]
+            ),
+            listen(
+              input,
+              "change",
+              /*change_handler_3*/
+              ctx[53]
+            )
+          ];
+          mounted = true;
+        }
+      },
+      p(ctx2, dirty) {
+        if (dirty[0] & /*$_previewWidth, $_current_domain*/
+        262656 && input_value_value !== (input_value_value = /*$_previewWidth*/
+        ctx2[18] > 0 ? (
+          /*$_previewWidth*/
+          ctx2[18]
+        ) : SITE[
+          /*$_current_domain*/
+          ctx2[9]
+        ] ? SITE[
+          /*$_current_domain*/
+          ctx2[9]
+        ].Iframe_Width : 1e3)) {
+          input.value = input_value_value;
+        }
+      },
+      d(detaching) {
+        if (detaching)
+          detach(input);
+        mounted = false;
+        run_all(dispose);
+      }
+    };
+  }
+  function create_default_slot(ctx) {
+    let input;
+    let input_value_value;
+    let mounted;
+    let dispose;
+    return {
+      c() {
+        input = element("input");
+        attr(input, "type", "range");
+        attr(input, "min", "40");
+        attr(input, "max", "100");
+        attr(input, "step", "1");
+        attr(input, "list", "values");
+        input.value = input_value_value = /*$_previewHeight*/
+        ctx[19] > 0 ? (
+          /*$_previewHeight*/
+          ctx[19]
+        ) : 96;
+      },
+      m(target, anchor) {
+        insert(target, input, anchor);
+        if (!mounted) {
+          dispose = [
+            listen(
+              input,
+              "input",
+              /*input_handler_1*/
+              ctx[54]
+            ),
+            listen(
+              input,
+              "change",
+              /*change_handler_4*/
+              ctx[55]
+            )
+          ];
+          mounted = true;
+        }
+      },
+      p(ctx2, dirty) {
+        if (dirty[0] & /*$_previewHeight*/
+        524288 && input_value_value !== (input_value_value = /*$_previewHeight*/
+        ctx2[19] > 0 ? (
+          /*$_previewHeight*/
+          ctx2[19]
+        ) : 96)) {
+          input.value = input_value_value;
+        }
+      },
+      d(detaching) {
+        if (detaching)
+          detach(input);
+        mounted = false;
+        run_all(dispose);
+      }
+    };
+  }
+  function create_fragment$4(ctx) {
+    let div4;
+    let div0;
+    let t0;
+    let div3;
+    let button0;
+    let t1;
+    let button1;
+    let t5;
+    let t6;
+    let t7;
+    let div5;
+    let current;
+    let mounted;
+    let dispose;
+    function select_block_type(ctx2, dirty) {
+      if (
+        /*$_show_mode*/
+        ctx2[4]
+      )
+        return create_if_block_10;
+      return create_else_block_4;
+    }
+    let current_block_type = select_block_type(ctx);
+    let if_block0 = current_block_type(ctx);
+    let if_block1 = (
+      /*$_show_debug_btn*/
+      ctx[8] && create_if_block_9$1(ctx)
+    );
+    let if_block2 = (
+      /*$_show_configPanel*/
+      ctx[7] && create_if_block$4(ctx)
+    );
+    return {
+      c() {
+        div4 = element("div");
+        div0 = element("div");
+        t0 = space();
+        div3 = element("div");
+        button0 = element("button");
+        if_block0.c();
+        t1 = space();
+        button1 = element("button");
+        button1.innerHTML = `<div><svg width="24" height="24" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><defs><style>.cls-1 {
+                fill: none;
+                stroke: #fff;
+                stroke-linecap: round;
+                stroke-linejoin: round;
+                stroke-width: 2px;
+              }
+            </style></defs><title></title><g data-name="80-setting" id="_80-setting"><circle class="cls-1" cx="10" cy="6" r="3"></circle><circle class="cls-1" cx="22" cy="16" r="3"></circle><circle class="cls-1" cx="10" cy="26" r="3"></circle><line class="cls-1" x1="7" x2="1" y1="6" y2="6"></line><line class="cls-1" x1="15" x2="1" y1="16" y2="16"></line><line class="cls-1" x1="7" x2="1" y1="26" y2="26"></line><line class="cls-1" x1="31" x2="17" y1="26" y2="26"></line><line class="cls-1" x1="31" x2="25" y1="16" y2="16"></line><line class="cls-1" x1="31" x2="17" y1="6" y2="6"></line></g></svg></div> 
+      <div>详细配置</div>`;
+        t5 = space();
+        if (if_block1)
+          if_block1.c();
+        t6 = space();
+        if (if_block2)
+          if_block2.c();
+        t7 = space();
+        div5 = element("div");
+        div5.textContent = "重置瀑布流配置边栏位置";
+        attr(div0, "class", "sideP__title svelte-mdsgbd");
+        attr(button0, "class", "sideP__btn svelte-mdsgbd");
+        attr(button1, "class", "sideP__btn svelte-mdsgbd");
+        attr(div3, "class", "sideP__out svelte-mdsgbd");
+        attr(div4, "class", "sideP svelte-mdsgbd");
+        set_style(
+          div4,
+          "top",
+          /*$_panelPos*/
+          ctx[5].y + "px"
+        );
+        set_style(
+          div4,
+          "left",
+          /*$_panelPos*/
+          ctx[5].x + "px"
+        );
+        set_style(
+          div4,
+          "background-color",
+          /*$_current_bgColor*/
+          ctx[6]
+        );
+        attr(div5, "id", "reset_panel_pos");
+        attr(div5, "class", "svelte-mdsgbd");
+      },
+      m(target, anchor) {
+        insert(target, div4, anchor);
+        append(div4, div0);
+        append(div4, t0);
+        append(div4, div3);
+        append(div3, button0);
+        if_block0.m(button0, null);
+        append(div3, t1);
+        append(div3, button1);
+        append(div3, t5);
+        if (if_block1)
+          if_block1.m(div3, null);
+        ctx[30](div4);
+        insert(target, t6, anchor);
+        if (if_block2)
+          if_block2.m(target, anchor);
+        insert(target, t7, anchor);
+        insert(target, div5, anchor);
+        current = true;
+        if (!mounted) {
+          dispose = [
+            listen(
+              div0,
+              "mousedown",
+              /*onMouseDown*/
+              ctx[20]
+            ),
+            listen(
+              button0,
+              "click",
+              /*__show_originTable*/
+              ctx[22]
+            ),
+            listen(
+              button1,
+              "click",
+              /*click_handler*/
+              ctx[29]
+            ),
+            listen(
+              div5,
+              "click",
+              /*resetPanelPos*/
+              ctx[21]
+            )
+          ];
+          mounted = true;
+        }
+      },
+      p(ctx2, dirty) {
+        if (current_block_type !== (current_block_type = select_block_type(ctx2))) {
+          if_block0.d(1);
+          if_block0 = current_block_type(ctx2);
+          if (if_block0) {
+            if_block0.c();
+            if_block0.m(button0, null);
+          }
+        }
+        if (
+          /*$_show_debug_btn*/
+          ctx2[8]
+        ) {
+          if (if_block1) {
+            if_block1.p(ctx2, dirty);
+          } else {
+            if_block1 = create_if_block_9$1(ctx2);
+            if_block1.c();
+            if_block1.m(div3, null);
+          }
+        } else if (if_block1) {
+          if_block1.d(1);
+          if_block1 = null;
+        }
+        if (!current || dirty[0] & /*$_panelPos*/
+        32) {
+          set_style(
+            div4,
+            "top",
+            /*$_panelPos*/
+            ctx2[5].y + "px"
+          );
+        }
+        if (!current || dirty[0] & /*$_panelPos*/
+        32) {
+          set_style(
+            div4,
+            "left",
+            /*$_panelPos*/
+            ctx2[5].x + "px"
+          );
+        }
+        if (!current || dirty[0] & /*$_current_bgColor*/
+        64) {
+          set_style(
+            div4,
+            "background-color",
+            /*$_current_bgColor*/
+            ctx2[6]
+          );
+        }
+        if (
+          /*$_show_configPanel*/
+          ctx2[7]
+        ) {
+          if (if_block2) {
+            if_block2.p(ctx2, dirty);
+            if (dirty[0] & /*$_show_configPanel*/
+            128) {
+              transition_in(if_block2, 1);
+            }
+          } else {
+            if_block2 = create_if_block$4(ctx2);
+            if_block2.c();
+            transition_in(if_block2, 1);
+            if_block2.m(t7.parentNode, t7);
+          }
+        } else if (if_block2) {
+          group_outros();
+          transition_out(if_block2, 1, 1, () => {
+            if_block2 = null;
+          });
+          check_outros();
+        }
+      },
+      i(local) {
+        if (current)
+          return;
+        transition_in(if_block2);
+        current = true;
+      },
+      o(local) {
+        transition_out(if_block2);
+        current = false;
+      },
+      d(detaching) {
+        if (detaching)
+          detach(div4);
+        if_block0.d();
+        if (if_block1)
+          if_block1.d();
+        ctx[30](null);
+        if (detaching)
+          detach(t6);
+        if (if_block2)
+          if_block2.d(detaching);
+        if (detaching)
+          detach(t7);
+        if (detaching)
+          detach(div5);
+        mounted = false;
+        run_all(dispose);
+      }
+    };
+  }
+  function posRangeIn(target, min, max) {
+    if (target <= min)
+      target = min;
+    if (target >= max)
+      target = max;
+    return target;
+  }
+  function instance$4($$self, $$props, $$invalidate) {
+    let $_iframe_switch;
+    let $_turnPage;
+    let $_CARD_SHOW;
+    let $_card_width;
+    let $_show_mode;
+    let $_panelPos;
+    let $_current_bgColor;
+    let $_show_configPanel;
+    let $_show_debug_btn;
+    let $_current_domain;
+    let $_SITE_SETTING;
+    let $_animated;
+    let $_show_nexus_pic;
+    let $_preview_style;
+    let $_delay_nexus_pic;
+    let $_pic_failed_showInfo;
+    let $_state_hover_pic;
+    let $_card_layout;
+    let $_previewWidth;
+    let $_previewHeight;
+    component_subscribe($$self, _iframe_switch, ($$value) => $$invalidate(82, $_iframe_switch = $$value));
+    component_subscribe($$self, _turnPage, ($$value) => $$invalidate(2, $_turnPage = $$value));
+    component_subscribe($$self, _CARD_SHOW, ($$value) => $$invalidate(3, $_CARD_SHOW = $$value));
+    component_subscribe($$self, _card_width, ($$value) => $$invalidate(83, $_card_width = $$value));
+    component_subscribe($$self, _Global_Masonry, ($$value) => $$invalidate(84, $$value));
+    component_subscribe($$self, _show_mode, ($$value) => $$invalidate(4, $_show_mode = $$value));
+    component_subscribe($$self, _panelPos, ($$value) => $$invalidate(5, $_panelPos = $$value));
+    component_subscribe($$self, _current_bgColor, ($$value) => $$invalidate(6, $_current_bgColor = $$value));
+    component_subscribe($$self, _show_configPanel, ($$value) => $$invalidate(7, $_show_configPanel = $$value));
+    component_subscribe($$self, _show_debug_btn, ($$value) => $$invalidate(8, $_show_debug_btn = $$value));
+    component_subscribe($$self, _current_domain, ($$value) => $$invalidate(9, $_current_domain = $$value));
+    component_subscribe($$self, _SITE_SETTING, ($$value) => $$invalidate(10, $_SITE_SETTING = $$value));
+    component_subscribe($$self, _animated, ($$value) => $$invalidate(11, $_animated = $$value));
+    component_subscribe($$self, _show_nexus_pic, ($$value) => $$invalidate(12, $_show_nexus_pic = $$value));
+    component_subscribe($$self, _preview_style, ($$value) => $$invalidate(13, $_preview_style = $$value));
+    component_subscribe($$self, _delay_nexus_pic, ($$value) => $$invalidate(14, $_delay_nexus_pic = $$value));
+    component_subscribe($$self, _pic_failed_showInfo, ($$value) => $$invalidate(15, $_pic_failed_showInfo = $$value));
+    component_subscribe($$self, _state_hover_pic, ($$value) => $$invalidate(16, $_state_hover_pic = $$value));
+    component_subscribe($$self, _card_layout, ($$value) => $$invalidate(17, $_card_layout = $$value));
+    component_subscribe($$self, _previewWidth, ($$value) => $$invalidate(18, $_previewWidth = $$value));
+    component_subscribe($$self, _previewHeight, ($$value) => $$invalidate(19, $_previewHeight = $$value));
+    let sideDom;
+    let isMouseDown = false;
+    let offsetX = 0;
+    let offsetY = 0;
+    const onMouseDown = (e) => {
+      e.preventDefault();
+      isMouseDown = true;
+      offsetX = e.clientX - sideDom.getBoundingClientRect().left;
+      offsetY = e.clientY - sideDom.getBoundingClientRect().top;
+    };
+    const onMouseMove = (e) => {
+      if (!isMouseDown)
+        return;
+      const res_X = posRangeIn(e.clientX - offsetX, 0, window.innerWidth - (sideDom.getBoundingClientRect().width + 5));
+      const res_Y = posRangeIn(e.clientY - offsetY, 0, window.innerHeight - (sideDom.getBoundingClientRect().height + 5));
+      set_store_value(_panelPos, $_panelPos = { x: res_X, y: res_Y }, $_panelPos);
+    };
+    const onMouseUp = () => {
+      isMouseDown = false;
+    };
+    function resetPanelPos() {
+      if ($_panelPos.x == 0 && $_panelPos.y == 0)
+        alert("无需重置瀑布流边栏位置");
+      set_store_value(_panelPos, $_panelPos = { x: 0, y: 0 }, $_panelPos);
+    }
+    let { originTable } = $$props;
+    function __show_originTable() {
+      set_store_value(_show_mode, $_show_mode = !$_show_mode, $_show_mode);
+      window.CHANGE_CARD_LAYOUT();
+    }
+    function config_changeWidth() {
+      set_store_value(_card_width, $_card_width = $_card_width == 300 ? 200 : 300, $_card_width);
+      console.log(`[debug]$card_width: ${$_card_width}`);
+      sortMasonryBundle();
+    }
+    function config_showAllDetails() {
+      set_store_value(_CARD_SHOW, $_CARD_SHOW.all = !$_CARD_SHOW.all, $_CARD_SHOW);
+      sortMasonryBundle();
+    }
+    let label_switchMode = $_turnPage ? "滚动加载" : "按钮加载";
+    function config_switchMode() {
+      set_store_value(_turnPage, $_turnPage = !$_turnPage, $_turnPage);
+      $$invalidate(1, label_switchMode = $_turnPage ? "滚动加载" : "按钮加载");
+    }
+    function config_changeLoadMode() {
+      set_store_value(_iframe_switch, $_iframe_switch = $_iframe_switch == 0 ? 1 : 0, $_iframe_switch);
+    }
+    function sortMasonryBundle() {
+      sortMasonry("fast");
+      sortMasonry("fast");
+      sortMasonry();
+      sortMasonry();
+    }
+    onMount(() => {
+      window.addEventListener("mousemove", onMouseMove);
+      window.addEventListener("mouseup", onMouseUp);
+      __initReadTracking();
+      __fillCardInfoSectionObserver();
+      const secFill = () => {
+        const webdav = document.getElementById("kesaPanelWebdav");
+        const read = document.getElementById("kesaPanelRead");
+        const tag = document.getElementById("kesaPanelTag");
+        const name = document.getElementById("kesaPanelName");
+        if (webdav && !webdav.dataset.filled) {
+          webdav.dataset.filled = "1";
+          __fillWebDAVSection(webdav);
+        }
+        if (read && !read.dataset.filled) {
+          read.dataset.filled = "1";
+          __fillReadSection(read);
+        }
+        if (tag && !tag.dataset.filled) {
+          tag.dataset.filled = "1";
+          __fillTagSection(tag);
+        }
+        if (name && !name.dataset.filled) {
+          name.dataset.filled = "1";
+          __fillNameFilterSection(name);
+        }
+      };
+      secFill();
+      const secObs = new MutationObserver(() => {
+        var _a, _b, _c, _d;
+        if (!document.getElementById("kesaPanelWebdav"))
+          return;
+        secFill();
+        if (((_a = document.getElementById("kesaPanelWebdav")) == null ? void 0 : _a.dataset.filled) && ((_b = document.getElementById("kesaPanelRead")) == null ? void 0 : _b.dataset.filled) && ((_c = document.getElementById("kesaPanelTag")) == null ? void 0 : _c.dataset.filled) && ((_d = document.getElementById("kesaPanelName")) == null ? void 0 : _d.dataset.filled)) {
+          secObs.disconnect();
+        }
+      });
+      secObs.observe(document.body, { childList: true, subtree: true });
+      return () => {
+        window.removeEventListener("mousemove", onMouseMove);
+        window.removeEventListener("mouseup", onMouseUp);
+        secObs.disconnect();
+      };
+    });
+    const click_handler = () => {
+      set_store_value(_show_configPanel, $_show_configPanel = !$_show_configPanel, $_show_configPanel);
+    };
+    function div4_binding($$value) {
+      binding_callbacks[$$value ? "unshift" : "push"](() => {
+        sideDom = $$value;
+        $$invalidate(0, sideDom);
+      });
+    }
+    const click_handler_1 = () => set_store_value(_show_configPanel, $_show_configPanel = false, $_show_configPanel);
+    function switch_1_checked_binding(value) {
+      if ($$self.$$.not_equal($_SITE_SETTING.mt.hide_gay, value)) {
+        $_SITE_SETTING.mt.hide_gay = value;
+        _SITE_SETTING.set($_SITE_SETTING);
+      }
+    }
+    const func = () => {
+      window.CHANGE_CARD_LAYOUT();
+    };
+    function switch0_checked_binding(value) {
+      $_show_mode = value;
+      _show_mode.set($_show_mode);
+    }
+    function switch1_checked_binding(value) {
+      $_turnPage = value;
+      _turnPage.set($_turnPage);
+    }
+    function switch2_checked_binding(value) {
+      $_animated = value;
+      _animated.set($_animated);
+    }
+    function switch3_checked_binding(value) {
+      $_show_debug_btn = value;
+      _show_debug_btn.set($_show_debug_btn);
+    }
+    function switch4_checked_binding(value) {
+      $_show_nexus_pic = value;
+      _show_nexus_pic.set($_show_nexus_pic);
+    }
+    function switch_1_checked_binding_1(value) {
+      $_preview_style = value;
+      _preview_style.set($_preview_style);
+    }
+    function input_change_input_handler() {
+      $_delay_nexus_pic = to_number(this.value);
+      _delay_nexus_pic.set($_delay_nexus_pic);
+    }
+    function switch6_checked_binding(value) {
+      $_pic_failed_showInfo = value;
+      _pic_failed_showInfo.set($_pic_failed_showInfo);
+    }
+    function switch7_checked_binding(value) {
+      $_state_hover_pic = value;
+      _state_hover_pic.set($_state_hover_pic);
+    }
+    const click_handler_2 = () => {
+      set_store_value(_show_debug_btn, $_show_debug_btn = !$_show_debug_btn, $_show_debug_btn);
+    };
+    const click_handler_3 = () => {
+      set_store_value(_show_nexus_pic, $_show_nexus_pic = !$_show_nexus_pic, $_show_nexus_pic);
+    };
+    const click_handler_4 = () => {
+      set_store_value(_delay_nexus_pic, $_delay_nexus_pic = $_delay_nexus_pic == 0 ? 600 : 0, $_delay_nexus_pic);
+    };
+    function input_change_input_handler_1() {
+      $_card_layout.column = to_number(this.value);
+      _card_layout.set($_card_layout);
+    }
+    const change_handler = () => {
+      set_store_value(_card_layout, $_card_layout = { ...$_card_layout }, $_card_layout);
+    };
+    function input_change_input_handler_2() {
+      $_card_layout.gap = to_number(this.value);
+      _card_layout.set($_card_layout);
+    }
+    const change_handler_1 = () => {
+      set_store_value(_card_layout, $_card_layout = { ...$_card_layout }, $_card_layout);
+    };
+    function input_change_input_handler_3() {
+      $_card_layout.margin = to_number(this.value);
+      _card_layout.set($_card_layout);
+    }
+    const change_handler_2 = () => {
+      set_store_value(_card_layout, $_card_layout = { ...$_card_layout }, $_card_layout);
+    };
+    const input_handler = (e) => {
+      set_store_value(_previewWidth, $_previewWidth = Number(e.target.value), $_previewWidth);
+    };
+    const change_handler_3 = (e) => {
+      set_store_value(_previewWidth, $_previewWidth = Number(e.target.value), $_previewWidth);
+    };
+    const input_handler_1 = (e) => {
+      set_store_value(_previewHeight, $_previewHeight = Number(e.target.value), $_previewHeight);
+    };
+    const change_handler_4 = (e) => {
+      set_store_value(_previewHeight, $_previewHeight = Number(e.target.value), $_previewHeight);
+    };
+    function switch13_checked_binding(value) {
+      if ($$self.$$.not_equal($_CARD_SHOW.all, value)) {
+        $_CARD_SHOW.all = value;
+        _CARD_SHOW.set($_CARD_SHOW);
+      }
+    }
+    function switch14_checked_binding(value) {
+      if ($$self.$$.not_equal($_CARD_SHOW.title, value)) {
+        $_CARD_SHOW.title = value;
+        _CARD_SHOW.set($_CARD_SHOW);
+      }
+    }
+    function switch15_checked_binding(value) {
+      if ($$self.$$.not_equal($_CARD_SHOW.free, value)) {
+        $_CARD_SHOW.free = value;
+        _CARD_SHOW.set($_CARD_SHOW);
+      }
+    }
+    function switch16_checked_binding(value) {
+      if ($$self.$$.not_equal($_CARD_SHOW.sub_title, value)) {
+        $_CARD_SHOW.sub_title = value;
+        _CARD_SHOW.set($_CARD_SHOW);
+      }
+    }
+    function switch17_checked_binding(value) {
+      if ($$self.$$.not_equal($_CARD_SHOW.tags, value)) {
+        $_CARD_SHOW.tags = value;
+        _CARD_SHOW.set($_CARD_SHOW);
+      }
+    }
+    function switch18_checked_binding(value) {
+      if ($$self.$$.not_equal($_CARD_SHOW.size_download_collect, value)) {
+        $_CARD_SHOW.size_download_collect = value;
+        _CARD_SHOW.set($_CARD_SHOW);
+      }
+    }
+    function switch19_checked_binding(value) {
+      if ($$self.$$.not_equal($_CARD_SHOW.upload_time, value)) {
+        $_CARD_SHOW.upload_time = value;
+        _CARD_SHOW.set($_CARD_SHOW);
+      }
+    }
+    function switch20_checked_binding(value) {
+      if ($$self.$$.not_equal($_CARD_SHOW.statistics, value)) {
+        $_CARD_SHOW.statistics = value;
+        _CARD_SHOW.set($_CARD_SHOW);
+      }
+    }
+    function input0_change_handler() {
+      $_CARD_SHOW.title = this.checked;
+      _CARD_SHOW.set($_CARD_SHOW);
+    }
+    const change_handler_5 = () => {
+      sortMasonry();
+    };
+    function input1_change_handler() {
+      $_CARD_SHOW.free = this.checked;
+      _CARD_SHOW.set($_CARD_SHOW);
+    }
+    const change_handler_6 = () => {
+      sortMasonry();
+    };
+    function input2_change_handler() {
+      $_CARD_SHOW.sub_title = this.checked;
+      _CARD_SHOW.set($_CARD_SHOW);
+    }
+    const change_handler_7 = () => {
+      sortMasonry();
+    };
+    function input3_change_handler() {
+      $_CARD_SHOW.tags = this.checked;
+      _CARD_SHOW.set($_CARD_SHOW);
+    }
+    const change_handler_8 = () => {
+      sortMasonry();
+    };
+    function input4_change_handler() {
+      $_CARD_SHOW.size_download_collect = this.checked;
+      _CARD_SHOW.set($_CARD_SHOW);
+    }
+    const change_handler_9 = () => {
+      sortMasonry();
+    };
+    function input5_change_handler() {
+      $_CARD_SHOW.upload_time = this.checked;
+      _CARD_SHOW.set($_CARD_SHOW);
+    }
+    const change_handler_10 = () => {
+      sortMasonry();
+    };
+    function input6_change_handler() {
+      $_CARD_SHOW.statistics = this.checked;
+      _CARD_SHOW.set($_CARD_SHOW);
+    }
+    const change_handler_11 = () => {
+      sortMasonry();
+    };
+    const click_handler_5 = () => set_store_value(_show_configPanel, $_show_configPanel = false, $_show_configPanel);
+    $$self.$$set = ($$props2) => {
+      if ("originTable" in $$props2)
+        $$invalidate(28, originTable = $$props2.originTable);
+    };
+    return [
+      sideDom,
+      label_switchMode,
+      $_turnPage,
+      $_CARD_SHOW,
+      $_show_mode,
+      $_panelPos,
+      $_current_bgColor,
+      $_show_configPanel,
+      $_show_debug_btn,
+      $_current_domain,
+      $_SITE_SETTING,
+      $_animated,
+      $_show_nexus_pic,
+      $_preview_style,
+      $_delay_nexus_pic,
+      $_pic_failed_showInfo,
+      $_state_hover_pic,
+      $_card_layout,
+      $_previewWidth,
+      $_previewHeight,
+      onMouseDown,
+      resetPanelPos,
+      __show_originTable,
+      config_changeWidth,
+      config_showAllDetails,
+      config_switchMode,
+      config_changeLoadMode,
+      sortMasonryBundle,
+      originTable,
+      click_handler,
+      div4_binding,
+      click_handler_1,
+      switch_1_checked_binding,
+      func,
+      switch0_checked_binding,
+      switch1_checked_binding,
+      switch2_checked_binding,
+      switch3_checked_binding,
+      switch4_checked_binding,
+      switch_1_checked_binding_1,
+      input_change_input_handler,
+      switch6_checked_binding,
+      switch7_checked_binding,
+      click_handler_2,
+      click_handler_3,
+      click_handler_4,
+      input_change_input_handler_1,
+      change_handler,
+      input_change_input_handler_2,
+      change_handler_1,
+      input_change_input_handler_3,
+      change_handler_2,
+      input_handler,
+      change_handler_3,
+      input_handler_1,
+      change_handler_4,
+      switch13_checked_binding,
+      switch14_checked_binding,
+      switch15_checked_binding,
+      switch16_checked_binding,
+      switch17_checked_binding,
+      switch18_checked_binding,
+      switch19_checked_binding,
+      switch20_checked_binding,
+      input0_change_handler,
+      change_handler_5,
+      input1_change_handler,
+      change_handler_6,
+      input2_change_handler,
+      change_handler_7,
+      input3_change_handler,
+      change_handler_8,
+      input4_change_handler,
+      change_handler_9,
+      input5_change_handler,
+      change_handler_10,
+      input6_change_handler,
+      change_handler_11,
+      click_handler_5
+    ];
+  }
+  class Sidepanel extends SvelteComponent {
+    constructor(options) {
+      super();
+      init(this, options, instance$4, create_fragment$4, safe_not_equal, { originTable: 28 }, null, [-1, -1, -1]);
+    }
   }
   const CARD = {
     /** 瀑布流卡片宽度 */
@@ -5263,1390 +7712,407 @@
     /** 翻页: 下一页的加载方式: Button | Slip */
     SWITCH_MODE: "Button"
   };
-  const ICON = {
-    /** 大小图标 */
-    SIZE: '<img class="size" src="pic/trans.gif" style=" transform: translateY(-0.4px);" alt="size" title="大小">',
-    /** 评论图标 */
-    COMMENT: '<img class="comments" src="pic/trans.gif" alt="comments" title="评论数">',
-    /** 上传人数图标 */
-    SEEDERS: '<img class="seeders" src="pic/trans.gif" alt="seeders" title="种子数">',
-    /** 下载人数图标 */
-    LEECHERS: '<img class="leechers" src="pic/trans.gif" alt="leechers" title="下载数">',
-    /** 已完成人数图标 */
-    SNATCHED: '<img class="snatched" src="pic/trans.gif" alt="snatched" title="完成数">',
-    /** 下载图标 */
-    DOWNLOAD: '<img class="download" src="pic/trans.gif" style=" transform: translateY(1px);" alt="download" title="下载本种">',
-    /** 未收藏图标 */
-    COLLET: '<img class="delbookmark" src="pic/trans.gif" alt="Unbookmarked" title="收藏">',
-    /** 已收藏图标 */
-    COLLETED: '<img class="bookmark" src="pic/trans.gif" alt="Bookmarked">'
+  function Launch_Hijack(param = { path: "/search", method: "POST" }) {
+    const path = param.path || "/search";
+    const method = param.method || "POST";
+    if (typeof XMLHttpRequest === "undefined") {
+      console.warn("[mteamHijack] XMLHttpRequest not available, skipping hijack");
+      return () => {
+      };
+    }
+    const nativeOpen = XMLHttpRequest.prototype.open;
+    const nativeSend = XMLHttpRequest.prototype.send;
+    const nativeFetch = window.fetch;
+    const requestMetadataMap = /* @__PURE__ */ new WeakMap();
+    const capturedFlags = /* @__PURE__ */ new WeakSet();
+    function isTargetRequest(url, requestMethod) {
+      if (!url.includes(path))
+        return false;
+      if (requestMethod.toUpperCase() !== method.toUpperCase())
+        return false;
+      return true;
+    }
+    function parseResponse(xhr) {
+      var _a;
+      try {
+        switch (xhr.responseType) {
+          case "json":
+            return xhr.response;
+          case "document":
+            return ((_a = xhr.responseXML) == null ? void 0 : _a.documentElement.textContent) || null;
+          case "arraybuffer":
+            return new Uint8Array(xhr.response);
+          case "blob":
+            return URL.createObjectURL(xhr.response);
+          default:
+            return xhr.responseText;
+        }
+      } catch {
+        return xhr.responseText;
+      }
+    }
+    function captureResponseData(xhr) {
+      const metadata = requestMetadataMap.get(xhr);
+      if (!metadata || !metadata.isTarget || capturedFlags.has(xhr)) {
+        return;
+      }
+      try {
+        const responseData = {
+          status: xhr.status,
+          headers: xhr.getAllResponseHeaders(),
+          data: parseResponse(xhr)
+        };
+        const event = new CustomEvent(`res>${method}->${path}`, { detail: responseData });
+        window.dispatchEvent(event);
+        capturedFlags.add(xhr);
+      } catch (e) {
+        console.error("<mteamHijack> Capture failed:", e);
+      }
+    }
+    XMLHttpRequest.prototype.open = function(method2, url) {
+      const metadata = {
+        method: method2.toUpperCase(),
+        url,
+        isTarget: isTargetRequest(url, method2)
+      };
+      requestMetadataMap.set(this, metadata);
+      return nativeOpen.apply(this, arguments);
+    };
+    XMLHttpRequest.prototype.send = function(body) {
+      const metadata = requestMetadataMap.get(this);
+      if (metadata == null ? void 0 : metadata.isTarget) {
+        const originalOnReadyStateChange = this.onreadystatechange;
+        const originalOnLoad = this.onload;
+        this.addEventListener("readystatechange", function() {
+          if (this.readyState === 4) {
+            captureResponseData(this);
+          }
+          originalOnReadyStateChange == null ? void 0 : originalOnReadyStateChange.call(this);
+        });
+        this.onload = function(e) {
+          captureResponseData(this);
+          originalOnLoad == null ? void 0 : originalOnLoad.call(this, e);
+        };
+        const reqBody = {
+          url: metadata.url,
+          body: body instanceof Document ? body.documentElement.textContent || "[Document]" : body
+        };
+        const event = new CustomEvent(`req>${method}->${path}`, { detail: reqBody });
+        window.dispatchEvent(event);
+      }
+      return nativeSend.apply(this, arguments);
+    };
+    if (nativeFetch) {
+      window.fetch = async function(...args) {
+        const [input, init2 = {}] = args;
+        const url = typeof input === "string" ? input : input instanceof Request ? input.url : String(input);
+        const requestMethod = (init2.method || "GET").toUpperCase();
+        const requestBody = init2.body;
+        const isTarget = isTargetRequest(url, requestMethod);
+        if (isTarget) {
+          const reqBody = {
+            url,
+            body: requestBody instanceof Document ? requestBody.documentElement.textContent || "[Document]" : requestBody
+          };
+          const event = new CustomEvent(`req>${method}->${path}`, { detail: reqBody });
+          window.dispatchEvent(event);
+        }
+        return nativeFetch.apply(this, args).then((response) => {
+          if (isTarget) {
+            const responseClone = response.clone();
+            const contentType = response.headers.get("content-type") || "";
+            const isJson = contentType.includes("application/json");
+            return responseClone[isJson ? "json" : "text"]().then((data) => {
+              const responseData = {
+                status: response.status,
+                headers: Array.from(response.headers.entries()).reduce(
+                  (obj, [key, value]) => {
+                    obj[key] = value;
+                    return obj;
+                  },
+                  /** @type {Record<string, string>} */
+                  {}
+                ),
+                data: isJson ? JSON.stringify(data) : data
+              };
+              const event = new CustomEvent(`res>${method}->${path}`, { detail: responseData });
+              window.dispatchEvent(event);
+              return response;
+            }).catch((error) => {
+              console.error("<mteamHijack> Failed to parse fetch response:", error);
+              return response;
+            });
+          }
+          return response;
+        });
+      };
+    } else {
+      console.warn("[mteamHijack] fetch API not available, skipping fetch hijack");
+    }
+    return function cleanup() {
+      XMLHttpRequest.prototype.open = nativeOpen;
+      XMLHttpRequest.prototype.send = nativeSend;
+      if (nativeFetch) {
+        window.fetch = nativeFetch;
+      }
+    };
+  }
+  const __kesaHijack = {
+    handler: null
   };
-  function create_if_block_16$1(ctx) {
+  if (typeof window !== "undefined") {
+    window.__kesaHijack = __kesaHijack;
+    window.__kesaHijackInject = function(data) {
+      if (window.__kesaHijack && typeof window.__kesaHijack.handler === "function") {
+        window.__kesaHijack.handler({
+          type: "res",
+          data: JSON.stringify({ data: { data, pageNumber: 1 } })
+        });
+        return true;
+      }
+      return false;
+    };
+  }
+  function create_if_block_9(ctx) {
     let div;
     let a;
-    let html_tag;
-    let raw_value = (
-      /*torrentInfo*/
-      (ctx[0].tempTagDom ? (
-        /*torrentInfo*/
-        ctx[0].tempTagDom.map(func$1).join("&nbsp;")
-      ) : "") + ""
-    );
-    let t0;
     let b;
-    let t1_value = (
-      /*torrentInfo*/
-      ctx[0].torrent_name + ""
+    let t_value = (
+      /*it*/
+      ctx[1].name + ""
     );
-    let t1;
-    let a_href_value;
+    let t;
+    let mounted;
+    let dispose;
     return {
       c() {
         div = element("div");
         a = element("a");
-        html_tag = new HtmlTag(false);
-        t0 = space();
         b = element("b");
-        t1 = text(t1_value);
-        html_tag.a = t0;
-        attr(a, "class", "two-lines svelte-vdh3h6");
-        attr(a, "href", a_href_value = /*torrentInfo*/
-        ctx[0].torrentLink);
+        t = text(t_value);
+        attr(a, "class", "two-lines svelte-xrdclb");
+        attr(
+          a,
+          "href",
+          /*detailLink*/
+          ctx[10]()
+        );
         attr(a, "target", "_blank");
-        attr(div, "class", "card-title svelte-vdh3h6");
+        attr(div, "class", "card-title svelte-xrdclb");
       },
       m(target, anchor) {
         insert(target, div, anchor);
         append(div, a);
-        html_tag.m(raw_value, a);
-        append(a, t0);
         append(a, b);
-        append(b, t1);
+        append(b, t);
+        if (!mounted) {
+          dispose = listen(
+            a,
+            "click",
+            /*onClickCard*/
+            ctx[11]
+          );
+          mounted = true;
+        }
       },
       p(ctx2, dirty) {
-        if (dirty & /*torrentInfo*/
-        1 && raw_value !== (raw_value = /*torrentInfo*/
-        (ctx2[0].tempTagDom ? (
-          /*torrentInfo*/
-          ctx2[0].tempTagDom.map(func$1).join("&nbsp;")
-        ) : "") + ""))
-          html_tag.p(raw_value);
-        if (dirty & /*torrentInfo*/
-        1 && t1_value !== (t1_value = /*torrentInfo*/
-        ctx2[0].torrent_name + ""))
-          set_data(t1, t1_value);
-        if (dirty & /*torrentInfo*/
-        1 && a_href_value !== (a_href_value = /*torrentInfo*/
-        ctx2[0].torrentLink)) {
-          attr(a, "href", a_href_value);
-        }
+        if (dirty & /*it*/
+        2 && t_value !== (t_value = /*it*/
+        ctx2[1].name + ""))
+          set_data(t, t_value);
       },
       d(detaching) {
         if (detaching)
           detach(div);
-      }
-    };
-  }
-  function create_if_block_10$1(ctx) {
-    let t0;
-    let t1;
-    let div0;
-    let raw0_value = (
-      /*torrentInfo*/
-      ctx[0].tagsDOM.map(
-        /*func_2*/
-        ctx[10]
-      ).join("") + ""
-    );
-    let t2;
-    let div8;
-    let div5;
-    let div1;
-    let html_tag;
-    let raw1_value = (
-      /*ICON*/
-      ctx[2].SIZE + ""
-    );
-    let t3;
-    let t4_value = (
-      /*torrentInfo*/
-      ctx[0].size + ""
-    );
-    let t4;
-    let t5;
-    let div2;
-    let html_tag_1;
-    let raw2_value = (
-      /*ICON*/
-      ctx[2].DOWNLOAD + ""
-    );
-    let t6;
-    let b0;
-    let a;
-    let t7;
-    let a_href_value;
-    let t8;
-    let div4;
-    let div3;
-    let html_tag_2;
-    let raw3_value = (
-      /*torrentInfo*/
-      (ctx[0].collectState == "Unbookmarked" ? (
-        /*ICON*/
-        ctx[2].COLLET
-      ) : (
-        /*ICON*/
-        ctx[2].COLLETED
-      )) + ""
-    );
-    let t9;
-    let b1;
-    let div3_id_value;
-    let t11;
-    let div6;
-    let b2;
-    let t13;
-    let t14_value = (
-      /*torrentInfo*/
-      ctx[0].upload_date + ""
-    );
-    let t14;
-    let t15;
-    let div7;
-    let html_tag_3;
-    let raw4_value = (
-      /*ICON*/
-      ctx[2].COMMENT + ""
-    );
-    let t16;
-    let b3;
-    let t17_value = (
-      /*torrentInfo*/
-      ctx[0].comments + ""
-    );
-    let t17;
-    let t18;
-    let html_tag_4;
-    let raw5_value = (
-      /*ICON*/
-      ctx[2].SEEDERS + ""
-    );
-    let t19;
-    let b4;
-    let t20_value = (
-      /*torrentInfo*/
-      ctx[0].seeders + ""
-    );
-    let t20;
-    let t21;
-    let html_tag_5;
-    let raw6_value = (
-      /*ICON*/
-      ctx[2].LEECHERS + ""
-    );
-    let t22;
-    let b5;
-    let t23_value = (
-      /*torrentInfo*/
-      ctx[0].leechers + ""
-    );
-    let t23;
-    let t24;
-    let html_tag_6;
-    let raw7_value = (
-      /*ICON*/
-      ctx[2].SNATCHED + ""
-    );
-    let t25;
-    let b6;
-    let t26_value = (
-      /*torrentInfo*/
-      ctx[0].snatched + ""
-    );
-    let t26;
-    let mounted;
-    let dispose;
-    let if_block0 = (
-      /*torrentInfo*/
-      (ctx[0].free_type || /*torrentInfo*/
-      ctx[0].pattMsg) && create_if_block_12$1(ctx)
-    );
-    let if_block1 = (
-      /*torrentInfo*/
-      ctx[0].description && create_if_block_11$1(ctx)
-    );
-    return {
-      c() {
-        if (if_block0)
-          if_block0.c();
-        t0 = space();
-        if (if_block1)
-          if_block1.c();
-        t1 = space();
-        div0 = element("div");
-        t2 = space();
-        div8 = element("div");
-        div5 = element("div");
-        div1 = element("div");
-        html_tag = new HtmlTag(false);
-        t3 = text(" ");
-        t4 = text(t4_value);
-        t5 = text("\n\n          \n            \n          ");
-        div2 = element("div");
-        html_tag_1 = new HtmlTag(false);
-        t6 = text(" \n            ");
-        b0 = element("b");
-        a = element("a");
-        t7 = text("下载");
-        t8 = text("\n\n          \n            \n          ");
-        div4 = element("div");
-        div3 = element("div");
-        html_tag_2 = new HtmlTag(false);
-        t9 = text("\n               ");
-        b1 = element("b");
-        b1.textContent = "收藏";
-        t11 = space();
-        div6 = element("div");
-        b2 = element("b");
-        b2.textContent = "上传时间:";
-        t13 = space();
-        t14 = text(t14_value);
-        t15 = space();
-        div7 = element("div");
-        html_tag_3 = new HtmlTag(false);
-        t16 = text(" ");
-        b3 = element("b");
-        t17 = text(t17_value);
-        t18 = text("  \n          ");
-        html_tag_4 = new HtmlTag(false);
-        t19 = text(" ");
-        b4 = element("b");
-        t20 = text(t20_value);
-        t21 = text("  \n          ");
-        html_tag_5 = new HtmlTag(false);
-        t22 = text(" ");
-        b5 = element("b");
-        t23 = text(t23_value);
-        t24 = text("  \n          ");
-        html_tag_6 = new HtmlTag(false);
-        t25 = text(" ");
-        b6 = element("b");
-        t26 = text(t26_value);
-        attr(div0, "class", "cl-tags svelte-vdh3h6");
-        html_tag.a = t3;
-        attr(div1, "class", "cl-center svelte-vdh3h6");
-        html_tag_1.a = t6;
-        attr(a, "href", a_href_value = /*torrentInfo*/
-        ctx[0].downloadLink);
-        attr(div2, "class", "cl-center svelte-vdh3h6");
-        html_tag_2.a = t9;
-        attr(div3, "class", "btnCollet cl-center svelte-vdh3h6");
-        attr(div3, "id", div3_id_value = "tI_" + /*torrentInfo*/
-        ctx[0].torrentIndex);
-        attr(div4, "class", "cl-center svelte-vdh3h6");
-        attr(div5, "class", "card-line svelte-vdh3h6");
-        attr(div6, "class", "card-line svelte-vdh3h6");
-        html_tag_3.a = t16;
-        html_tag_4.a = t19;
-        html_tag_5.a = t22;
-        html_tag_6.a = t25;
-        attr(div7, "class", "card-line svelte-vdh3h6");
-        attr(div8, "class", "card-details svelte-vdh3h6");
-      },
-      m(target, anchor) {
-        if (if_block0)
-          if_block0.m(target, anchor);
-        insert(target, t0, anchor);
-        if (if_block1)
-          if_block1.m(target, anchor);
-        insert(target, t1, anchor);
-        insert(target, div0, anchor);
-        div0.innerHTML = raw0_value;
-        insert(target, t2, anchor);
-        insert(target, div8, anchor);
-        append(div8, div5);
-        append(div5, div1);
-        html_tag.m(raw1_value, div1);
-        append(div1, t3);
-        append(div1, t4);
-        append(div5, t5);
-        append(div5, div2);
-        html_tag_1.m(raw2_value, div2);
-        append(div2, t6);
-        append(div2, b0);
-        append(b0, a);
-        append(a, t7);
-        append(div5, t8);
-        append(div5, div4);
-        append(div4, div3);
-        html_tag_2.m(raw3_value, div3);
-        append(div3, t9);
-        append(div3, b1);
-        append(div8, t11);
-        append(div8, div6);
-        append(div6, b2);
-        append(div6, t13);
-        append(div6, t14);
-        append(div8, t15);
-        append(div8, div7);
-        html_tag_3.m(raw4_value, div7);
-        append(div7, t16);
-        append(div7, b3);
-        append(b3, t17);
-        append(div7, t18);
-        html_tag_4.m(raw5_value, div7);
-        append(div7, t19);
-        append(div7, b4);
-        append(b4, t20);
-        append(div7, t21);
-        html_tag_5.m(raw6_value, div7);
-        append(div7, t22);
-        append(div7, b5);
-        append(b5, t23);
-        append(div7, t24);
-        html_tag_6.m(raw7_value, div7);
-        append(div7, t25);
-        append(div7, b6);
-        append(b6, t26);
-        if (!mounted) {
-          dispose = listen(div3, "click", function() {
-            if (is_function(COLLET_AND_ICON_CHANGE$1(
-              /*torrentInfo*/
-              ctx[0].collectLink,
-              "tI_" + /*torrentInfo*/
-              ctx[0].torrentIndex
-            )))
-              COLLET_AND_ICON_CHANGE$1(
-                /*torrentInfo*/
-                ctx[0].collectLink,
-                "tI_" + /*torrentInfo*/
-                ctx[0].torrentIndex
-              ).apply(this, arguments);
-          });
-          mounted = true;
-        }
-      },
-      p(new_ctx, dirty) {
-        ctx = new_ctx;
-        if (
-          /*torrentInfo*/
-          ctx[0].free_type || /*torrentInfo*/
-          ctx[0].pattMsg
-        ) {
-          if (if_block0) {
-            if_block0.p(ctx, dirty);
-          } else {
-            if_block0 = create_if_block_12$1(ctx);
-            if_block0.c();
-            if_block0.m(t0.parentNode, t0);
-          }
-        } else if (if_block0) {
-          if_block0.d(1);
-          if_block0 = null;
-        }
-        if (
-          /*torrentInfo*/
-          ctx[0].description
-        ) {
-          if (if_block1) {
-            if_block1.p(ctx, dirty);
-          } else {
-            if_block1 = create_if_block_11$1(ctx);
-            if_block1.c();
-            if_block1.m(t1.parentNode, t1);
-          }
-        } else if (if_block1) {
-          if_block1.d(1);
-          if_block1 = null;
-        }
-        if (dirty & /*torrentInfo*/
-        1 && raw0_value !== (raw0_value = /*torrentInfo*/
-        ctx[0].tagsDOM.map(
-          /*func_2*/
-          ctx[10]
-        ).join("") + ""))
-          div0.innerHTML = raw0_value;
-        if (dirty & /*ICON*/
-        4 && raw1_value !== (raw1_value = /*ICON*/
-        ctx[2].SIZE + ""))
-          html_tag.p(raw1_value);
-        if (dirty & /*torrentInfo*/
-        1 && t4_value !== (t4_value = /*torrentInfo*/
-        ctx[0].size + ""))
-          set_data(t4, t4_value);
-        if (dirty & /*ICON*/
-        4 && raw2_value !== (raw2_value = /*ICON*/
-        ctx[2].DOWNLOAD + ""))
-          html_tag_1.p(raw2_value);
-        if (dirty & /*torrentInfo*/
-        1 && a_href_value !== (a_href_value = /*torrentInfo*/
-        ctx[0].downloadLink)) {
-          attr(a, "href", a_href_value);
-        }
-        if (dirty & /*torrentInfo, ICON*/
-        5 && raw3_value !== (raw3_value = /*torrentInfo*/
-        (ctx[0].collectState == "Unbookmarked" ? (
-          /*ICON*/
-          ctx[2].COLLET
-        ) : (
-          /*ICON*/
-          ctx[2].COLLETED
-        )) + ""))
-          html_tag_2.p(raw3_value);
-        if (dirty & /*torrentInfo*/
-        1 && div3_id_value !== (div3_id_value = "tI_" + /*torrentInfo*/
-        ctx[0].torrentIndex)) {
-          attr(div3, "id", div3_id_value);
-        }
-        if (dirty & /*torrentInfo*/
-        1 && t14_value !== (t14_value = /*torrentInfo*/
-        ctx[0].upload_date + ""))
-          set_data(t14, t14_value);
-        if (dirty & /*ICON*/
-        4 && raw4_value !== (raw4_value = /*ICON*/
-        ctx[2].COMMENT + ""))
-          html_tag_3.p(raw4_value);
-        if (dirty & /*torrentInfo*/
-        1 && t17_value !== (t17_value = /*torrentInfo*/
-        ctx[0].comments + ""))
-          set_data(t17, t17_value);
-        if (dirty & /*ICON*/
-        4 && raw5_value !== (raw5_value = /*ICON*/
-        ctx[2].SEEDERS + ""))
-          html_tag_4.p(raw5_value);
-        if (dirty & /*torrentInfo*/
-        1 && t20_value !== (t20_value = /*torrentInfo*/
-        ctx[0].seeders + ""))
-          set_data(t20, t20_value);
-        if (dirty & /*ICON*/
-        4 && raw6_value !== (raw6_value = /*ICON*/
-        ctx[2].LEECHERS + ""))
-          html_tag_5.p(raw6_value);
-        if (dirty & /*torrentInfo*/
-        1 && t23_value !== (t23_value = /*torrentInfo*/
-        ctx[0].leechers + ""))
-          set_data(t23, t23_value);
-        if (dirty & /*ICON*/
-        4 && raw7_value !== (raw7_value = /*ICON*/
-        ctx[2].SNATCHED + ""))
-          html_tag_6.p(raw7_value);
-        if (dirty & /*torrentInfo*/
-        1 && t26_value !== (t26_value = /*torrentInfo*/
-        ctx[0].snatched + ""))
-          set_data(t26, t26_value);
-      },
-      d(detaching) {
-        if (if_block0)
-          if_block0.d(detaching);
-        if (detaching)
-          detach(t0);
-        if (if_block1)
-          if_block1.d(detaching);
-        if (detaching)
-          detach(t1);
-        if (detaching)
-          detach(div0);
-        if (detaching)
-          detach(t2);
-        if (detaching)
-          detach(div8);
         mounted = false;
         dispose();
       }
     };
   }
-  function create_if_block_12$1(ctx) {
-    let div1;
-    let div0;
-    let t0;
-    let t1;
-    let div0_class_value;
-    let if_block0 = (
-      /*torrentInfo*/
-      ctx[0].place_at_the_top.length != 0 && create_if_block_15$1(ctx)
-    );
-    let if_block1 = (
-      /*torrentInfo*/
-      ctx[0].freeTypeImg && create_if_block_14$1(ctx)
-    );
-    let if_block2 = (
-      /*torrentInfo*/
-      ctx[0].free_remaining_time && create_if_block_13$1(ctx)
-    );
-    return {
-      c() {
-        div1 = element("div");
-        div0 = element("div");
-        if (if_block0)
-          if_block0.c();
-        t0 = space();
-        if (if_block1)
-          if_block1.c();
-        t1 = space();
-        if (if_block2)
-          if_block2.c();
-        attr(div0, "class", div0_class_value = "top_and_free " + /*torrentInfo*/
-        ctx[0].free_type + " svelte-vdh3h6");
-        attr(div1, "class", "card-alter svelte-vdh3h6");
-      },
-      m(target, anchor) {
-        insert(target, div1, anchor);
-        append(div1, div0);
-        if (if_block0)
-          if_block0.m(div0, null);
-        append(div0, t0);
-        if (if_block1)
-          if_block1.m(div0, null);
-        append(div0, t1);
-        if (if_block2)
-          if_block2.m(div0, null);
-      },
-      p(ctx2, dirty) {
-        if (
-          /*torrentInfo*/
-          ctx2[0].place_at_the_top.length != 0
-        ) {
-          if (if_block0) {
-            if_block0.p(ctx2, dirty);
-          } else {
-            if_block0 = create_if_block_15$1(ctx2);
-            if_block0.c();
-            if_block0.m(div0, t0);
-          }
-        } else if (if_block0) {
-          if_block0.d(1);
-          if_block0 = null;
-        }
-        if (
-          /*torrentInfo*/
-          ctx2[0].freeTypeImg
-        ) {
-          if (if_block1) {
-            if_block1.p(ctx2, dirty);
-          } else {
-            if_block1 = create_if_block_14$1(ctx2);
-            if_block1.c();
-            if_block1.m(div0, t1);
-          }
-        } else if (if_block1) {
-          if_block1.d(1);
-          if_block1 = null;
-        }
-        if (
-          /*torrentInfo*/
-          ctx2[0].free_remaining_time
-        ) {
-          if (if_block2) {
-            if_block2.p(ctx2, dirty);
-          } else {
-            if_block2 = create_if_block_13$1(ctx2);
-            if_block2.c();
-            if_block2.m(div0, null);
-          }
-        } else if (if_block2) {
-          if_block2.d(1);
-          if_block2 = null;
-        }
-        if (dirty & /*torrentInfo*/
-        1 && div0_class_value !== (div0_class_value = "top_and_free " + /*torrentInfo*/
-        ctx2[0].free_type + " svelte-vdh3h6")) {
-          attr(div0, "class", div0_class_value);
-        }
-      },
-      d(detaching) {
-        if (detaching)
-          detach(div1);
-        if (if_block0)
-          if_block0.d();
-        if (if_block1)
-          if_block1.d();
-        if (if_block2)
-          if_block2.d();
-      }
-    };
-  }
-  function create_if_block_15$1(ctx) {
-    let html_tag;
-    let raw_value = Array.from(
-      /*torrentInfo*/
-      ctx[0].place_at_the_top
-    ).map(func_1$1) + "&nbsp;";
-    let html_anchor;
-    return {
-      c() {
-        html_tag = new HtmlTag(false);
-        html_anchor = empty();
-        html_tag.a = html_anchor;
-      },
-      m(target, anchor) {
-        html_tag.m(raw_value, target, anchor);
-        insert(target, html_anchor, anchor);
-      },
-      p(ctx2, dirty) {
-        if (dirty & /*torrentInfo*/
-        1 && raw_value !== (raw_value = Array.from(
-          /*torrentInfo*/
-          ctx2[0].place_at_the_top
-        ).map(func_1$1) + "&nbsp;"))
-          html_tag.p(raw_value);
-      },
-      d(detaching) {
-        if (detaching)
-          detach(html_anchor);
-        if (detaching)
-          html_tag.d();
-      }
-    };
-  }
-  function create_if_block_14$1(ctx) {
-    let html_tag;
-    let raw_value = (
-      /*torrentInfo*/
-      ctx[0].freeTypeImg.outerHTML + ""
-    );
-    let html_anchor;
-    return {
-      c() {
-        html_tag = new HtmlTag(false);
-        html_anchor = empty();
-        html_tag.a = html_anchor;
-      },
-      m(target, anchor) {
-        html_tag.m(raw_value, target, anchor);
-        insert(target, html_anchor, anchor);
-      },
-      p(ctx2, dirty) {
-        if (dirty & /*torrentInfo*/
-        1 && raw_value !== (raw_value = /*torrentInfo*/
-        ctx2[0].freeTypeImg.outerHTML + ""))
-          html_tag.p(raw_value);
-      },
-      d(detaching) {
-        if (detaching)
-          detach(html_anchor);
-        if (detaching)
-          html_tag.d();
-      }
-    };
-  }
-  function create_if_block_13$1(ctx) {
-    let t0;
-    let b;
-    let t1_value = (
-      /*torrentInfo*/
-      ctx[0].free_remaining_time + ""
-    );
-    let t1;
-    return {
-      c() {
-        t0 = text(" ");
-        b = element("b");
-        t1 = text(t1_value);
-      },
-      m(target, anchor) {
-        insert(target, t0, anchor);
-        insert(target, b, anchor);
-        append(b, t1);
-      },
-      p(ctx2, dirty) {
-        if (dirty & /*torrentInfo*/
-        1 && t1_value !== (t1_value = /*torrentInfo*/
-        ctx2[0].free_remaining_time + ""))
-          set_data(t1, t1_value);
-      },
-      d(detaching) {
-        if (detaching)
-          detach(t0);
-        if (detaching)
-          detach(b);
-      }
-    };
-  }
-  function create_if_block_11$1(ctx) {
-    let a;
-    let t_value = (
-      /*torrentInfo*/
-      ctx[0].description + ""
-    );
-    let t;
-    let a_href_value;
-    return {
-      c() {
-        a = element("a");
-        t = text(t_value);
-        attr(a, "class", "card-description svelte-vdh3h6");
-        attr(a, "href", a_href_value = /*torrentInfo*/
-        ctx[0].torrentLink);
-      },
-      m(target, anchor) {
-        insert(target, a, anchor);
-        append(a, t);
-      },
-      p(ctx2, dirty) {
-        if (dirty & /*torrentInfo*/
-        1 && t_value !== (t_value = /*torrentInfo*/
-        ctx2[0].description + ""))
-          set_data(t, t_value);
-        if (dirty & /*torrentInfo*/
-        1 && a_href_value !== (a_href_value = /*torrentInfo*/
-        ctx2[0].torrentLink)) {
-          attr(a, "href", a_href_value);
-        }
-      },
-      d(detaching) {
-        if (detaching)
-          detach(a);
-      }
-    };
-  }
-  function create_if_block$4(ctx) {
-    let t0;
-    let t1;
-    let t2;
-    let div;
-    let t3;
-    let t4;
-    let if_block0 = (
-      /*$_CARD_SHOW*/
-      ctx[5].free && /*torrentInfo*/
-      (ctx[0].free_type || /*torrentInfo*/
-      ctx[0].pattMsg) && create_if_block_6$1(ctx)
-    );
-    let if_block1 = (
-      /*$_CARD_SHOW*/
-      ctx[5].sub_title && /*torrentInfo*/
-      ctx[0].description && create_if_block_5$1(ctx)
-    );
-    let if_block2 = (
-      /*$_CARD_SHOW*/
-      ctx[5].tags && create_if_block_4$1(ctx)
-    );
-    let if_block3 = (
-      /*$_CARD_SHOW*/
-      ctx[5].size_download_collect && create_if_block_3$2(ctx)
-    );
-    let if_block4 = (
-      /*$_CARD_SHOW*/
-      ctx[5].upload_time && create_if_block_2$2(ctx)
-    );
-    let if_block5 = (
-      /*$_CARD_SHOW*/
-      ctx[5].statistics && create_if_block_1$3(ctx)
-    );
-    return {
-      c() {
-        if (if_block0)
-          if_block0.c();
-        t0 = space();
-        if (if_block1)
-          if_block1.c();
-        t1 = space();
-        if (if_block2)
-          if_block2.c();
-        t2 = space();
-        div = element("div");
-        if (if_block3)
-          if_block3.c();
-        t3 = space();
-        if (if_block4)
-          if_block4.c();
-        t4 = space();
-        if (if_block5)
-          if_block5.c();
-        attr(div, "class", "card-details svelte-vdh3h6");
-      },
-      m(target, anchor) {
-        if (if_block0)
-          if_block0.m(target, anchor);
-        insert(target, t0, anchor);
-        if (if_block1)
-          if_block1.m(target, anchor);
-        insert(target, t1, anchor);
-        if (if_block2)
-          if_block2.m(target, anchor);
-        insert(target, t2, anchor);
-        insert(target, div, anchor);
-        if (if_block3)
-          if_block3.m(div, null);
-        append(div, t3);
-        if (if_block4)
-          if_block4.m(div, null);
-        append(div, t4);
-        if (if_block5)
-          if_block5.m(div, null);
-      },
-      p(ctx2, dirty) {
-        if (
-          /*$_CARD_SHOW*/
-          ctx2[5].free && /*torrentInfo*/
-          (ctx2[0].free_type || /*torrentInfo*/
-          ctx2[0].pattMsg)
-        ) {
-          if (if_block0) {
-            if_block0.p(ctx2, dirty);
-          } else {
-            if_block0 = create_if_block_6$1(ctx2);
-            if_block0.c();
-            if_block0.m(t0.parentNode, t0);
-          }
-        } else if (if_block0) {
-          if_block0.d(1);
-          if_block0 = null;
-        }
-        if (
-          /*$_CARD_SHOW*/
-          ctx2[5].sub_title && /*torrentInfo*/
-          ctx2[0].description
-        ) {
-          if (if_block1) {
-            if_block1.p(ctx2, dirty);
-          } else {
-            if_block1 = create_if_block_5$1(ctx2);
-            if_block1.c();
-            if_block1.m(t1.parentNode, t1);
-          }
-        } else if (if_block1) {
-          if_block1.d(1);
-          if_block1 = null;
-        }
-        if (
-          /*$_CARD_SHOW*/
-          ctx2[5].tags
-        ) {
-          if (if_block2) {
-            if_block2.p(ctx2, dirty);
-          } else {
-            if_block2 = create_if_block_4$1(ctx2);
-            if_block2.c();
-            if_block2.m(t2.parentNode, t2);
-          }
-        } else if (if_block2) {
-          if_block2.d(1);
-          if_block2 = null;
-        }
-        if (
-          /*$_CARD_SHOW*/
-          ctx2[5].size_download_collect
-        ) {
-          if (if_block3) {
-            if_block3.p(ctx2, dirty);
-          } else {
-            if_block3 = create_if_block_3$2(ctx2);
-            if_block3.c();
-            if_block3.m(div, t3);
-          }
-        } else if (if_block3) {
-          if_block3.d(1);
-          if_block3 = null;
-        }
-        if (
-          /*$_CARD_SHOW*/
-          ctx2[5].upload_time
-        ) {
-          if (if_block4) {
-            if_block4.p(ctx2, dirty);
-          } else {
-            if_block4 = create_if_block_2$2(ctx2);
-            if_block4.c();
-            if_block4.m(div, t4);
-          }
-        } else if (if_block4) {
-          if_block4.d(1);
-          if_block4 = null;
-        }
-        if (
-          /*$_CARD_SHOW*/
-          ctx2[5].statistics
-        ) {
-          if (if_block5) {
-            if_block5.p(ctx2, dirty);
-          } else {
-            if_block5 = create_if_block_1$3(ctx2);
-            if_block5.c();
-            if_block5.m(div, null);
-          }
-        } else if (if_block5) {
-          if_block5.d(1);
-          if_block5 = null;
-        }
-      },
-      d(detaching) {
-        if (if_block0)
-          if_block0.d(detaching);
-        if (detaching)
-          detach(t0);
-        if (if_block1)
-          if_block1.d(detaching);
-        if (detaching)
-          detach(t1);
-        if (if_block2)
-          if_block2.d(detaching);
-        if (detaching)
-          detach(t2);
-        if (detaching)
-          detach(div);
-        if (if_block3)
-          if_block3.d();
-        if (if_block4)
-          if_block4.d();
-        if (if_block5)
-          if_block5.d();
-      }
-    };
-  }
-  function create_if_block_6$1(ctx) {
-    let div1;
-    let div0;
-    let t0;
-    let t1;
-    let div0_class_value;
-    let if_block0 = (
-      /*torrentInfo*/
-      ctx[0].place_at_the_top.length != 0 && create_if_block_9$1(ctx)
-    );
-    let if_block1 = (
-      /*torrentInfo*/
-      ctx[0].freeTypeImg && create_if_block_8$1(ctx)
-    );
-    let if_block2 = (
-      /*torrentInfo*/
-      ctx[0].free_remaining_time && create_if_block_7$1(ctx)
-    );
-    return {
-      c() {
-        div1 = element("div");
-        div0 = element("div");
-        if (if_block0)
-          if_block0.c();
-        t0 = space();
-        if (if_block1)
-          if_block1.c();
-        t1 = space();
-        if (if_block2)
-          if_block2.c();
-        attr(div0, "class", div0_class_value = "top_and_free " + /*torrentInfo*/
-        ctx[0].free_type + " svelte-vdh3h6");
-        attr(div1, "class", "card-alter svelte-vdh3h6");
-      },
-      m(target, anchor) {
-        insert(target, div1, anchor);
-        append(div1, div0);
-        if (if_block0)
-          if_block0.m(div0, null);
-        append(div0, t0);
-        if (if_block1)
-          if_block1.m(div0, null);
-        append(div0, t1);
-        if (if_block2)
-          if_block2.m(div0, null);
-      },
-      p(ctx2, dirty) {
-        if (
-          /*torrentInfo*/
-          ctx2[0].place_at_the_top.length != 0
-        ) {
-          if (if_block0) {
-            if_block0.p(ctx2, dirty);
-          } else {
-            if_block0 = create_if_block_9$1(ctx2);
-            if_block0.c();
-            if_block0.m(div0, t0);
-          }
-        } else if (if_block0) {
-          if_block0.d(1);
-          if_block0 = null;
-        }
-        if (
-          /*torrentInfo*/
-          ctx2[0].freeTypeImg
-        ) {
-          if (if_block1) {
-            if_block1.p(ctx2, dirty);
-          } else {
-            if_block1 = create_if_block_8$1(ctx2);
-            if_block1.c();
-            if_block1.m(div0, t1);
-          }
-        } else if (if_block1) {
-          if_block1.d(1);
-          if_block1 = null;
-        }
-        if (
-          /*torrentInfo*/
-          ctx2[0].free_remaining_time
-        ) {
-          if (if_block2) {
-            if_block2.p(ctx2, dirty);
-          } else {
-            if_block2 = create_if_block_7$1(ctx2);
-            if_block2.c();
-            if_block2.m(div0, null);
-          }
-        } else if (if_block2) {
-          if_block2.d(1);
-          if_block2 = null;
-        }
-        if (dirty & /*torrentInfo*/
-        1 && div0_class_value !== (div0_class_value = "top_and_free " + /*torrentInfo*/
-        ctx2[0].free_type + " svelte-vdh3h6")) {
-          attr(div0, "class", div0_class_value);
-        }
-      },
-      d(detaching) {
-        if (detaching)
-          detach(div1);
-        if (if_block0)
-          if_block0.d();
-        if (if_block1)
-          if_block1.d();
-        if (if_block2)
-          if_block2.d();
-      }
-    };
-  }
-  function create_if_block_9$1(ctx) {
-    let html_tag;
-    let raw_value = Array.from(
-      /*torrentInfo*/
-      ctx[0].place_at_the_top
-    ).map(func_3$1) + "&nbsp;";
-    let html_anchor;
-    return {
-      c() {
-        html_tag = new HtmlTag(false);
-        html_anchor = empty();
-        html_tag.a = html_anchor;
-      },
-      m(target, anchor) {
-        html_tag.m(raw_value, target, anchor);
-        insert(target, html_anchor, anchor);
-      },
-      p(ctx2, dirty) {
-        if (dirty & /*torrentInfo*/
-        1 && raw_value !== (raw_value = Array.from(
-          /*torrentInfo*/
-          ctx2[0].place_at_the_top
-        ).map(func_3$1) + "&nbsp;"))
-          html_tag.p(raw_value);
-      },
-      d(detaching) {
-        if (detaching)
-          detach(html_anchor);
-        if (detaching)
-          html_tag.d();
-      }
-    };
-  }
-  function create_if_block_8$1(ctx) {
-    let html_tag;
-    let raw_value = (
-      /*torrentInfo*/
-      ctx[0].freeTypeImg.outerHTML + ""
-    );
-    let html_anchor;
-    return {
-      c() {
-        html_tag = new HtmlTag(false);
-        html_anchor = empty();
-        html_tag.a = html_anchor;
-      },
-      m(target, anchor) {
-        html_tag.m(raw_value, target, anchor);
-        insert(target, html_anchor, anchor);
-      },
-      p(ctx2, dirty) {
-        if (dirty & /*torrentInfo*/
-        1 && raw_value !== (raw_value = /*torrentInfo*/
-        ctx2[0].freeTypeImg.outerHTML + ""))
-          html_tag.p(raw_value);
-      },
-      d(detaching) {
-        if (detaching)
-          detach(html_anchor);
-        if (detaching)
-          html_tag.d();
-      }
-    };
-  }
-  function create_if_block_7$1(ctx) {
-    let t0;
-    let b;
-    let t1_value = (
-      /*torrentInfo*/
-      ctx[0].free_remaining_time + ""
-    );
-    let t1;
-    return {
-      c() {
-        t0 = text(" ");
-        b = element("b");
-        t1 = text(t1_value);
-      },
-      m(target, anchor) {
-        insert(target, t0, anchor);
-        insert(target, b, anchor);
-        append(b, t1);
-      },
-      p(ctx2, dirty) {
-        if (dirty & /*torrentInfo*/
-        1 && t1_value !== (t1_value = /*torrentInfo*/
-        ctx2[0].free_remaining_time + ""))
-          set_data(t1, t1_value);
-      },
-      d(detaching) {
-        if (detaching)
-          detach(t0);
-        if (detaching)
-          detach(b);
-      }
-    };
-  }
-  function create_if_block_5$1(ctx) {
-    let a;
-    let t_value = (
-      /*torrentInfo*/
-      ctx[0].description + ""
-    );
-    let t;
-    let a_href_value;
-    return {
-      c() {
-        a = element("a");
-        t = text(t_value);
-        attr(a, "class", "card-description svelte-vdh3h6");
-        attr(a, "href", a_href_value = /*torrentInfo*/
-        ctx[0].torrentLink);
-      },
-      m(target, anchor) {
-        insert(target, a, anchor);
-        append(a, t);
-      },
-      p(ctx2, dirty) {
-        if (dirty & /*torrentInfo*/
-        1 && t_value !== (t_value = /*torrentInfo*/
-        ctx2[0].description + ""))
-          set_data(t, t_value);
-        if (dirty & /*torrentInfo*/
-        1 && a_href_value !== (a_href_value = /*torrentInfo*/
-        ctx2[0].torrentLink)) {
-          attr(a, "href", a_href_value);
-        }
-      },
-      d(detaching) {
-        if (detaching)
-          detach(a);
-      }
-    };
-  }
-  function create_if_block_4$1(ctx) {
-    let div;
-    let raw_value = (
-      /*torrentInfo*/
-      ctx[0].tagsDOM.map(
-        /*func_4*/
-        ctx[11]
-      ).join("") + ""
-    );
-    return {
-      c() {
-        div = element("div");
-        attr(div, "class", "cl-tags svelte-vdh3h6");
-      },
-      m(target, anchor) {
-        insert(target, div, anchor);
-        div.innerHTML = raw_value;
-      },
-      p(ctx2, dirty) {
-        if (dirty & /*torrentInfo*/
-        1 && raw_value !== (raw_value = /*torrentInfo*/
-        ctx2[0].tagsDOM.map(
-          /*func_4*/
-          ctx2[11]
-        ).join("") + ""))
-          div.innerHTML = raw_value;
-      },
-      d(detaching) {
-        if (detaching)
-          detach(div);
-      }
-    };
-  }
-  function create_if_block_3$2(ctx) {
-    let div4;
-    let div0;
-    let html_tag;
-    let raw0_value = (
-      /*ICON*/
-      ctx[2].SIZE + ""
-    );
-    let t0;
-    let t1_value = (
-      /*torrentInfo*/
-      ctx[0].size + ""
-    );
-    let t1;
-    let t2;
-    let div1;
-    let html_tag_1;
-    let raw1_value = (
-      /*ICON*/
-      ctx[2].DOWNLOAD + ""
-    );
-    let t3;
-    let b0;
-    let a;
-    let t4;
-    let a_href_value;
-    let t5;
-    let div3;
-    let div2;
-    let html_tag_2;
-    let raw2_value = (
-      /*torrentInfo*/
-      (ctx[0].collectState == "Unbookmarked" ? (
-        /*ICON*/
-        ctx[2].COLLET
-      ) : (
-        /*ICON*/
-        ctx[2].COLLETED
-      )) + ""
-    );
-    let t6;
-    let b1;
-    let div2_id_value;
+  function create_else_block$2(ctx) {
+    let img;
+    let img_src_value;
+    let img_alt_value;
     let mounted;
     let dispose;
     return {
       c() {
-        div4 = element("div");
-        div0 = element("div");
-        html_tag = new HtmlTag(false);
-        t0 = text(" ");
-        t1 = text(t1_value);
-        t2 = text("\n\n            \n              \n            ");
-        div1 = element("div");
-        html_tag_1 = new HtmlTag(false);
-        t3 = text(" \n              ");
-        b0 = element("b");
-        a = element("a");
-        t4 = text("下载");
-        t5 = text("\n\n            \n              \n            ");
-        div3 = element("div");
-        div2 = element("div");
-        html_tag_2 = new HtmlTag(false);
-        t6 = text("\n                 ");
-        b1 = element("b");
-        b1.textContent = "收藏";
-        html_tag.a = t0;
-        attr(div0, "class", "cl-center svelte-vdh3h6");
-        html_tag_1.a = t3;
-        attr(a, "href", a_href_value = /*torrentInfo*/
-        ctx[0].downloadLink);
-        attr(div1, "class", "cl-center svelte-vdh3h6");
-        html_tag_2.a = t6;
-        attr(div2, "class", "btnCollet cl-center svelte-vdh3h6");
-        attr(div2, "id", div2_id_value = "tI_" + /*torrentInfo*/
-        ctx[0].torrentIndex);
-        attr(div3, "class", "cl-center svelte-vdh3h6");
-        attr(div4, "class", "card-line svelte-vdh3h6");
+        img = element("img");
+        attr(img, "class", "card-image--img nexus-lazy-load_Kesa svelte-xrdclb");
+        if (!src_url_equal(img.src, img_src_value = CONFIG.LOADING_PIC))
+          attr(img, "src", img_src_value);
+        attr(
+          img,
+          "data-src",
+          /*picSrc*/
+          ctx[3]
+        );
+        attr(img, "alt", img_alt_value = /*it*/
+        ctx[1].name);
       },
       m(target, anchor) {
-        insert(target, div4, anchor);
-        append(div4, div0);
-        html_tag.m(raw0_value, div0);
-        append(div0, t0);
-        append(div0, t1);
-        append(div4, t2);
-        append(div4, div1);
-        html_tag_1.m(raw1_value, div1);
-        append(div1, t3);
-        append(div1, b0);
-        append(b0, a);
-        append(a, t4);
-        append(div4, t5);
-        append(div4, div3);
-        append(div3, div2);
-        html_tag_2.m(raw2_value, div2);
-        append(div2, t6);
-        append(div2, b1);
+        insert(target, img, anchor);
         if (!mounted) {
-          dispose = listen(div2, "click", function() {
-            if (is_function(COLLET_AND_ICON_CHANGE$1(
-              /*torrentInfo*/
-              ctx[0].collectLink,
-              "tI_" + /*torrentInfo*/
-              ctx[0].torrentIndex
-            )))
-              COLLET_AND_ICON_CHANGE$1(
-                /*torrentInfo*/
-                ctx[0].collectLink,
-                "tI_" + /*torrentInfo*/
-                ctx[0].torrentIndex
-              ).apply(this, arguments);
-          });
+          dispose = [
+            listen(
+              img,
+              "load",
+              /*sort_masonry*/
+              ctx[14]
+            ),
+            listen(
+              img,
+              "error",
+              /*onPicError*/
+              ctx[12]
+            )
+          ];
           mounted = true;
         }
       },
-      p(new_ctx, dirty) {
-        ctx = new_ctx;
-        if (dirty & /*ICON*/
-        4 && raw0_value !== (raw0_value = /*ICON*/
-        ctx[2].SIZE + ""))
-          html_tag.p(raw0_value);
-        if (dirty & /*torrentInfo*/
-        1 && t1_value !== (t1_value = /*torrentInfo*/
-        ctx[0].size + ""))
-          set_data(t1, t1_value);
-        if (dirty & /*ICON*/
-        4 && raw1_value !== (raw1_value = /*ICON*/
-        ctx[2].DOWNLOAD + ""))
-          html_tag_1.p(raw1_value);
-        if (dirty & /*torrentInfo*/
-        1 && a_href_value !== (a_href_value = /*torrentInfo*/
-        ctx[0].downloadLink)) {
-          attr(a, "href", a_href_value);
+      p(ctx2, dirty) {
+        if (dirty & /*picSrc*/
+        8) {
+          attr(
+            img,
+            "data-src",
+            /*picSrc*/
+            ctx2[3]
+          );
         }
-        if (dirty & /*torrentInfo, ICON*/
-        5 && raw2_value !== (raw2_value = /*torrentInfo*/
-        (ctx[0].collectState == "Unbookmarked" ? (
-          /*ICON*/
-          ctx[2].COLLET
-        ) : (
-          /*ICON*/
-          ctx[2].COLLETED
-        )) + ""))
-          html_tag_2.p(raw2_value);
-        if (dirty & /*torrentInfo*/
-        1 && div2_id_value !== (div2_id_value = "tI_" + /*torrentInfo*/
-        ctx[0].torrentIndex)) {
-          attr(div2, "id", div2_id_value);
+        if (dirty & /*it*/
+        2 && img_alt_value !== (img_alt_value = /*it*/
+        ctx2[1].name)) {
+          attr(img, "alt", img_alt_value);
         }
       },
       d(detaching) {
         if (detaching)
-          detach(div4);
+          detach(img);
         mounted = false;
-        dispose();
+        run_all(dispose);
       }
     };
   }
-  function create_if_block_2$2(ctx) {
+  function create_if_block_8(ctx) {
+    let div;
+    let t_value = (
+      /*$_pic_failed_showInfo*/
+      (ctx[9] ? (
+        /*it*/
+        ctx[1].name || "图片加载失败"
+      ) : "图片加载失败") + ""
+    );
+    let t;
+    return {
+      c() {
+        div = element("div");
+        t = text(t_value);
+        attr(div, "class", "pic_error svelte-xrdclb");
+      },
+      m(target, anchor) {
+        insert(target, div, anchor);
+        append(div, t);
+      },
+      p(ctx2, dirty) {
+        if (dirty & /*$_pic_failed_showInfo, it*/
+        514 && t_value !== (t_value = /*$_pic_failed_showInfo*/
+        (ctx2[9] ? (
+          /*it*/
+          ctx2[1].name || "图片加载失败"
+        ) : "图片加载失败") + ""))
+          set_data(t, t_value);
+      },
+      d(detaching) {
+        if (detaching)
+          detach(div);
+      }
+    };
+  }
+  function create_if_block_7(ctx) {
+    let div;
+    let t_value = (
+      /*_discountText*/
+      (ctx[13][
+        /*it*/
+        ctx[1].status.discount
+      ] || /*it*/
+      ctx[1].status.discount) + ""
+    );
+    let t;
+    return {
+      c() {
+        div = element("div");
+        t = text(t_value);
+        attr(div, "class", "card-discount svelte-xrdclb");
+        toggle_class(
+          div,
+          "isFree",
+          /*it*/
+          ctx[1].status.discount == "FREE"
+        );
+        toggle_class(
+          div,
+          "is50",
+          /*it*/
+          ctx[1].status.discount == "PERCENT_50"
+        );
+      },
+      m(target, anchor) {
+        insert(target, div, anchor);
+        append(div, t);
+      },
+      p(ctx2, dirty) {
+        if (dirty & /*it*/
+        2 && t_value !== (t_value = /*_discountText*/
+        (ctx2[13][
+          /*it*/
+          ctx2[1].status.discount
+        ] || /*it*/
+        ctx2[1].status.discount) + ""))
+          set_data(t, t_value);
+        if (dirty & /*it*/
+        2) {
+          toggle_class(
+            div,
+            "isFree",
+            /*it*/
+            ctx2[1].status.discount == "FREE"
+          );
+        }
+        if (dirty & /*it*/
+        2) {
+          toggle_class(
+            div,
+            "is50",
+            /*it*/
+            ctx2[1].status.discount == "PERCENT_50"
+          );
+        }
+      },
+      d(detaching) {
+        if (detaching)
+          detach(div);
+      }
+    };
+  }
+  function create_if_block_6(ctx) {
     let div;
     let b;
     let t1;
-    let t2_value = (
-      /*torrentInfo*/
-      ctx[0].upload_date + ""
-    );
+    let t2_value = getFileSize(
+      /*it*/
+      ctx[1].size
+    ) + "";
     let t2;
     return {
       c() {
         div = element("div");
         b = element("b");
-        b.textContent = "上传时间:";
+        b.textContent = "大小:";
         t1 = space();
         t2 = text(t2_value);
-        attr(div, "class", "card-line svelte-vdh3h6");
+        attr(div, "class", "card-line svelte-xrdclb");
       },
       m(target, anchor) {
         insert(target, div, anchor);
@@ -6655,9 +8121,11 @@
         append(div, t2);
       },
       p(ctx2, dirty) {
-        if (dirty & /*torrentInfo*/
-        1 && t2_value !== (t2_value = /*torrentInfo*/
-        ctx2[0].upload_date + ""))
+        if (dirty & /*it*/
+        2 && t2_value !== (t2_value = getFileSize(
+          /*it*/
+          ctx2[1].size
+        ) + ""))
           set_data(t2, t2_value);
       },
       d(detaching) {
@@ -6666,142 +8134,68 @@
       }
     };
   }
-  function create_if_block_1$3(ctx) {
+  function create_if_block_5(ctx) {
     let div;
-    let html_tag;
-    let raw0_value = (
-      /*ICON*/
-      ctx[2].COMMENT + ""
-    );
     let t0;
     let b0;
     let t1_value = (
-      /*torrentInfo*/
-      ctx[0].comments + ""
+      /*it*/
+      (ctx[1].status.comments ?? 0) + ""
     );
     let t1;
     let t2;
-    let html_tag_1;
-    let raw1_value = (
-      /*ICON*/
-      ctx[2].SEEDERS + ""
+    let b1;
+    let t3_value = (
+      /*it*/
+      (ctx[1].status.seeders ?? 0) + ""
     );
     let t3;
-    let b1;
-    let t4_value = (
-      /*torrentInfo*/
-      ctx[0].seeders + ""
-    );
     let t4;
-    let t5;
-    let html_tag_2;
-    let raw2_value = (
-      /*ICON*/
-      ctx[2].LEECHERS + ""
-    );
-    let t6;
     let b2;
-    let t7_value = (
-      /*torrentInfo*/
-      ctx[0].leechers + ""
+    let t5_value = (
+      /*it*/
+      (ctx[1].status.leechers ?? 0) + ""
     );
-    let t7;
-    let t8;
-    let html_tag_3;
-    let raw3_value = (
-      /*ICON*/
-      ctx[2].SNATCHED + ""
-    );
-    let t9;
-    let b3;
-    let t10_value = (
-      /*torrentInfo*/
-      ctx[0].snatched + ""
-    );
-    let t10;
+    let t5;
     return {
       c() {
         div = element("div");
-        html_tag = new HtmlTag(false);
-        t0 = text(" ");
+        t0 = text("评论:");
         b0 = element("b");
         t1 = text(t1_value);
-        t2 = text("  \n            ");
-        html_tag_1 = new HtmlTag(false);
-        t3 = text(" ");
+        t2 = text("  \n          做种:");
         b1 = element("b");
-        t4 = text(t4_value);
-        t5 = text("  \n            ");
-        html_tag_2 = new HtmlTag(false);
-        t6 = text(" ");
+        t3 = text(t3_value);
+        t4 = text("  \n          下载:");
         b2 = element("b");
-        t7 = text(t7_value);
-        t8 = text("  \n            ");
-        html_tag_3 = new HtmlTag(false);
-        t9 = text(" ");
-        b3 = element("b");
-        t10 = text(t10_value);
-        html_tag.a = t0;
-        html_tag_1.a = t3;
-        html_tag_2.a = t6;
-        html_tag_3.a = t9;
-        attr(div, "class", "card-line svelte-vdh3h6");
+        t5 = text(t5_value);
+        attr(div, "class", "card-line svelte-xrdclb");
       },
       m(target, anchor) {
         insert(target, div, anchor);
-        html_tag.m(raw0_value, div);
         append(div, t0);
         append(div, b0);
         append(b0, t1);
         append(div, t2);
-        html_tag_1.m(raw1_value, div);
-        append(div, t3);
         append(div, b1);
-        append(b1, t4);
-        append(div, t5);
-        html_tag_2.m(raw2_value, div);
-        append(div, t6);
+        append(b1, t3);
+        append(div, t4);
         append(div, b2);
-        append(b2, t7);
-        append(div, t8);
-        html_tag_3.m(raw3_value, div);
-        append(div, t9);
-        append(div, b3);
-        append(b3, t10);
+        append(b2, t5);
       },
       p(ctx2, dirty) {
-        if (dirty & /*ICON*/
-        4 && raw0_value !== (raw0_value = /*ICON*/
-        ctx2[2].COMMENT + ""))
-          html_tag.p(raw0_value);
-        if (dirty & /*torrentInfo*/
-        1 && t1_value !== (t1_value = /*torrentInfo*/
-        ctx2[0].comments + ""))
+        if (dirty & /*it*/
+        2 && t1_value !== (t1_value = /*it*/
+        (ctx2[1].status.comments ?? 0) + ""))
           set_data(t1, t1_value);
-        if (dirty & /*ICON*/
-        4 && raw1_value !== (raw1_value = /*ICON*/
-        ctx2[2].SEEDERS + ""))
-          html_tag_1.p(raw1_value);
-        if (dirty & /*torrentInfo*/
-        1 && t4_value !== (t4_value = /*torrentInfo*/
-        ctx2[0].seeders + ""))
-          set_data(t4, t4_value);
-        if (dirty & /*ICON*/
-        4 && raw2_value !== (raw2_value = /*ICON*/
-        ctx2[2].LEECHERS + ""))
-          html_tag_2.p(raw2_value);
-        if (dirty & /*torrentInfo*/
-        1 && t7_value !== (t7_value = /*torrentInfo*/
-        ctx2[0].leechers + ""))
-          set_data(t7, t7_value);
-        if (dirty & /*ICON*/
-        4 && raw3_value !== (raw3_value = /*ICON*/
-        ctx2[2].SNATCHED + ""))
-          html_tag_3.p(raw3_value);
-        if (dirty & /*torrentInfo*/
-        1 && t10_value !== (t10_value = /*torrentInfo*/
-        ctx2[0].snatched + ""))
-          set_data(t10, t10_value);
+        if (dirty & /*it*/
+        2 && t3_value !== (t3_value = /*it*/
+        (ctx2[1].status.seeders ?? 0) + ""))
+          set_data(t3, t3_value);
+        if (dirty & /*it*/
+        2 && t5_value !== (t5_value = /*it*/
+        (ctx2[1].status.leechers ?? 0) + ""))
+          set_data(t5, t5_value);
       },
       d(detaching) {
         if (detaching)
@@ -6809,1119 +8203,34 @@
       }
     };
   }
-  function create_fragment$4(ctx) {
-    let div4;
-    let div3;
-    let div0;
-    let t0_value = (
-      /*torrentInfo*/
-      ctx[0].category + ""
-    );
-    let t0;
-    let div0_data_href_value;
-    let t1;
-    let t2;
-    let div2;
-    let img;
-    let img_src_value;
-    let img_data_src_value;
-    let img_alt_value;
-    let t3;
-    let div1;
-    let t4_value = (
-      /*torrentInfo*/
-      ctx[0].torrentIndex + 1 + ""
-    );
-    let t4;
-    let t5;
-    let t6;
-    let mounted;
-    let dispose;
-    let if_block0 = (
-      /*$_CARD_SHOW*/
-      (ctx[5].title || /*_hover*/
-      ctx[3]) && create_if_block_16$1(ctx)
-    );
-    let if_block1 = (
-      /*$_CARD_SHOW*/
-      (ctx[5].all || /*_hover*/
-      ctx[3]) && create_if_block_10$1(ctx)
-    );
-    let if_block2 = !/*$_CARD_SHOW*/
-    (ctx[5].all || /*_hover*/
-    ctx[3]) && create_if_block$4(ctx);
-    return {
-      c() {
-        div4 = element("div");
-        div3 = element("div");
-        div0 = element("div");
-        t0 = text(t0_value);
-        t1 = space();
-        if (if_block0)
-          if_block0.c();
-        t2 = space();
-        div2 = element("div");
-        img = element("img");
-        t3 = space();
-        div1 = element("div");
-        t4 = text(t4_value);
-        t5 = space();
-        if (if_block1)
-          if_block1.c();
-        t6 = space();
-        if (if_block2)
-          if_block2.c();
-        attr(div0, "class", "card-category svelte-vdh3h6");
-        attr(div0, "data-href", div0_data_href_value = /*torrentInfo*/
-        ctx[0].categoryLink);
-        set_style(div0, "background-color", CONFIG$1.CATEGORY[
-          /*torrentInfo*/
-          ctx[0].categoryNumber
-        ] ?? "transparent");
-        set_style(div0, "color", CONFIG$1.CATEGORY[
-          /*torrentInfo*/
-          ctx[0].categoryNumber
-        ] ? getTextColor$1(CONFIG$1.CATEGORY[
-          /*torrentInfo*/
-          ctx[0].categoryNumber
-        ]) : "black");
-        attr(img, "class", "card-image--img nexus-lazy-load_Kesa svelte-vdh3h6");
-        if (!src_url_equal(img.src, img_src_value = CONFIG$1.LOADING_PIC))
-          attr(img, "src", img_src_value);
-        attr(img, "data-src", img_data_src_value = /*torrentInfo*/
-        ctx[0].picLink);
-        attr(img, "alt", img_alt_value = /*torrentInfo*/
-        ctx[0].torrentName);
-        attr(div1, "class", "card-index svelte-vdh3h6");
-        attr(div2, "class", "card-image svelte-vdh3h6");
-        attr(div3, "class", "card-holder svelte-vdh3h6");
-        attr(div4, "class", "card svelte-vdh3h6");
-        set_style(
-          div4,
-          "width",
-          /*cardWidth*/
-          ctx[1] + "px"
-        );
-        set_style(div4, "z-index", 1e4 - /*torrentInfo*/
-        ctx[0].torrentIndex);
-        set_style(
-          div4,
-          "background-color",
-          /*$_current_bgColor*/
-          ctx[4]
-        );
-      },
-      m(target, anchor) {
-        insert(target, div4, anchor);
-        append(div4, div3);
-        append(div3, div0);
-        append(div0, t0);
-        append(div3, t1);
-        if (if_block0)
-          if_block0.m(div3, null);
-        append(div3, t2);
-        append(div3, div2);
-        append(div2, img);
-        append(div2, t3);
-        append(div2, div1);
-        append(div1, t4);
-        append(div3, t5);
-        if (if_block1)
-          if_block1.m(div3, null);
-        append(div3, t6);
-        if (if_block2)
-          if_block2.m(div3, null);
-        if (!mounted) {
-          dispose = [
-            listen(
-              img,
-              "load",
-              /*sort_masonry*/
-              ctx[6]
-            ),
-            listen(
-              img,
-              "click",
-              /*showDetailIframe*/
-              ctx[7]
-            ),
-            listen(
-              div3,
-              "mouseenter",
-              /*card_show_detail*/
-              ctx[8]
-            ),
-            listen(
-              div3,
-              "mouseleave",
-              /*card_hide_detail*/
-              ctx[9]
-            )
-          ];
-          mounted = true;
-        }
-      },
-      p(ctx2, [dirty]) {
-        if (dirty & /*torrentInfo*/
-        1 && t0_value !== (t0_value = /*torrentInfo*/
-        ctx2[0].category + ""))
-          set_data(t0, t0_value);
-        if (dirty & /*torrentInfo*/
-        1 && div0_data_href_value !== (div0_data_href_value = /*torrentInfo*/
-        ctx2[0].categoryLink)) {
-          attr(div0, "data-href", div0_data_href_value);
-        }
-        if (dirty & /*torrentInfo*/
-        1) {
-          set_style(div0, "background-color", CONFIG$1.CATEGORY[
-            /*torrentInfo*/
-            ctx2[0].categoryNumber
-          ] ?? "transparent");
-        }
-        if (dirty & /*torrentInfo*/
-        1) {
-          set_style(div0, "color", CONFIG$1.CATEGORY[
-            /*torrentInfo*/
-            ctx2[0].categoryNumber
-          ] ? getTextColor$1(CONFIG$1.CATEGORY[
-            /*torrentInfo*/
-            ctx2[0].categoryNumber
-          ]) : "black");
-        }
-        if (
-          /*$_CARD_SHOW*/
-          ctx2[5].title || /*_hover*/
-          ctx2[3]
-        ) {
-          if (if_block0) {
-            if_block0.p(ctx2, dirty);
-          } else {
-            if_block0 = create_if_block_16$1(ctx2);
-            if_block0.c();
-            if_block0.m(div3, t2);
-          }
-        } else if (if_block0) {
-          if_block0.d(1);
-          if_block0 = null;
-        }
-        if (dirty & /*torrentInfo*/
-        1 && img_data_src_value !== (img_data_src_value = /*torrentInfo*/
-        ctx2[0].picLink)) {
-          attr(img, "data-src", img_data_src_value);
-        }
-        if (dirty & /*torrentInfo*/
-        1 && img_alt_value !== (img_alt_value = /*torrentInfo*/
-        ctx2[0].torrentName)) {
-          attr(img, "alt", img_alt_value);
-        }
-        if (dirty & /*torrentInfo*/
-        1 && t4_value !== (t4_value = /*torrentInfo*/
-        ctx2[0].torrentIndex + 1 + ""))
-          set_data(t4, t4_value);
-        if (
-          /*$_CARD_SHOW*/
-          ctx2[5].all || /*_hover*/
-          ctx2[3]
-        ) {
-          if (if_block1) {
-            if_block1.p(ctx2, dirty);
-          } else {
-            if_block1 = create_if_block_10$1(ctx2);
-            if_block1.c();
-            if_block1.m(div3, t6);
-          }
-        } else if (if_block1) {
-          if_block1.d(1);
-          if_block1 = null;
-        }
-        if (!/*$_CARD_SHOW*/
-        (ctx2[5].all || /*_hover*/
-        ctx2[3])) {
-          if (if_block2) {
-            if_block2.p(ctx2, dirty);
-          } else {
-            if_block2 = create_if_block$4(ctx2);
-            if_block2.c();
-            if_block2.m(div3, null);
-          }
-        } else if (if_block2) {
-          if_block2.d(1);
-          if_block2 = null;
-        }
-        if (dirty & /*cardWidth*/
-        2) {
-          set_style(
-            div4,
-            "width",
-            /*cardWidth*/
-            ctx2[1] + "px"
-          );
-        }
-        if (dirty & /*torrentInfo*/
-        1) {
-          set_style(div4, "z-index", 1e4 - /*torrentInfo*/
-          ctx2[0].torrentIndex);
-        }
-        if (dirty & /*$_current_bgColor*/
-        16) {
-          set_style(
-            div4,
-            "background-color",
-            /*$_current_bgColor*/
-            ctx2[4]
-          );
-        }
-      },
-      i: noop,
-      o: noop,
-      d(detaching) {
-        if (detaching)
-          detach(div4);
-        if (if_block0)
-          if_block0.d();
-        if (if_block1)
-          if_block1.d();
-        if (if_block2)
-          if_block2.d();
-        mounted = false;
-        run_all(dispose);
-      }
-    };
-  }
-  function COLLET_AND_ICON_CHANGE$1(jsCodeLink, card_id) {
-    try {
-      window.location.href = jsCodeLink;
-      const btn = document.querySelector(`div#${card_id}`);
-      const img = btn.children[0];
-      img.className = img.className == "delbookmark" ? "bookmark" : "delbookmark";
-      console.log(`执行脚本${jsCodeLink}成功, 已经收藏或者取消~`);
-    } catch (error) {
-      console.error(error);
-    }
-  }
-  function getTextColor$1(background) {
-    const color = background.replace("#", "");
-    const red = parseInt(color.substr(0, 2), 16);
-    const green = parseInt(color.substr(2, 2), 16);
-    const blue = parseInt(color.substr(4, 2), 16);
-    const brightness = (red * 299 + green * 587 + blue * 114) / 1e3;
-    return brightness < 128 ? "white" : "black";
-  }
-  const func$1 = (e) => e.outerHTML;
-  const func_1$1 = (e) => e.outerHTML;
-  const func_3$1 = (e) => e.outerHTML;
-  function instance$4($$self, $$props, $$invalidate) {
-    let $_iframe_url;
-    let $_iframe_switch;
-    let $_current_bgColor;
-    let $_CARD_SHOW;
-    component_subscribe($$self, _iframe_url, ($$value) => $$invalidate(12, $_iframe_url = $$value));
-    component_subscribe($$self, _iframe_switch, ($$value) => $$invalidate(13, $_iframe_switch = $$value));
-    component_subscribe($$self, _current_bgColor, ($$value) => $$invalidate(4, $_current_bgColor = $$value));
-    component_subscribe($$self, _CARD_SHOW, ($$value) => $$invalidate(5, $_CARD_SHOW = $$value));
-    function sort_masonry() {
-      sortMasonry();
-    }
-    function showDetailIframe() {
-      set_store_value(_iframe_switch, $_iframe_switch = 1, $_iframe_switch);
-      set_store_value(_iframe_url, $_iframe_url = torrentInfo.torrentLink + "#kdescr", $_iframe_url);
-    }
-    let { torrentInfo } = $$props;
-    let { cardWidth } = $$props;
-    let { ICON: ICON2 } = $$props;
-    let _hover = false;
-    function card_show_detail() {
-      $$invalidate(3, _hover = true);
-    }
-    function card_hide_detail() {
-      $$invalidate(3, _hover = false);
-    }
-    const func_2 = (el) => {
-      const _tag = document.createElement("div");
-      _tag.innerHTML = el.outerHTML;
-      return _tag.outerHTML;
-    };
-    const func_4 = (el) => {
-      const _tag = document.createElement("div");
-      _tag.innerHTML = el.outerHTML;
-      return _tag.outerHTML;
-    };
-    $$self.$$set = ($$props2) => {
-      if ("torrentInfo" in $$props2)
-        $$invalidate(0, torrentInfo = $$props2.torrentInfo);
-      if ("cardWidth" in $$props2)
-        $$invalidate(1, cardWidth = $$props2.cardWidth);
-      if ("ICON" in $$props2)
-        $$invalidate(2, ICON2 = $$props2.ICON);
-    };
-    return [
-      torrentInfo,
-      cardWidth,
-      ICON2,
-      _hover,
-      $_current_bgColor,
-      $_CARD_SHOW,
-      sort_masonry,
-      showDetailIframe,
-      card_show_detail,
-      card_hide_detail,
-      func_2,
-      func_4
-    ];
-  }
-  class Kamept extends SvelteComponent {
-    constructor(options) {
-      super();
-      init(this, options, instance$4, create_fragment$4, safe_not_equal, { torrentInfo: 0, cardWidth: 1, ICON: 2 });
-    }
-  }
-  function create_if_block_16(ctx) {
-    let div;
-    let a;
-    let t0;
-    let b;
-    let t1_value = (
-      /*torrentInfo*/
-      ctx[0].torrent_name + ""
-    );
-    let t1;
-    let a_href_value;
-    let if_block = (
-      /*torrentInfo*/
-      ctx[0].tempTagDom.length != 0 && create_if_block_17(ctx)
-    );
-    return {
-      c() {
-        div = element("div");
-        a = element("a");
-        if (if_block)
-          if_block.c();
-        t0 = space();
-        b = element("b");
-        t1 = text(t1_value);
-        attr(a, "class", "two-lines svelte-1fw75v2");
-        attr(a, "href", a_href_value = /*torrentInfo*/
-        ctx[0].torrentLink);
-        attr(a, "target", "_blank");
-        attr(div, "class", "card-title svelte-1fw75v2");
-      },
-      m(target, anchor) {
-        insert(target, div, anchor);
-        append(div, a);
-        if (if_block)
-          if_block.m(a, null);
-        append(a, t0);
-        append(a, b);
-        append(b, t1);
-      },
-      p(ctx2, dirty) {
-        if (
-          /*torrentInfo*/
-          ctx2[0].tempTagDom.length != 0
-        ) {
-          if (if_block) {
-            if_block.p(ctx2, dirty);
-          } else {
-            if_block = create_if_block_17(ctx2);
-            if_block.c();
-            if_block.m(a, t0);
-          }
-        } else if (if_block) {
-          if_block.d(1);
-          if_block = null;
-        }
-        if (dirty & /*torrentInfo*/
-        1 && t1_value !== (t1_value = /*torrentInfo*/
-        ctx2[0].torrent_name + ""))
-          set_data(t1, t1_value);
-        if (dirty & /*torrentInfo*/
-        1 && a_href_value !== (a_href_value = /*torrentInfo*/
-        ctx2[0].torrentLink)) {
-          attr(a, "href", a_href_value);
-        }
-      },
-      d(detaching) {
-        if (detaching)
-          detach(div);
-        if (if_block)
-          if_block.d();
-      }
-    };
-  }
-  function create_if_block_17(ctx) {
-    let span;
-    let raw_value = Array.from(
-      /*torrentInfo*/
-      ctx[0].tempTagDom
-    ).map(func) + "";
-    return {
-      c() {
-        span = element("span");
-        attr(span, "class", "tempTags svelte-1fw75v2");
-      },
-      m(target, anchor) {
-        insert(target, span, anchor);
-        span.innerHTML = raw_value;
-      },
-      p(ctx2, dirty) {
-        if (dirty & /*torrentInfo*/
-        1 && raw_value !== (raw_value = Array.from(
-          /*torrentInfo*/
-          ctx2[0].tempTagDom
-        ).map(func) + ""))
-          span.innerHTML = raw_value;
-      },
-      d(detaching) {
-        if (detaching)
-          detach(span);
-      }
-    };
-  }
-  function create_if_block_10(ctx) {
-    let t0;
-    let t1;
-    let div0;
-    let raw0_value = (
-      /*torrentInfo*/
-      ctx[0].tagsDOM.map(
-        /*func_2*/
-        ctx[11]
-      ).join("") + ""
-    );
-    let t2;
-    let div8;
-    let div5;
-    let div1;
-    let html_tag;
-    let raw1_value = (
-      /*ICON*/
-      ctx[2].SIZE + ""
-    );
-    let t3;
-    let t4_value = (
-      /*torrentInfo*/
-      ctx[0].size + ""
-    );
-    let t4;
-    let t5;
-    let div2;
-    let html_tag_1;
-    let raw2_value = (
-      /*ICON*/
-      ctx[2].DOWNLOAD + ""
-    );
-    let t6;
-    let b0;
-    let a;
-    let t7;
-    let a_href_value;
-    let t8;
-    let div4;
-    let div3;
-    let html_tag_2;
-    let raw3_value = (
-      /*torrentInfo*/
-      (ctx[0].collectState == "Unbookmarked" ? (
-        /*ICON*/
-        ctx[2].COLLET
-      ) : (
-        /*ICON*/
-        ctx[2].COLLETED
-      )) + ""
-    );
-    let t9;
-    let b1;
-    let div3_id_value;
-    let t11;
-    let div6;
-    let b2;
-    let t13;
-    let t14_value = (
-      /*torrentInfo*/
-      ctx[0].upload_date + ""
-    );
-    let t14;
-    let t15;
-    let div7;
-    let html_tag_3;
-    let raw4_value = (
-      /*ICON*/
-      ctx[2].COMMENT + ""
-    );
-    let t16;
-    let b3;
-    let t17_value = (
-      /*torrentInfo*/
-      ctx[0].comments + ""
-    );
-    let t17;
-    let t18;
-    let html_tag_4;
-    let raw5_value = (
-      /*ICON*/
-      ctx[2].SEEDERS + ""
-    );
-    let t19;
-    let b4;
-    let t20_value = (
-      /*torrentInfo*/
-      ctx[0].seeders + ""
-    );
-    let t20;
-    let t21;
-    let html_tag_5;
-    let raw6_value = (
-      /*ICON*/
-      ctx[2].LEECHERS + ""
-    );
-    let t22;
-    let b5;
-    let t23_value = (
-      /*torrentInfo*/
-      ctx[0].leechers + ""
-    );
-    let t23;
-    let t24;
-    let html_tag_6;
-    let raw7_value = (
-      /*ICON*/
-      ctx[2].SNATCHED + ""
-    );
-    let t25;
-    let b6;
-    let t26_value = (
-      /*torrentInfo*/
-      ctx[0].snatched + ""
-    );
-    let t26;
-    let mounted;
-    let dispose;
-    let if_block0 = (
-      /*torrentInfo*/
-      (ctx[0].free_type || /*torrentInfo*/
-      ctx[0].pattMsg) && create_if_block_12(ctx)
-    );
-    let if_block1 = (
-      /*torrentInfo*/
-      ctx[0].description && create_if_block_11(ctx)
-    );
-    return {
-      c() {
-        if (if_block0)
-          if_block0.c();
-        t0 = space();
-        if (if_block1)
-          if_block1.c();
-        t1 = space();
-        div0 = element("div");
-        t2 = space();
-        div8 = element("div");
-        div5 = element("div");
-        div1 = element("div");
-        html_tag = new HtmlTag(false);
-        t3 = text(" ");
-        t4 = text(t4_value);
-        t5 = text("\n\n          \n            \n          ");
-        div2 = element("div");
-        html_tag_1 = new HtmlTag(false);
-        t6 = text(" \n            ");
-        b0 = element("b");
-        a = element("a");
-        t7 = text("下载");
-        t8 = text("\n\n          \n            \n          ");
-        div4 = element("div");
-        div3 = element("div");
-        html_tag_2 = new HtmlTag(false);
-        t9 = text("\n               ");
-        b1 = element("b");
-        b1.textContent = "收藏";
-        t11 = space();
-        div6 = element("div");
-        b2 = element("b");
-        b2.textContent = "上传时间:";
-        t13 = space();
-        t14 = text(t14_value);
-        t15 = space();
-        div7 = element("div");
-        html_tag_3 = new HtmlTag(false);
-        t16 = text(" ");
-        b3 = element("b");
-        t17 = text(t17_value);
-        t18 = text("  \n          ");
-        html_tag_4 = new HtmlTag(false);
-        t19 = text(" ");
-        b4 = element("b");
-        t20 = text(t20_value);
-        t21 = text("  \n          ");
-        html_tag_5 = new HtmlTag(false);
-        t22 = text(" ");
-        b5 = element("b");
-        t23 = text(t23_value);
-        t24 = text("  \n          ");
-        html_tag_6 = new HtmlTag(false);
-        t25 = text(" ");
-        b6 = element("b");
-        t26 = text(t26_value);
-        attr(div0, "class", "cl-tags svelte-1fw75v2");
-        html_tag.a = t3;
-        attr(div1, "class", "cl-center svelte-1fw75v2");
-        html_tag_1.a = t6;
-        attr(a, "href", a_href_value = /*torrentInfo*/
-        ctx[0].downloadLink);
-        attr(div2, "class", "cl-center svelte-1fw75v2");
-        html_tag_2.a = t9;
-        attr(div3, "class", "btnCollet cl-center svelte-1fw75v2");
-        attr(div3, "id", div3_id_value = "tI_" + /*torrentInfo*/
-        ctx[0].torrentIndex);
-        attr(div4, "class", "cl-center svelte-1fw75v2");
-        attr(div5, "class", "card-line svelte-1fw75v2");
-        attr(div6, "class", "card-line svelte-1fw75v2");
-        html_tag_3.a = t16;
-        html_tag_4.a = t19;
-        html_tag_5.a = t22;
-        html_tag_6.a = t25;
-        attr(div7, "class", "card-line svelte-1fw75v2");
-        attr(div8, "class", "card-details svelte-1fw75v2");
-      },
-      m(target, anchor) {
-        if (if_block0)
-          if_block0.m(target, anchor);
-        insert(target, t0, anchor);
-        if (if_block1)
-          if_block1.m(target, anchor);
-        insert(target, t1, anchor);
-        insert(target, div0, anchor);
-        div0.innerHTML = raw0_value;
-        insert(target, t2, anchor);
-        insert(target, div8, anchor);
-        append(div8, div5);
-        append(div5, div1);
-        html_tag.m(raw1_value, div1);
-        append(div1, t3);
-        append(div1, t4);
-        append(div5, t5);
-        append(div5, div2);
-        html_tag_1.m(raw2_value, div2);
-        append(div2, t6);
-        append(div2, b0);
-        append(b0, a);
-        append(a, t7);
-        append(div5, t8);
-        append(div5, div4);
-        append(div4, div3);
-        html_tag_2.m(raw3_value, div3);
-        append(div3, t9);
-        append(div3, b1);
-        append(div8, t11);
-        append(div8, div6);
-        append(div6, b2);
-        append(div6, t13);
-        append(div6, t14);
-        append(div8, t15);
-        append(div8, div7);
-        html_tag_3.m(raw4_value, div7);
-        append(div7, t16);
-        append(div7, b3);
-        append(b3, t17);
-        append(div7, t18);
-        html_tag_4.m(raw5_value, div7);
-        append(div7, t19);
-        append(div7, b4);
-        append(b4, t20);
-        append(div7, t21);
-        html_tag_5.m(raw6_value, div7);
-        append(div7, t22);
-        append(div7, b5);
-        append(b5, t23);
-        append(div7, t24);
-        html_tag_6.m(raw7_value, div7);
-        append(div7, t25);
-        append(div7, b6);
-        append(b6, t26);
-        if (!mounted) {
-          dispose = listen(div3, "click", function() {
-            if (is_function(COLLET_AND_ICON_CHANGE(
-              /*torrentInfo*/
-              ctx[0].collectLink,
-              "tI_" + /*torrentInfo*/
-              ctx[0].torrentIndex
-            )))
-              COLLET_AND_ICON_CHANGE(
-                /*torrentInfo*/
-                ctx[0].collectLink,
-                "tI_" + /*torrentInfo*/
-                ctx[0].torrentIndex
-              ).apply(this, arguments);
-          });
-          mounted = true;
-        }
-      },
-      p(new_ctx, dirty) {
-        ctx = new_ctx;
-        if (
-          /*torrentInfo*/
-          ctx[0].free_type || /*torrentInfo*/
-          ctx[0].pattMsg
-        ) {
-          if (if_block0) {
-            if_block0.p(ctx, dirty);
-          } else {
-            if_block0 = create_if_block_12(ctx);
-            if_block0.c();
-            if_block0.m(t0.parentNode, t0);
-          }
-        } else if (if_block0) {
-          if_block0.d(1);
-          if_block0 = null;
-        }
-        if (
-          /*torrentInfo*/
-          ctx[0].description
-        ) {
-          if (if_block1) {
-            if_block1.p(ctx, dirty);
-          } else {
-            if_block1 = create_if_block_11(ctx);
-            if_block1.c();
-            if_block1.m(t1.parentNode, t1);
-          }
-        } else if (if_block1) {
-          if_block1.d(1);
-          if_block1 = null;
-        }
-        if (dirty & /*torrentInfo*/
-        1 && raw0_value !== (raw0_value = /*torrentInfo*/
-        ctx[0].tagsDOM.map(
-          /*func_2*/
-          ctx[11]
-        ).join("") + ""))
-          div0.innerHTML = raw0_value;
-        if (dirty & /*ICON*/
-        4 && raw1_value !== (raw1_value = /*ICON*/
-        ctx[2].SIZE + ""))
-          html_tag.p(raw1_value);
-        if (dirty & /*torrentInfo*/
-        1 && t4_value !== (t4_value = /*torrentInfo*/
-        ctx[0].size + ""))
-          set_data(t4, t4_value);
-        if (dirty & /*ICON*/
-        4 && raw2_value !== (raw2_value = /*ICON*/
-        ctx[2].DOWNLOAD + ""))
-          html_tag_1.p(raw2_value);
-        if (dirty & /*torrentInfo*/
-        1 && a_href_value !== (a_href_value = /*torrentInfo*/
-        ctx[0].downloadLink)) {
-          attr(a, "href", a_href_value);
-        }
-        if (dirty & /*torrentInfo, ICON*/
-        5 && raw3_value !== (raw3_value = /*torrentInfo*/
-        (ctx[0].collectState == "Unbookmarked" ? (
-          /*ICON*/
-          ctx[2].COLLET
-        ) : (
-          /*ICON*/
-          ctx[2].COLLETED
-        )) + ""))
-          html_tag_2.p(raw3_value);
-        if (dirty & /*torrentInfo*/
-        1 && div3_id_value !== (div3_id_value = "tI_" + /*torrentInfo*/
-        ctx[0].torrentIndex)) {
-          attr(div3, "id", div3_id_value);
-        }
-        if (dirty & /*torrentInfo*/
-        1 && t14_value !== (t14_value = /*torrentInfo*/
-        ctx[0].upload_date + ""))
-          set_data(t14, t14_value);
-        if (dirty & /*ICON*/
-        4 && raw4_value !== (raw4_value = /*ICON*/
-        ctx[2].COMMENT + ""))
-          html_tag_3.p(raw4_value);
-        if (dirty & /*torrentInfo*/
-        1 && t17_value !== (t17_value = /*torrentInfo*/
-        ctx[0].comments + ""))
-          set_data(t17, t17_value);
-        if (dirty & /*ICON*/
-        4 && raw5_value !== (raw5_value = /*ICON*/
-        ctx[2].SEEDERS + ""))
-          html_tag_4.p(raw5_value);
-        if (dirty & /*torrentInfo*/
-        1 && t20_value !== (t20_value = /*torrentInfo*/
-        ctx[0].seeders + ""))
-          set_data(t20, t20_value);
-        if (dirty & /*ICON*/
-        4 && raw6_value !== (raw6_value = /*ICON*/
-        ctx[2].LEECHERS + ""))
-          html_tag_5.p(raw6_value);
-        if (dirty & /*torrentInfo*/
-        1 && t23_value !== (t23_value = /*torrentInfo*/
-        ctx[0].leechers + ""))
-          set_data(t23, t23_value);
-        if (dirty & /*ICON*/
-        4 && raw7_value !== (raw7_value = /*ICON*/
-        ctx[2].SNATCHED + ""))
-          html_tag_6.p(raw7_value);
-        if (dirty & /*torrentInfo*/
-        1 && t26_value !== (t26_value = /*torrentInfo*/
-        ctx[0].snatched + ""))
-          set_data(t26, t26_value);
-      },
-      d(detaching) {
-        if (if_block0)
-          if_block0.d(detaching);
-        if (detaching)
-          detach(t0);
-        if (if_block1)
-          if_block1.d(detaching);
-        if (detaching)
-          detach(t1);
-        if (detaching)
-          detach(div0);
-        if (detaching)
-          detach(t2);
-        if (detaching)
-          detach(div8);
-        mounted = false;
-        dispose();
-      }
-    };
-  }
-  function create_if_block_12(ctx) {
-    let div1;
-    let div0;
-    let t0;
-    let t1;
-    let div0_class_value;
-    let if_block0 = (
-      /*torrentInfo*/
-      ctx[0].place_at_the_top.length != 0 && create_if_block_15(ctx)
-    );
-    let if_block1 = (
-      /*torrentInfo*/
-      ctx[0].freeTypeImg && create_if_block_14(ctx)
-    );
-    let if_block2 = (
-      /*torrentInfo*/
-      ctx[0].free_remaining_time && create_if_block_13(ctx)
-    );
-    return {
-      c() {
-        div1 = element("div");
-        div0 = element("div");
-        if (if_block0)
-          if_block0.c();
-        t0 = space();
-        if (if_block1)
-          if_block1.c();
-        t1 = space();
-        if (if_block2)
-          if_block2.c();
-        attr(div0, "class", div0_class_value = "top_and_free " + /*torrentInfo*/
-        ctx[0].free_type + " svelte-1fw75v2");
-        attr(div1, "class", "card-alter svelte-1fw75v2");
-      },
-      m(target, anchor) {
-        insert(target, div1, anchor);
-        append(div1, div0);
-        if (if_block0)
-          if_block0.m(div0, null);
-        append(div0, t0);
-        if (if_block1)
-          if_block1.m(div0, null);
-        append(div0, t1);
-        if (if_block2)
-          if_block2.m(div0, null);
-      },
-      p(ctx2, dirty) {
-        if (
-          /*torrentInfo*/
-          ctx2[0].place_at_the_top.length != 0
-        ) {
-          if (if_block0) {
-            if_block0.p(ctx2, dirty);
-          } else {
-            if_block0 = create_if_block_15(ctx2);
-            if_block0.c();
-            if_block0.m(div0, t0);
-          }
-        } else if (if_block0) {
-          if_block0.d(1);
-          if_block0 = null;
-        }
-        if (
-          /*torrentInfo*/
-          ctx2[0].freeTypeImg
-        ) {
-          if (if_block1) {
-            if_block1.p(ctx2, dirty);
-          } else {
-            if_block1 = create_if_block_14(ctx2);
-            if_block1.c();
-            if_block1.m(div0, t1);
-          }
-        } else if (if_block1) {
-          if_block1.d(1);
-          if_block1 = null;
-        }
-        if (
-          /*torrentInfo*/
-          ctx2[0].free_remaining_time
-        ) {
-          if (if_block2) {
-            if_block2.p(ctx2, dirty);
-          } else {
-            if_block2 = create_if_block_13(ctx2);
-            if_block2.c();
-            if_block2.m(div0, null);
-          }
-        } else if (if_block2) {
-          if_block2.d(1);
-          if_block2 = null;
-        }
-        if (dirty & /*torrentInfo*/
-        1 && div0_class_value !== (div0_class_value = "top_and_free " + /*torrentInfo*/
-        ctx2[0].free_type + " svelte-1fw75v2")) {
-          attr(div0, "class", div0_class_value);
-        }
-      },
-      d(detaching) {
-        if (detaching)
-          detach(div1);
-        if (if_block0)
-          if_block0.d();
-        if (if_block1)
-          if_block1.d();
-        if (if_block2)
-          if_block2.d();
-      }
-    };
-  }
-  function create_if_block_15(ctx) {
-    let html_tag;
-    let raw_value = Array.from(
-      /*torrentInfo*/
-      ctx[0].place_at_the_top
-    ).map(func_1) + "&nbsp;";
-    let html_anchor;
-    return {
-      c() {
-        html_tag = new HtmlTag(false);
-        html_anchor = empty();
-        html_tag.a = html_anchor;
-      },
-      m(target, anchor) {
-        html_tag.m(raw_value, target, anchor);
-        insert(target, html_anchor, anchor);
-      },
-      p(ctx2, dirty) {
-        if (dirty & /*torrentInfo*/
-        1 && raw_value !== (raw_value = Array.from(
-          /*torrentInfo*/
-          ctx2[0].place_at_the_top
-        ).map(func_1) + "&nbsp;"))
-          html_tag.p(raw_value);
-      },
-      d(detaching) {
-        if (detaching)
-          detach(html_anchor);
-        if (detaching)
-          html_tag.d();
-      }
-    };
-  }
-  function create_if_block_14(ctx) {
-    let html_tag;
-    let raw_value = (
-      /*torrentInfo*/
-      ctx[0].freeTypeImg.outerHTML + ""
-    );
-    let html_anchor;
-    return {
-      c() {
-        html_tag = new HtmlTag(false);
-        html_anchor = empty();
-        html_tag.a = html_anchor;
-      },
-      m(target, anchor) {
-        html_tag.m(raw_value, target, anchor);
-        insert(target, html_anchor, anchor);
-      },
-      p(ctx2, dirty) {
-        if (dirty & /*torrentInfo*/
-        1 && raw_value !== (raw_value = /*torrentInfo*/
-        ctx2[0].freeTypeImg.outerHTML + ""))
-          html_tag.p(raw_value);
-      },
-      d(detaching) {
-        if (detaching)
-          detach(html_anchor);
-        if (detaching)
-          html_tag.d();
-      }
-    };
-  }
-  function create_if_block_13(ctx) {
-    let t0;
-    let b;
-    let t1_value = (
-      /*torrentInfo*/
-      ctx[0].free_remaining_time + ""
-    );
-    let t1;
-    return {
-      c() {
-        t0 = text(" ");
-        b = element("b");
-        t1 = text(t1_value);
-      },
-      m(target, anchor) {
-        insert(target, t0, anchor);
-        insert(target, b, anchor);
-        append(b, t1);
-      },
-      p(ctx2, dirty) {
-        if (dirty & /*torrentInfo*/
-        1 && t1_value !== (t1_value = /*torrentInfo*/
-        ctx2[0].free_remaining_time + ""))
-          set_data(t1, t1_value);
-      },
-      d(detaching) {
-        if (detaching)
-          detach(t0);
-        if (detaching)
-          detach(b);
-      }
-    };
-  }
-  function create_if_block_11(ctx) {
+  function create_if_block_4(ctx) {
     let a;
     let t_value = (
-      /*torrentInfo*/
-      ctx[0].description + ""
+      /*it*/
+      ctx[1].smallDescr + ""
     );
     let t;
-    let a_href_value;
     return {
       c() {
         a = element("a");
         t = text(t_value);
-        attr(a, "class", "card-description svelte-1fw75v2");
-        attr(a, "href", a_href_value = /*torrentInfo*/
-        ctx[0].torrentLink);
+        attr(a, "class", "card-description svelte-xrdclb");
+        attr(
+          a,
+          "href",
+          /*detailLink*/
+          ctx[10]()
+        );
       },
       m(target, anchor) {
         insert(target, a, anchor);
         append(a, t);
       },
       p(ctx2, dirty) {
-        if (dirty & /*torrentInfo*/
-        1 && t_value !== (t_value = /*torrentInfo*/
-        ctx2[0].description + ""))
+        if (dirty & /*it*/
+        2 && t_value !== (t_value = /*it*/
+        ctx2[1].smallDescr + ""))
           set_data(t, t_value);
-        if (dirty & /*torrentInfo*/
-        1 && a_href_value !== (a_href_value = /*torrentInfo*/
-        ctx2[0].torrentLink)) {
-          attr(a, "href", a_href_value);
-        }
       },
       d(detaching) {
         if (detaching)
@@ -7930,42 +8239,27 @@
     };
   }
   function create_if_block$3(ctx) {
-    let t0;
-    let t1;
-    let t2;
     let div;
-    let t3;
-    let t4;
-    let if_block0 = (
-      /*$_CARD_SHOW*/
-      ctx[6].free && /*torrentInfo*/
-      (ctx[0].free_type || /*torrentInfo*/
-      ctx[0].pattMsg) && create_if_block_6(ctx)
-    );
-    let if_block1 = (
-      /*$_CARD_SHOW*/
-      ctx[6].sub_title && /*torrentInfo*/
-      ctx[0].description && create_if_block_5(ctx)
-    );
-    let if_block2 = (
-      /*$_CARD_SHOW*/
-      ctx[6].tags && /*torrentInfo*/
-      ctx[0].tagsDOM.length != 0 && create_if_block_4(ctx)
-    );
-    let if_block3 = (
-      /*$_CARD_SHOW*/
-      ctx[6].size_download_collect && create_if_block_3$1(ctx)
-    );
-    let if_block4 = (
-      /*$_CARD_SHOW*/
-      ctx[6].upload_time && create_if_block_2$1(ctx)
-    );
-    let if_block5 = (
-      /*$_CARD_SHOW*/
-      ctx[6].statistics && create_if_block_1$2(ctx)
-    );
+    let show_if_2 = (Number(
+      /*it*/
+      ctx[1].labels
+    ) & 1) === 1;
+    let t0;
+    let show_if_1 = (Number(
+      /*it*/
+      ctx[1].labels
+    ) & 2) === 2;
+    let t1;
+    let show_if = (Number(
+      /*it*/
+      ctx[1].labels
+    ) & 4) === 4;
+    let if_block0 = show_if_2 && create_if_block_3();
+    let if_block1 = show_if_1 && create_if_block_2();
+    let if_block2 = show_if && create_if_block_1$2();
     return {
       c() {
+        div = element("div");
         if (if_block0)
           if_block0.c();
         t0 = space();
@@ -7974,83 +8268,366 @@
         t1 = space();
         if (if_block2)
           if_block2.c();
-        t2 = space();
-        div = element("div");
-        if (if_block3)
-          if_block3.c();
-        t3 = space();
-        if (if_block4)
-          if_block4.c();
-        t4 = space();
-        if (if_block5)
-          if_block5.c();
-        attr(div, "class", "card-details svelte-1fw75v2");
+        attr(div, "class", "cl-tags svelte-xrdclb");
       },
       m(target, anchor) {
-        if (if_block0)
-          if_block0.m(target, anchor);
-        insert(target, t0, anchor);
-        if (if_block1)
-          if_block1.m(target, anchor);
-        insert(target, t1, anchor);
-        if (if_block2)
-          if_block2.m(target, anchor);
-        insert(target, t2, anchor);
         insert(target, div, anchor);
-        if (if_block3)
-          if_block3.m(div, null);
-        append(div, t3);
-        if (if_block4)
-          if_block4.m(div, null);
-        append(div, t4);
-        if (if_block5)
-          if_block5.m(div, null);
+        if (if_block0)
+          if_block0.m(div, null);
+        append(div, t0);
+        if (if_block1)
+          if_block1.m(div, null);
+        append(div, t1);
+        if (if_block2)
+          if_block2.m(div, null);
       },
       p(ctx2, dirty) {
-        if (
-          /*$_CARD_SHOW*/
-          ctx2[6].free && /*torrentInfo*/
-          (ctx2[0].free_type || /*torrentInfo*/
-          ctx2[0].pattMsg)
-        ) {
-          if (if_block0) {
-            if_block0.p(ctx2, dirty);
-          } else {
-            if_block0 = create_if_block_6(ctx2);
+        if (dirty & /*it*/
+        2)
+          show_if_2 = (Number(
+            /*it*/
+            ctx2[1].labels
+          ) & 1) === 1;
+        if (show_if_2) {
+          if (if_block0)
+            ;
+          else {
+            if_block0 = create_if_block_3();
             if_block0.c();
-            if_block0.m(t0.parentNode, t0);
+            if_block0.m(div, t0);
           }
         } else if (if_block0) {
           if_block0.d(1);
           if_block0 = null;
         }
-        if (
-          /*$_CARD_SHOW*/
-          ctx2[6].sub_title && /*torrentInfo*/
-          ctx2[0].description
-        ) {
-          if (if_block1) {
-            if_block1.p(ctx2, dirty);
-          } else {
-            if_block1 = create_if_block_5(ctx2);
+        if (dirty & /*it*/
+        2)
+          show_if_1 = (Number(
+            /*it*/
+            ctx2[1].labels
+          ) & 2) === 2;
+        if (show_if_1) {
+          if (if_block1)
+            ;
+          else {
+            if_block1 = create_if_block_2();
             if_block1.c();
-            if_block1.m(t1.parentNode, t1);
+            if_block1.m(div, t1);
           }
         } else if (if_block1) {
           if_block1.d(1);
           if_block1 = null;
         }
+        if (dirty & /*it*/
+        2)
+          show_if = (Number(
+            /*it*/
+            ctx2[1].labels
+          ) & 4) === 4;
+        if (show_if) {
+          if (if_block2)
+            ;
+          else {
+            if_block2 = create_if_block_1$2();
+            if_block2.c();
+            if_block2.m(div, null);
+          }
+        } else if (if_block2) {
+          if_block2.d(1);
+          if_block2 = null;
+        }
+      },
+      d(detaching) {
+        if (detaching)
+          detach(div);
+        if (if_block0)
+          if_block0.d();
+        if (if_block1)
+          if_block1.d();
+        if (if_block2)
+          if_block2.d();
+      }
+    };
+  }
+  function create_if_block_3(ctx) {
+    let span;
+    return {
+      c() {
+        span = element("span");
+        span.textContent = "DIY";
+        attr(span, "class", "_tag _tag_diy svelte-xrdclb");
+      },
+      m(target, anchor) {
+        insert(target, span, anchor);
+      },
+      d(detaching) {
+        if (detaching)
+          detach(span);
+      }
+    };
+  }
+  function create_if_block_2(ctx) {
+    let span;
+    return {
+      c() {
+        span = element("span");
+        span.textContent = "国配";
+        attr(span, "class", "_tag _tag_dub svelte-xrdclb");
+      },
+      m(target, anchor) {
+        insert(target, span, anchor);
+      },
+      d(detaching) {
+        if (detaching)
+          detach(span);
+      }
+    };
+  }
+  function create_if_block_1$2(ctx) {
+    let span;
+    return {
+      c() {
+        span = element("span");
+        span.textContent = "中字";
+        attr(span, "class", "_tag _tag_sub svelte-xrdclb");
+      },
+      m(target, anchor) {
+        insert(target, span, anchor);
+      },
+      d(detaching) {
+        if (detaching)
+          detach(span);
+      }
+    };
+  }
+  function create_fragment$3(ctx) {
+    let div5;
+    let div4;
+    let div0;
+    let t0_value = (
+      /*it*/
+      ctx[1].category + ""
+    );
+    let t0;
+    let t1;
+    let t2;
+    let div2;
+    let t3;
+    let div1;
+    let t4;
+    let t5;
+    let div3;
+    let t6;
+    let t7;
+    let t8;
+    let show_if = (
+      /*$_CARD_SHOW*/
+      ctx[8].tags && (Number(
+        /*it*/
+        ctx[1].labels
+      ) || 0)
+    );
+    let mounted;
+    let dispose;
+    let if_block0 = (
+      /*$_CARD_SHOW*/
+      ctx[8].title && create_if_block_9(ctx)
+    );
+    function select_block_type(ctx2, dirty) {
+      if (
+        /*picError*/
+        ctx2[4]
+      )
+        return create_if_block_8;
+      return create_else_block$2;
+    }
+    let current_block_type = select_block_type(ctx);
+    let if_block1 = current_block_type(ctx);
+    let if_block2 = (
+      /*it*/
+      ctx[1].status.discount && /*it*/
+      ctx[1].status.discount != "NORMAL" && create_if_block_7(ctx)
+    );
+    let if_block3 = (
+      /*$_CARD_SHOW*/
+      ctx[8].size_download_collect && create_if_block_6(ctx)
+    );
+    let if_block4 = (
+      /*$_CARD_SHOW*/
+      ctx[8].statistics && create_if_block_5(ctx)
+    );
+    let if_block5 = (
+      /*$_CARD_SHOW*/
+      ctx[8].sub_title && /*it*/
+      ctx[1].smallDescr && create_if_block_4(ctx)
+    );
+    let if_block6 = show_if && create_if_block$3(ctx);
+    return {
+      c() {
+        div5 = element("div");
+        div4 = element("div");
+        div0 = element("div");
+        t0 = text(t0_value);
+        t1 = space();
+        if (if_block0)
+          if_block0.c();
+        t2 = space();
+        div2 = element("div");
+        if_block1.c();
+        t3 = space();
+        div1 = element("div");
+        div1.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
+        t4 = space();
+        if (if_block2)
+          if_block2.c();
+        t5 = space();
+        div3 = element("div");
+        if (if_block3)
+          if_block3.c();
+        t6 = space();
+        if (if_block4)
+          if_block4.c();
+        t7 = space();
+        if (if_block5)
+          if_block5.c();
+        t8 = space();
+        if (if_block6)
+          if_block6.c();
+        attr(div0, "class", "card-category svelte-xrdclb");
+        set_style(
+          div0,
+          "background-color",
+          /*cateColor*/
+          ctx[2]
+        );
+        set_style(
+          div0,
+          "color",
+          /*cateFontColor*/
+          ctx[5]
+        );
+        attr(div1, "class", "hover-trigger svelte-xrdclb");
+        attr(div2, "class", "card-image svelte-xrdclb");
+        attr(div3, "class", "card-details svelte-xrdclb");
+        attr(div4, "class", "card-holder svelte-xrdclb");
+        attr(div5, "class", "card svelte-xrdclb");
+        set_style(
+          div5,
+          "width",
+          /*cardWidth*/
+          ctx[0] + "px"
+        );
+        set_style(
+          div5,
+          "background-color",
+          /*$_current_bgColor*/
+          ctx[7]
+        );
+        set_style(
+          div5,
+          "display",
+          /*gayHidden*/
+          ctx[6] ? "none" : ""
+        );
+      },
+      m(target, anchor) {
+        insert(target, div5, anchor);
+        append(div5, div4);
+        append(div4, div0);
+        append(div0, t0);
+        append(div4, t1);
+        if (if_block0)
+          if_block0.m(div4, null);
+        append(div4, t2);
+        append(div4, div2);
+        if_block1.m(div2, null);
+        append(div2, t3);
+        append(div2, div1);
+        append(div2, t4);
+        if (if_block2)
+          if_block2.m(div2, null);
+        append(div4, t5);
+        append(div4, div3);
+        if (if_block3)
+          if_block3.m(div3, null);
+        append(div3, t6);
+        if (if_block4)
+          if_block4.m(div3, null);
+        append(div4, t7);
+        if (if_block5)
+          if_block5.m(div4, null);
+        append(div4, t8);
+        if (if_block6)
+          if_block6.m(div4, null);
+        if (!mounted) {
+          dispose = listen(
+            div2,
+            "click",
+            /*onClickCard*/
+            ctx[11]
+          );
+          mounted = true;
+        }
+      },
+      p(ctx2, [dirty]) {
+        if (dirty & /*it*/
+        2 && t0_value !== (t0_value = /*it*/
+        ctx2[1].category + ""))
+          set_data(t0, t0_value);
+        if (dirty & /*cateColor*/
+        4) {
+          set_style(
+            div0,
+            "background-color",
+            /*cateColor*/
+            ctx2[2]
+          );
+        }
+        if (dirty & /*cateFontColor*/
+        32) {
+          set_style(
+            div0,
+            "color",
+            /*cateFontColor*/
+            ctx2[5]
+          );
+        }
         if (
           /*$_CARD_SHOW*/
-          ctx2[6].tags && /*torrentInfo*/
-          ctx2[0].tagsDOM.length != 0
+          ctx2[8].title
+        ) {
+          if (if_block0) {
+            if_block0.p(ctx2, dirty);
+          } else {
+            if_block0 = create_if_block_9(ctx2);
+            if_block0.c();
+            if_block0.m(div4, t2);
+          }
+        } else if (if_block0) {
+          if_block0.d(1);
+          if_block0 = null;
+        }
+        if (current_block_type === (current_block_type = select_block_type(ctx2)) && if_block1) {
+          if_block1.p(ctx2, dirty);
+        } else {
+          if_block1.d(1);
+          if_block1 = current_block_type(ctx2);
+          if (if_block1) {
+            if_block1.c();
+            if_block1.m(div2, t3);
+          }
+        }
+        if (
+          /*it*/
+          ctx2[1].status.discount && /*it*/
+          ctx2[1].status.discount != "NORMAL"
         ) {
           if (if_block2) {
             if_block2.p(ctx2, dirty);
           } else {
-            if_block2 = create_if_block_4(ctx2);
+            if_block2 = create_if_block_7(ctx2);
             if_block2.c();
-            if_block2.m(t2.parentNode, t2);
+            if_block2.m(div2, null);
           }
         } else if (if_block2) {
           if_block2.d(1);
@@ -8058,14 +8635,14 @@
         }
         if (
           /*$_CARD_SHOW*/
-          ctx2[6].size_download_collect
+          ctx2[8].size_download_collect
         ) {
           if (if_block3) {
             if_block3.p(ctx2, dirty);
           } else {
-            if_block3 = create_if_block_3$1(ctx2);
+            if_block3 = create_if_block_6(ctx2);
             if_block3.c();
-            if_block3.m(div, t3);
+            if_block3.m(div3, t6);
           }
         } else if (if_block3) {
           if_block3.d(1);
@@ -8073,14 +8650,14 @@
         }
         if (
           /*$_CARD_SHOW*/
-          ctx2[6].upload_time
+          ctx2[8].statistics
         ) {
           if (if_block4) {
             if_block4.p(ctx2, dirty);
           } else {
-            if_block4 = create_if_block_2$1(ctx2);
+            if_block4 = create_if_block_5(ctx2);
             if_block4.c();
-            if_block4.m(div, t4);
+            if_block4.m(div3, null);
           }
         } else if (if_block4) {
           if_block4.d(1);
@@ -8088,1182 +8665,393 @@
         }
         if (
           /*$_CARD_SHOW*/
-          ctx2[6].statistics
+          ctx2[8].sub_title && /*it*/
+          ctx2[1].smallDescr
         ) {
           if (if_block5) {
             if_block5.p(ctx2, dirty);
           } else {
-            if_block5 = create_if_block_1$2(ctx2);
+            if_block5 = create_if_block_4(ctx2);
             if_block5.c();
-            if_block5.m(div, null);
+            if_block5.m(div4, t8);
           }
         } else if (if_block5) {
           if_block5.d(1);
           if_block5 = null;
         }
+        if (dirty & /*$_CARD_SHOW, it*/
+        258)
+          show_if = /*$_CARD_SHOW*/
+          ctx2[8].tags && (Number(
+            /*it*/
+            ctx2[1].labels
+          ) || 0);
+        if (show_if) {
+          if (if_block6) {
+            if_block6.p(ctx2, dirty);
+          } else {
+            if_block6 = create_if_block$3(ctx2);
+            if_block6.c();
+            if_block6.m(div4, null);
+          }
+        } else if (if_block6) {
+          if_block6.d(1);
+          if_block6 = null;
+        }
+        if (dirty & /*cardWidth*/
+        1) {
+          set_style(
+            div5,
+            "width",
+            /*cardWidth*/
+            ctx2[0] + "px"
+          );
+        }
+        if (dirty & /*$_current_bgColor*/
+        128) {
+          set_style(
+            div5,
+            "background-color",
+            /*$_current_bgColor*/
+            ctx2[7]
+          );
+        }
+        if (dirty & /*gayHidden*/
+        64) {
+          set_style(
+            div5,
+            "display",
+            /*gayHidden*/
+            ctx2[6] ? "none" : ""
+          );
+        }
       },
+      i: noop,
+      o: noop,
       d(detaching) {
+        if (detaching)
+          detach(div5);
         if (if_block0)
-          if_block0.d(detaching);
-        if (detaching)
-          detach(t0);
-        if (if_block1)
-          if_block1.d(detaching);
-        if (detaching)
-          detach(t1);
+          if_block0.d();
+        if_block1.d();
         if (if_block2)
-          if_block2.d(detaching);
-        if (detaching)
-          detach(t2);
-        if (detaching)
-          detach(div);
+          if_block2.d();
         if (if_block3)
           if_block3.d();
         if (if_block4)
           if_block4.d();
         if (if_block5)
           if_block5.d();
-      }
-    };
-  }
-  function create_if_block_6(ctx) {
-    let div1;
-    let div0;
-    let t0;
-    let t1;
-    let div0_class_value;
-    let if_block0 = (
-      /*torrentInfo*/
-      ctx[0].place_at_the_top.length != 0 && create_if_block_9(ctx)
-    );
-    let if_block1 = (
-      /*torrentInfo*/
-      ctx[0].freeTypeImg && create_if_block_8(ctx)
-    );
-    let if_block2 = (
-      /*torrentInfo*/
-      ctx[0].free_remaining_time && create_if_block_7(ctx)
-    );
-    return {
-      c() {
-        div1 = element("div");
-        div0 = element("div");
-        if (if_block0)
-          if_block0.c();
-        t0 = space();
-        if (if_block1)
-          if_block1.c();
-        t1 = space();
-        if (if_block2)
-          if_block2.c();
-        attr(div0, "class", div0_class_value = "top_and_free " + /*torrentInfo*/
-        ctx[0].free_type + " svelte-1fw75v2");
-        attr(div1, "class", "card-alter svelte-1fw75v2");
-      },
-      m(target, anchor) {
-        insert(target, div1, anchor);
-        append(div1, div0);
-        if (if_block0)
-          if_block0.m(div0, null);
-        append(div0, t0);
-        if (if_block1)
-          if_block1.m(div0, null);
-        append(div0, t1);
-        if (if_block2)
-          if_block2.m(div0, null);
-      },
-      p(ctx2, dirty) {
-        if (
-          /*torrentInfo*/
-          ctx2[0].place_at_the_top.length != 0
-        ) {
-          if (if_block0) {
-            if_block0.p(ctx2, dirty);
-          } else {
-            if_block0 = create_if_block_9(ctx2);
-            if_block0.c();
-            if_block0.m(div0, t0);
-          }
-        } else if (if_block0) {
-          if_block0.d(1);
-          if_block0 = null;
-        }
-        if (
-          /*torrentInfo*/
-          ctx2[0].freeTypeImg
-        ) {
-          if (if_block1) {
-            if_block1.p(ctx2, dirty);
-          } else {
-            if_block1 = create_if_block_8(ctx2);
-            if_block1.c();
-            if_block1.m(div0, t1);
-          }
-        } else if (if_block1) {
-          if_block1.d(1);
-          if_block1 = null;
-        }
-        if (
-          /*torrentInfo*/
-          ctx2[0].free_remaining_time
-        ) {
-          if (if_block2) {
-            if_block2.p(ctx2, dirty);
-          } else {
-            if_block2 = create_if_block_7(ctx2);
-            if_block2.c();
-            if_block2.m(div0, null);
-          }
-        } else if (if_block2) {
-          if_block2.d(1);
-          if_block2 = null;
-        }
-        if (dirty & /*torrentInfo*/
-        1 && div0_class_value !== (div0_class_value = "top_and_free " + /*torrentInfo*/
-        ctx2[0].free_type + " svelte-1fw75v2")) {
-          attr(div0, "class", div0_class_value);
-        }
-      },
-      d(detaching) {
-        if (detaching)
-          detach(div1);
-        if (if_block0)
-          if_block0.d();
-        if (if_block1)
-          if_block1.d();
-        if (if_block2)
-          if_block2.d();
-      }
-    };
-  }
-  function create_if_block_9(ctx) {
-    let html_tag;
-    let raw_value = Array.from(
-      /*torrentInfo*/
-      ctx[0].place_at_the_top
-    ).map(func_3) + "&nbsp;";
-    let html_anchor;
-    return {
-      c() {
-        html_tag = new HtmlTag(false);
-        html_anchor = empty();
-        html_tag.a = html_anchor;
-      },
-      m(target, anchor) {
-        html_tag.m(raw_value, target, anchor);
-        insert(target, html_anchor, anchor);
-      },
-      p(ctx2, dirty) {
-        if (dirty & /*torrentInfo*/
-        1 && raw_value !== (raw_value = Array.from(
-          /*torrentInfo*/
-          ctx2[0].place_at_the_top
-        ).map(func_3) + "&nbsp;"))
-          html_tag.p(raw_value);
-      },
-      d(detaching) {
-        if (detaching)
-          detach(html_anchor);
-        if (detaching)
-          html_tag.d();
-      }
-    };
-  }
-  function create_if_block_8(ctx) {
-    let html_tag;
-    let raw_value = (
-      /*torrentInfo*/
-      ctx[0].freeTypeImg.outerHTML + ""
-    );
-    let html_anchor;
-    return {
-      c() {
-        html_tag = new HtmlTag(false);
-        html_anchor = empty();
-        html_tag.a = html_anchor;
-      },
-      m(target, anchor) {
-        html_tag.m(raw_value, target, anchor);
-        insert(target, html_anchor, anchor);
-      },
-      p(ctx2, dirty) {
-        if (dirty & /*torrentInfo*/
-        1 && raw_value !== (raw_value = /*torrentInfo*/
-        ctx2[0].freeTypeImg.outerHTML + ""))
-          html_tag.p(raw_value);
-      },
-      d(detaching) {
-        if (detaching)
-          detach(html_anchor);
-        if (detaching)
-          html_tag.d();
-      }
-    };
-  }
-  function create_if_block_7(ctx) {
-    let t0;
-    let b;
-    let t1_value = (
-      /*torrentInfo*/
-      ctx[0].free_remaining_time + ""
-    );
-    let t1;
-    return {
-      c() {
-        t0 = text(" ");
-        b = element("b");
-        t1 = text(t1_value);
-      },
-      m(target, anchor) {
-        insert(target, t0, anchor);
-        insert(target, b, anchor);
-        append(b, t1);
-      },
-      p(ctx2, dirty) {
-        if (dirty & /*torrentInfo*/
-        1 && t1_value !== (t1_value = /*torrentInfo*/
-        ctx2[0].free_remaining_time + ""))
-          set_data(t1, t1_value);
-      },
-      d(detaching) {
-        if (detaching)
-          detach(t0);
-        if (detaching)
-          detach(b);
-      }
-    };
-  }
-  function create_if_block_5(ctx) {
-    let a;
-    let t_value = (
-      /*torrentInfo*/
-      ctx[0].description + ""
-    );
-    let t;
-    let a_href_value;
-    return {
-      c() {
-        a = element("a");
-        t = text(t_value);
-        attr(a, "class", "card-description svelte-1fw75v2");
-        attr(a, "href", a_href_value = /*torrentInfo*/
-        ctx[0].torrentLink);
-      },
-      m(target, anchor) {
-        insert(target, a, anchor);
-        append(a, t);
-      },
-      p(ctx2, dirty) {
-        if (dirty & /*torrentInfo*/
-        1 && t_value !== (t_value = /*torrentInfo*/
-        ctx2[0].description + ""))
-          set_data(t, t_value);
-        if (dirty & /*torrentInfo*/
-        1 && a_href_value !== (a_href_value = /*torrentInfo*/
-        ctx2[0].torrentLink)) {
-          attr(a, "href", a_href_value);
-        }
-      },
-      d(detaching) {
-        if (detaching)
-          detach(a);
-      }
-    };
-  }
-  function create_if_block_4(ctx) {
-    let div;
-    let raw_value = (
-      /*torrentInfo*/
-      ctx[0].tagsDOM.map(
-        /*func_4*/
-        ctx[12]
-      ).join("") + ""
-    );
-    return {
-      c() {
-        div = element("div");
-        attr(div, "class", "cl-tags svelte-1fw75v2");
-      },
-      m(target, anchor) {
-        insert(target, div, anchor);
-        div.innerHTML = raw_value;
-      },
-      p(ctx2, dirty) {
-        if (dirty & /*torrentInfo*/
-        1 && raw_value !== (raw_value = /*torrentInfo*/
-        ctx2[0].tagsDOM.map(
-          /*func_4*/
-          ctx2[12]
-        ).join("") + ""))
-          div.innerHTML = raw_value;
-      },
-      d(detaching) {
-        if (detaching)
-          detach(div);
-      }
-    };
-  }
-  function create_if_block_3$1(ctx) {
-    let div4;
-    let div0;
-    let html_tag;
-    let raw0_value = (
-      /*ICON*/
-      ctx[2].SIZE + ""
-    );
-    let t0;
-    let t1_value = (
-      /*torrentInfo*/
-      ctx[0].size + ""
-    );
-    let t1;
-    let t2;
-    let div1;
-    let html_tag_1;
-    let raw1_value = (
-      /*ICON*/
-      ctx[2].DOWNLOAD + ""
-    );
-    let t3;
-    let b0;
-    let a;
-    let t4;
-    let a_href_value;
-    let t5;
-    let div3;
-    let div2;
-    let html_tag_2;
-    let raw2_value = (
-      /*torrentInfo*/
-      (ctx[0].collectState == "Unbookmarked" ? (
-        /*ICON*/
-        ctx[2].COLLET
-      ) : (
-        /*ICON*/
-        ctx[2].COLLETED
-      )) + ""
-    );
-    let t6;
-    let b1;
-    let div2_id_value;
-    let mounted;
-    let dispose;
-    return {
-      c() {
-        div4 = element("div");
-        div0 = element("div");
-        html_tag = new HtmlTag(false);
-        t0 = text(" ");
-        t1 = text(t1_value);
-        t2 = text("\n\n            \n              \n            ");
-        div1 = element("div");
-        html_tag_1 = new HtmlTag(false);
-        t3 = text(" \n              ");
-        b0 = element("b");
-        a = element("a");
-        t4 = text("下载");
-        t5 = text("\n\n            \n              \n            ");
-        div3 = element("div");
-        div2 = element("div");
-        html_tag_2 = new HtmlTag(false);
-        t6 = text("\n                 ");
-        b1 = element("b");
-        b1.textContent = "收藏";
-        html_tag.a = t0;
-        attr(div0, "class", "cl-center svelte-1fw75v2");
-        html_tag_1.a = t3;
-        attr(a, "href", a_href_value = /*torrentInfo*/
-        ctx[0].downloadLink);
-        attr(div1, "class", "cl-center svelte-1fw75v2");
-        html_tag_2.a = t6;
-        attr(div2, "class", "btnCollet cl-center svelte-1fw75v2");
-        attr(div2, "id", div2_id_value = "tI_" + /*torrentInfo*/
-        ctx[0].torrentIndex);
-        attr(div3, "class", "cl-center svelte-1fw75v2");
-        attr(div4, "class", "card-line svelte-1fw75v2");
-      },
-      m(target, anchor) {
-        insert(target, div4, anchor);
-        append(div4, div0);
-        html_tag.m(raw0_value, div0);
-        append(div0, t0);
-        append(div0, t1);
-        append(div4, t2);
-        append(div4, div1);
-        html_tag_1.m(raw1_value, div1);
-        append(div1, t3);
-        append(div1, b0);
-        append(b0, a);
-        append(a, t4);
-        append(div4, t5);
-        append(div4, div3);
-        append(div3, div2);
-        html_tag_2.m(raw2_value, div2);
-        append(div2, t6);
-        append(div2, b1);
-        if (!mounted) {
-          dispose = listen(div2, "click", function() {
-            if (is_function(COLLET_AND_ICON_CHANGE(
-              /*torrentInfo*/
-              ctx[0].collectLink,
-              "tI_" + /*torrentInfo*/
-              ctx[0].torrentIndex
-            )))
-              COLLET_AND_ICON_CHANGE(
-                /*torrentInfo*/
-                ctx[0].collectLink,
-                "tI_" + /*torrentInfo*/
-                ctx[0].torrentIndex
-              ).apply(this, arguments);
-          });
-          mounted = true;
-        }
-      },
-      p(new_ctx, dirty) {
-        ctx = new_ctx;
-        if (dirty & /*ICON*/
-        4 && raw0_value !== (raw0_value = /*ICON*/
-        ctx[2].SIZE + ""))
-          html_tag.p(raw0_value);
-        if (dirty & /*torrentInfo*/
-        1 && t1_value !== (t1_value = /*torrentInfo*/
-        ctx[0].size + ""))
-          set_data(t1, t1_value);
-        if (dirty & /*ICON*/
-        4 && raw1_value !== (raw1_value = /*ICON*/
-        ctx[2].DOWNLOAD + ""))
-          html_tag_1.p(raw1_value);
-        if (dirty & /*torrentInfo*/
-        1 && a_href_value !== (a_href_value = /*torrentInfo*/
-        ctx[0].downloadLink)) {
-          attr(a, "href", a_href_value);
-        }
-        if (dirty & /*torrentInfo, ICON*/
-        5 && raw2_value !== (raw2_value = /*torrentInfo*/
-        (ctx[0].collectState == "Unbookmarked" ? (
-          /*ICON*/
-          ctx[2].COLLET
-        ) : (
-          /*ICON*/
-          ctx[2].COLLETED
-        )) + ""))
-          html_tag_2.p(raw2_value);
-        if (dirty & /*torrentInfo*/
-        1 && div2_id_value !== (div2_id_value = "tI_" + /*torrentInfo*/
-        ctx[0].torrentIndex)) {
-          attr(div2, "id", div2_id_value);
-        }
-      },
-      d(detaching) {
-        if (detaching)
-          detach(div4);
+        if (if_block6)
+          if_block6.d();
         mounted = false;
         dispose();
       }
     };
   }
-  function create_if_block_2$1(ctx) {
-    let div;
-    let b;
-    let t1;
-    let t2_value = (
-      /*torrentInfo*/
-      ctx[0].upload_date + ""
-    );
-    let t2;
-    return {
-      c() {
-        div = element("div");
-        b = element("b");
-        b.textContent = "上传时间:";
-        t1 = space();
-        t2 = text(t2_value);
-        attr(div, "class", "card-line svelte-1fw75v2");
-      },
-      m(target, anchor) {
-        insert(target, div, anchor);
-        append(div, b);
-        append(div, t1);
-        append(div, t2);
-      },
-      p(ctx2, dirty) {
-        if (dirty & /*torrentInfo*/
-        1 && t2_value !== (t2_value = /*torrentInfo*/
-        ctx2[0].upload_date + ""))
-          set_data(t2, t2_value);
-      },
-      d(detaching) {
-        if (detaching)
-          detach(div);
-      }
-    };
-  }
-  function create_if_block_1$2(ctx) {
-    let div;
-    let html_tag;
-    let raw0_value = (
-      /*ICON*/
-      ctx[2].COMMENT + ""
-    );
-    let t0;
-    let b0;
-    let t1_value = (
-      /*torrentInfo*/
-      ctx[0].comments + ""
-    );
-    let t1;
-    let t2;
-    let html_tag_1;
-    let raw1_value = (
-      /*ICON*/
-      ctx[2].SEEDERS + ""
-    );
-    let t3;
-    let b1;
-    let t4_value = (
-      /*torrentInfo*/
-      ctx[0].seeders + ""
-    );
-    let t4;
-    let t5;
-    let html_tag_2;
-    let raw2_value = (
-      /*ICON*/
-      ctx[2].LEECHERS + ""
-    );
-    let t6;
-    let b2;
-    let t7_value = (
-      /*torrentInfo*/
-      ctx[0].leechers + ""
-    );
-    let t7;
-    let t8;
-    let html_tag_3;
-    let raw3_value = (
-      /*ICON*/
-      ctx[2].SNATCHED + ""
-    );
-    let t9;
-    let b3;
-    let t10_value = (
-      /*torrentInfo*/
-      ctx[0].snatched + ""
-    );
-    let t10;
-    return {
-      c() {
-        div = element("div");
-        html_tag = new HtmlTag(false);
-        t0 = text(" ");
-        b0 = element("b");
-        t1 = text(t1_value);
-        t2 = text("  \n            ");
-        html_tag_1 = new HtmlTag(false);
-        t3 = text(" ");
-        b1 = element("b");
-        t4 = text(t4_value);
-        t5 = text("  \n            ");
-        html_tag_2 = new HtmlTag(false);
-        t6 = text(" ");
-        b2 = element("b");
-        t7 = text(t7_value);
-        t8 = text("  \n            ");
-        html_tag_3 = new HtmlTag(false);
-        t9 = text(" ");
-        b3 = element("b");
-        t10 = text(t10_value);
-        html_tag.a = t0;
-        html_tag_1.a = t3;
-        html_tag_2.a = t6;
-        html_tag_3.a = t9;
-        attr(div, "class", "card-line svelte-1fw75v2");
-      },
-      m(target, anchor) {
-        insert(target, div, anchor);
-        html_tag.m(raw0_value, div);
-        append(div, t0);
-        append(div, b0);
-        append(b0, t1);
-        append(div, t2);
-        html_tag_1.m(raw1_value, div);
-        append(div, t3);
-        append(div, b1);
-        append(b1, t4);
-        append(div, t5);
-        html_tag_2.m(raw2_value, div);
-        append(div, t6);
-        append(div, b2);
-        append(b2, t7);
-        append(div, t8);
-        html_tag_3.m(raw3_value, div);
-        append(div, t9);
-        append(div, b3);
-        append(b3, t10);
-      },
-      p(ctx2, dirty) {
-        if (dirty & /*ICON*/
-        4 && raw0_value !== (raw0_value = /*ICON*/
-        ctx2[2].COMMENT + ""))
-          html_tag.p(raw0_value);
-        if (dirty & /*torrentInfo*/
-        1 && t1_value !== (t1_value = /*torrentInfo*/
-        ctx2[0].comments + ""))
-          set_data(t1, t1_value);
-        if (dirty & /*ICON*/
-        4 && raw1_value !== (raw1_value = /*ICON*/
-        ctx2[2].SEEDERS + ""))
-          html_tag_1.p(raw1_value);
-        if (dirty & /*torrentInfo*/
-        1 && t4_value !== (t4_value = /*torrentInfo*/
-        ctx2[0].seeders + ""))
-          set_data(t4, t4_value);
-        if (dirty & /*ICON*/
-        4 && raw2_value !== (raw2_value = /*ICON*/
-        ctx2[2].LEECHERS + ""))
-          html_tag_2.p(raw2_value);
-        if (dirty & /*torrentInfo*/
-        1 && t7_value !== (t7_value = /*torrentInfo*/
-        ctx2[0].leechers + ""))
-          set_data(t7, t7_value);
-        if (dirty & /*ICON*/
-        4 && raw3_value !== (raw3_value = /*ICON*/
-        ctx2[2].SNATCHED + ""))
-          html_tag_3.p(raw3_value);
-        if (dirty & /*torrentInfo*/
-        1 && t10_value !== (t10_value = /*torrentInfo*/
-        ctx2[0].snatched + ""))
-          set_data(t10, t10_value);
-      },
-      d(detaching) {
-        if (detaching)
-          detach(div);
-      }
-    };
-  }
-  function create_fragment$3(ctx) {
-    let div4;
-    let div3;
-    let div0;
-    let img0;
-    let img0_src_value;
-    let t0;
-    let t1_value = (
-      /*torrentInfo*/
-      ctx[0].category + ""
-    );
-    let t1;
-    let div0_data_href_value;
-    let t2;
-    let t3;
-    let div2;
-    let img1;
-    let img1_src_value;
-    let img1_data_src_value;
-    let img1_alt_value;
-    let t4;
-    let div1;
-    let t5_value = (
-      /*torrentInfo*/
-      ctx[0].torrentIndex + 1 + ""
-    );
-    let t5;
-    let t6;
-    let t7;
-    let mounted;
-    let dispose;
-    let if_block0 = (
-      /*$_CARD_SHOW*/
-      (ctx[6].title || /*_hover*/
-      ctx[3]) && create_if_block_16(ctx)
-    );
-    let if_block1 = (
-      /*$_CARD_SHOW*/
-      (ctx[6].all || /*_hover*/
-      ctx[3]) && create_if_block_10(ctx)
-    );
-    let if_block2 = !/*$_CARD_SHOW*/
-    (ctx[6].all || /*_hover*/
-    ctx[3]) && create_if_block$3(ctx);
-    return {
-      c() {
-        div4 = element("div");
-        div3 = element("div");
-        div0 = element("div");
-        img0 = element("img");
-        t0 = space();
-        t1 = text(t1_value);
-        t2 = space();
-        if (if_block0)
-          if_block0.c();
-        t3 = space();
-        div2 = element("div");
-        img1 = element("img");
-        t4 = space();
-        div1 = element("div");
-        t5 = text(t5_value);
-        t6 = space();
-        if (if_block1)
-          if_block1.c();
-        t7 = space();
-        if (if_block2)
-          if_block2.c();
-        attr(img0, "class", "card_category-img svelte-1fw75v2");
-        if (!src_url_equal(img0.src, img0_src_value = /*torrentInfo*/
-        ctx[0]._categoryImg))
-          attr(img0, "src", img0_src_value);
-        attr(img0, "alt", "");
-        attr(div0, "class", "card-category svelte-1fw75v2");
-        attr(div0, "data-href", div0_data_href_value = /*torrentInfo*/
-        ctx[0].categoryLink);
-        set_style(div0, "background-color", CONFIG.CATEGORY[
-          /*torrentInfo*/
-          ctx[0].categoryNumber
-        ] ?? "transparent");
-        set_style(div0, "color", CONFIG.CATEGORY[
-          /*torrentInfo*/
-          ctx[0].categoryNumber
-        ] ? getTextColor(CONFIG.CATEGORY[
-          /*torrentInfo*/
-          ctx[0].categoryNumber
-        ]) : "black");
-        attr(img1, "class", "card-image--img nexus-lazy-load_Kesa svelte-1fw75v2");
-        if (!src_url_equal(img1.src, img1_src_value = CONFIG.LOADING_PIC))
-          attr(img1, "src", img1_src_value);
-        attr(img1, "data-src", img1_data_src_value = /*torrentInfo*/
-        ctx[0].picLink);
-        attr(img1, "alt", img1_alt_value = /*torrentInfo*/
-        ctx[0].torrentName);
-        attr(div1, "class", "card-index svelte-1fw75v2");
-        attr(div2, "class", "card-image svelte-1fw75v2");
-        attr(div3, "class", "card-holder svelte-1fw75v2");
-        attr(div4, "class", "card svelte-1fw75v2");
-        set_style(
-          div4,
-          "display",
-          /*torrentInfo*/
-          ctx[0].categoryNumber == "440" && /*$_SITE_SETTING*/
-          ctx[4].mt.hide_gay ? "none" : "block"
-        );
-        set_style(
-          div4,
-          "width",
-          /*cardWidth*/
-          ctx[1] + "px"
-        );
-        set_style(div4, "z-index", 1e4 - /*torrentInfo*/
-        ctx[0].torrentIndex);
-        set_style(
-          div4,
-          "background-color",
-          /*$_current_bgColor*/
-          ctx[5]
-        );
-      },
-      m(target, anchor) {
-        insert(target, div4, anchor);
-        append(div4, div3);
-        append(div3, div0);
-        append(div0, img0);
-        append(div0, t0);
-        append(div0, t1);
-        append(div3, t2);
-        if (if_block0)
-          if_block0.m(div3, null);
-        append(div3, t3);
-        append(div3, div2);
-        append(div2, img1);
-        append(div2, t4);
-        append(div2, div1);
-        append(div1, t5);
-        append(div3, t6);
-        if (if_block1)
-          if_block1.m(div3, null);
-        append(div3, t7);
-        if (if_block2)
-          if_block2.m(div3, null);
-        if (!mounted) {
-          dispose = [
-            listen(
-              img1,
-              "load",
-              /*sort_masonry*/
-              ctx[7]
-            ),
-            listen(
-              img1,
-              "click",
-              /*showDetailIframe*/
-              ctx[8]
-            ),
-            listen(
-              div3,
-              "mouseenter",
-              /*card_show_detail*/
-              ctx[9]
-            ),
-            listen(
-              div3,
-              "mouseleave",
-              /*card_hide_detail*/
-              ctx[10]
-            )
-          ];
-          mounted = true;
-        }
-      },
-      p(ctx2, [dirty]) {
-        if (dirty & /*torrentInfo*/
-        1 && !src_url_equal(img0.src, img0_src_value = /*torrentInfo*/
-        ctx2[0]._categoryImg)) {
-          attr(img0, "src", img0_src_value);
-        }
-        if (dirty & /*torrentInfo*/
-        1 && t1_value !== (t1_value = /*torrentInfo*/
-        ctx2[0].category + ""))
-          set_data(t1, t1_value);
-        if (dirty & /*torrentInfo*/
-        1 && div0_data_href_value !== (div0_data_href_value = /*torrentInfo*/
-        ctx2[0].categoryLink)) {
-          attr(div0, "data-href", div0_data_href_value);
-        }
-        if (dirty & /*torrentInfo*/
-        1) {
-          set_style(div0, "background-color", CONFIG.CATEGORY[
-            /*torrentInfo*/
-            ctx2[0].categoryNumber
-          ] ?? "transparent");
-        }
-        if (dirty & /*torrentInfo*/
-        1) {
-          set_style(div0, "color", CONFIG.CATEGORY[
-            /*torrentInfo*/
-            ctx2[0].categoryNumber
-          ] ? getTextColor(CONFIG.CATEGORY[
-            /*torrentInfo*/
-            ctx2[0].categoryNumber
-          ]) : "black");
-        }
-        if (
-          /*$_CARD_SHOW*/
-          ctx2[6].title || /*_hover*/
-          ctx2[3]
-        ) {
-          if (if_block0) {
-            if_block0.p(ctx2, dirty);
-          } else {
-            if_block0 = create_if_block_16(ctx2);
-            if_block0.c();
-            if_block0.m(div3, t3);
-          }
-        } else if (if_block0) {
-          if_block0.d(1);
-          if_block0 = null;
-        }
-        if (dirty & /*torrentInfo*/
-        1 && img1_data_src_value !== (img1_data_src_value = /*torrentInfo*/
-        ctx2[0].picLink)) {
-          attr(img1, "data-src", img1_data_src_value);
-        }
-        if (dirty & /*torrentInfo*/
-        1 && img1_alt_value !== (img1_alt_value = /*torrentInfo*/
-        ctx2[0].torrentName)) {
-          attr(img1, "alt", img1_alt_value);
-        }
-        if (dirty & /*torrentInfo*/
-        1 && t5_value !== (t5_value = /*torrentInfo*/
-        ctx2[0].torrentIndex + 1 + ""))
-          set_data(t5, t5_value);
-        if (
-          /*$_CARD_SHOW*/
-          ctx2[6].all || /*_hover*/
-          ctx2[3]
-        ) {
-          if (if_block1) {
-            if_block1.p(ctx2, dirty);
-          } else {
-            if_block1 = create_if_block_10(ctx2);
-            if_block1.c();
-            if_block1.m(div3, t7);
-          }
-        } else if (if_block1) {
-          if_block1.d(1);
-          if_block1 = null;
-        }
-        if (!/*$_CARD_SHOW*/
-        (ctx2[6].all || /*_hover*/
-        ctx2[3])) {
-          if (if_block2) {
-            if_block2.p(ctx2, dirty);
-          } else {
-            if_block2 = create_if_block$3(ctx2);
-            if_block2.c();
-            if_block2.m(div3, null);
-          }
-        } else if (if_block2) {
-          if_block2.d(1);
-          if_block2 = null;
-        }
-        if (dirty & /*torrentInfo, $_SITE_SETTING*/
-        17) {
-          set_style(
-            div4,
-            "display",
-            /*torrentInfo*/
-            ctx2[0].categoryNumber == "440" && /*$_SITE_SETTING*/
-            ctx2[4].mt.hide_gay ? "none" : "block"
-          );
-        }
-        if (dirty & /*cardWidth*/
-        2) {
-          set_style(
-            div4,
-            "width",
-            /*cardWidth*/
-            ctx2[1] + "px"
-          );
-        }
-        if (dirty & /*torrentInfo*/
-        1) {
-          set_style(div4, "z-index", 1e4 - /*torrentInfo*/
-          ctx2[0].torrentIndex);
-        }
-        if (dirty & /*$_current_bgColor*/
-        32) {
-          set_style(
-            div4,
-            "background-color",
-            /*$_current_bgColor*/
-            ctx2[5]
-          );
-        }
-      },
-      i: noop,
-      o: noop,
-      d(detaching) {
-        if (detaching)
-          detach(div4);
-        if (if_block0)
-          if_block0.d();
-        if (if_block1)
-          if_block1.d();
-        if (if_block2)
-          if_block2.d();
-        mounted = false;
-        run_all(dispose);
-      }
-    };
-  }
-  function COLLET_AND_ICON_CHANGE(jsCodeLink, card_id) {
-    try {
-      window.location.href = jsCodeLink;
-      const btn = document.querySelector(`div#${card_id}`);
-      const img = btn.children[0];
-      img.className = img.className == "delbookmark" ? "bookmark" : "delbookmark";
-      console.log(`执行脚本${jsCodeLink}成功, 已经收藏或者取消~`);
-    } catch (error) {
-      console.error(error);
-    }
-  }
   function getTextColor(background) {
-    const color = background.replace("#", "");
+    const color = (background || "").replace("#", "");
+    if (!/^[0-9a-fA-F]{6}$/.test(color))
+      return "black";
     const red = parseInt(color.substr(0, 2), 16);
     const green = parseInt(color.substr(2, 2), 16);
     const blue = parseInt(color.substr(4, 2), 16);
     const brightness = (red * 299 + green * 587 + blue * 114) / 1e3;
     return brightness < 128 ? "white" : "black";
   }
-  const func = (e) => e.outerHTML;
-  const func_1 = (e) => e.outerHTML;
-  const func_3 = (e) => e.outerHTML;
+  function getFileSize(size) {
+    size = Number(size) || 0;
+    if (size === 0)
+      return "0 B";
+    const units = ["B", "KB", "MB", "GB", "TB"];
+    let i = 0;
+    let sizeCopy = size;
+    while (sizeCopy >= 1024 && i < units.length - 1) {
+      sizeCopy /= 1024;
+      i++;
+    }
+    const formattedSize = sizeCopy.toFixed(2).replace(/\.?0+$/, "");
+    return `${formattedSize} ${units[i]}`;
+  }
   function instance$3($$self, $$props, $$invalidate) {
+    let gayHidden;
+    let $_SITE_SETTING;
     let $_iframe_url;
     let $_iframe_switch;
-    let $_SITE_SETTING;
     let $_current_bgColor;
     let $_CARD_SHOW;
-    component_subscribe($$self, _iframe_url, ($$value) => $$invalidate(13, $_iframe_url = $$value));
-    component_subscribe($$self, _iframe_switch, ($$value) => $$invalidate(14, $_iframe_switch = $$value));
-    component_subscribe($$self, _SITE_SETTING, ($$value) => $$invalidate(4, $_SITE_SETTING = $$value));
-    component_subscribe($$self, _current_bgColor, ($$value) => $$invalidate(5, $_current_bgColor = $$value));
-    component_subscribe($$self, _CARD_SHOW, ($$value) => $$invalidate(6, $_CARD_SHOW = $$value));
+    let $_pic_failed_showInfo;
+    component_subscribe($$self, _SITE_SETTING, ($$value) => $$invalidate(16, $_SITE_SETTING = $$value));
+    component_subscribe($$self, _iframe_url, ($$value) => $$invalidate(17, $_iframe_url = $$value));
+    component_subscribe($$self, _iframe_switch, ($$value) => $$invalidate(18, $_iframe_switch = $$value));
+    component_subscribe($$self, _current_bgColor, ($$value) => $$invalidate(7, $_current_bgColor = $$value));
+    component_subscribe($$self, _CARD_SHOW, ($$value) => $$invalidate(8, $_CARD_SHOW = $$value));
+    component_subscribe($$self, _pic_failed_showInfo, ($$value) => $$invalidate(9, $_pic_failed_showInfo = $$value));
+    let { torrentInfo } = $$props;
+    let { cardWidth } = $$props;
+    let it;
+    function detailLink() {
+      if (__isPTT)
+        return __ksDetailUrl(it);
+      if (it.id)
+        return "/detail/" + it.id;
+      return it.torrentLink || "#";
+    }
+    function onClickCard(e) {
+      if (__isPTT)
+        return;
+      const link = detailLink();
+      if (!link || link === "#")
+        return;
+      if (e && e.preventDefault)
+        e.preventDefault();
+      set_store_value(_iframe_switch, $_iframe_switch = 1, $_iframe_switch);
+      set_store_value(_iframe_url, $_iframe_url = /^https?:/.test(link) ? link : location.origin + link, $_iframe_url);
+    }
+    let picSrc = "";
+    let picError = false;
+    const onPicError = () => {
+      $$invalidate(4, picError = true);
+      sort_masonry();
+    };
+    let cateColor = "transparent";
+    let cateFontColor = "black";
+    const _discountText = { FREE: "免费", PERCENT_50: "50%" };
     function sort_masonry() {
       sortMasonry();
     }
-    function showDetailIframe() {
-      set_store_value(_iframe_switch, $_iframe_switch = 1, $_iframe_switch);
-      set_store_value(_iframe_url, $_iframe_url = torrentInfo.torrentLink + "#kdescr", $_iframe_url);
-    }
-    let { torrentInfo } = $$props;
-    let { cardWidth } = $$props;
-    let { ICON: ICON2 } = $$props;
-    let _hover = false;
-    function card_show_detail() {
-      $$invalidate(3, _hover = true);
-    }
-    function card_hide_detail() {
-      $$invalidate(3, _hover = false);
-    }
-    const func_2 = (el) => {
-      const _tag = document.createElement("div");
-      _tag.innerHTML = el.outerHTML;
-      return _tag.outerHTML;
-    };
-    const func_4 = (el) => {
-      const _tag = document.createElement("div");
-      _tag.innerHTML = el.outerHTML;
-      return _tag.outerHTML;
-    };
     $$self.$$set = ($$props2) => {
       if ("torrentInfo" in $$props2)
-        $$invalidate(0, torrentInfo = $$props2.torrentInfo);
+        $$invalidate(15, torrentInfo = $$props2.torrentInfo);
       if ("cardWidth" in $$props2)
-        $$invalidate(1, cardWidth = $$props2.cardWidth);
-      if ("ICON" in $$props2)
-        $$invalidate(2, ICON2 = $$props2.ICON);
+        $$invalidate(0, cardWidth = $$props2.cardWidth);
+    };
+    $$self.$$.update = () => {
+      if ($$self.$$.dirty & /*torrentInfo*/
+      32768) {
+        {
+          $$invalidate(1, it = torrentInfo || {});
+          $$invalidate(1, it.status = torrentInfo.status || {}, it);
+        }
+      }
+      if ($$self.$$.dirty & /*it, $_SITE_SETTING*/
+      65538) {
+        $$invalidate(6, gayHidden = !__isPTT && it.category === 440 && $_SITE_SETTING.mt.hide_gay);
+      }
+      if ($$self.$$.dirty & /*it*/
+      2) {
+        $$invalidate(3, picSrc = it.imageList && it.imageList[0] || "");
+      }
+      if ($$self.$$.dirty & /*it, cateColor*/
+      6) {
+        {
+          $$invalidate(2, cateColor = CONFIG.CATEGORY[it.category] ?? "transparent");
+          $$invalidate(5, cateFontColor = cateColor && cateColor !== "transparent" ? getTextColor(cateColor) : "black");
+        }
+      }
     };
     return [
-      torrentInfo,
       cardWidth,
-      ICON2,
-      _hover,
-      $_SITE_SETTING,
+      it,
+      cateColor,
+      picSrc,
+      picError,
+      cateFontColor,
+      gayHidden,
       $_current_bgColor,
       $_CARD_SHOW,
+      $_pic_failed_showInfo,
+      detailLink,
+      onClickCard,
+      onPicError,
+      _discountText,
       sort_masonry,
-      showDetailIframe,
-      card_show_detail,
-      card_hide_detail,
-      func_2,
-      func_4
+      torrentInfo,
+      $_SITE_SETTING
     ];
   }
-  class Mteam extends SvelteComponent {
+  class TorrentCard extends SvelteComponent {
     constructor(options) {
       super();
-      init(this, options, instance$3, create_fragment$3, safe_not_equal, { torrentInfo: 0, cardWidth: 1, ICON: 2 });
+      init(this, options, instance$3, create_fragment$3, safe_not_equal, { torrentInfo: 15, cardWidth: 0 });
     }
-  }
-  function get_each_context_1(ctx, list, i) {
-    const child_ctx = ctx.slice();
-    child_ctx[24] = list[i];
-    return child_ctx;
   }
   function get_each_context(ctx, list, i) {
     const child_ctx = ctx.slice();
-    child_ctx[24] = list[i];
+    child_ctx[30] = list[i];
     return child_ctx;
   }
-  function create_else_block_1(ctx) {
-    let div;
-    return {
-      c() {
-        div = element("div");
-        div.textContent = "else";
-      },
-      m(target, anchor) {
-        insert(target, div, anchor);
-      },
-      p: noop,
-      i: noop,
-      o: noop,
-      d(detaching) {
-        if (detaching)
-          detach(div);
-      }
-    };
-  }
-  function create_if_block_3(ctx) {
-    let each_blocks = [];
-    let each_1_lookup = /* @__PURE__ */ new Map();
-    let each_1_anchor;
+  function create_each_block(key_1, ctx) {
+    let first;
+    let torrentcard;
     let current;
-    let each_value_1 = (
-      /*infoList*/
-      ctx[2]
-    );
-    const get_key = (ctx2) => (
-      /*info*/
-      ctx2[24].torrentIndex
-    );
-    for (let i = 0; i < each_value_1.length; i += 1) {
-      let child_ctx = get_each_context_1(ctx, each_value_1, i);
-      let key = get_key(child_ctx);
-      each_1_lookup.set(key, each_blocks[i] = create_each_block_1(key, child_ctx));
-    }
+    torrentcard = new TorrentCard({
+      props: {
+        torrentInfo: (
+          /*info*/
+          ctx[30]
+        ),
+        cardWidth: (
+          /*CARD*/
+          ctx[0].CARD_WIDTH
+        )
+      }
+    });
     return {
+      key: key_1,
+      first: null,
       c() {
-        for (let i = 0; i < each_blocks.length; i += 1) {
-          each_blocks[i].c();
-        }
-        each_1_anchor = empty();
+        first = empty();
+        create_component(torrentcard.$$.fragment);
+        this.first = first;
       },
       m(target, anchor) {
-        for (let i = 0; i < each_blocks.length; i += 1) {
-          if (each_blocks[i]) {
-            each_blocks[i].m(target, anchor);
-          }
-        }
-        insert(target, each_1_anchor, anchor);
+        insert(target, first, anchor);
+        mount_component(torrentcard, target, anchor);
         current = true;
       },
-      p(ctx2, dirty) {
-        if (dirty & /*infoList, CARD, ICON*/
-        5) {
-          each_value_1 = /*infoList*/
-          ctx2[2];
-          group_outros();
-          each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value_1, each_1_lookup, each_1_anchor.parentNode, outro_and_destroy_block, create_each_block_1, each_1_anchor, get_each_context_1);
-          check_outros();
-        }
+      p(new_ctx, dirty) {
+        ctx = new_ctx;
+        const torrentcard_changes = {};
+        if (dirty[0] & /*infoList*/
+        4)
+          torrentcard_changes.torrentInfo = /*info*/
+          ctx[30];
+        if (dirty[0] & /*CARD*/
+        1)
+          torrentcard_changes.cardWidth = /*CARD*/
+          ctx[0].CARD_WIDTH;
+        torrentcard.$set(torrentcard_changes);
       },
       i(local) {
         if (current)
           return;
-        for (let i = 0; i < each_value_1.length; i += 1) {
-          transition_in(each_blocks[i]);
-        }
+        transition_in(torrentcard.$$.fragment, local);
         current = true;
       },
       o(local) {
-        for (let i = 0; i < each_blocks.length; i += 1) {
-          transition_out(each_blocks[i]);
-        }
+        transition_out(torrentcard.$$.fragment, local);
         current = false;
       },
       d(detaching) {
-        for (let i = 0; i < each_blocks.length; i += 1) {
-          each_blocks[i].d(detaching);
-        }
         if (detaching)
-          detach(each_1_anchor);
+          detach(first);
+        destroy_component(torrentcard, detaching);
       }
     };
   }
-  function create_if_block_2(ctx) {
+  function create_else_block$1(ctx) {
+    let t_value = (
+      /*LOAD_TEXT*/
+      ctx[4].normal + ""
+    );
+    let t;
+    return {
+      c() {
+        t = text(t_value);
+      },
+      m(target, anchor) {
+        insert(target, t, anchor);
+      },
+      p: noop,
+      d(detaching) {
+        if (detaching)
+          detach(t);
+      }
+    };
+  }
+  function create_if_block_1$1(ctx) {
+    let t_value = (
+      /*LOAD_TEXT*/
+      ctx[4].suspend + ""
+    );
+    let t;
+    return {
+      c() {
+        t = text(t_value);
+      },
+      m(target, anchor) {
+        insert(target, t, anchor);
+      },
+      p: noop,
+      d(detaching) {
+        if (detaching)
+          detach(t);
+      }
+    };
+  }
+  function create_if_block$2(ctx) {
+    let t_value = (
+      /*LOAD_TEXT*/
+      ctx[4].disable + ""
+    );
+    let t;
+    return {
+      c() {
+        t = text(t_value);
+      },
+      m(target, anchor) {
+        insert(target, t, anchor);
+      },
+      p: noop,
+      d(detaching) {
+        if (detaching)
+          detach(t);
+      }
+    };
+  }
+  function create_fragment$2(ctx) {
     let each_blocks = [];
     let each_1_lookup = /* @__PURE__ */ new Map();
-    let each_1_anchor;
+    let t;
+    let div;
+    let button;
+    let button_disabled_value;
     let current;
+    let mounted;
+    let dispose;
     let each_value = (
       /*infoList*/
       ctx[2]
     );
     const get_key = (ctx2) => (
       /*info*/
-      ctx2[24].torrentIndex
+      ctx2[30].id
     );
     for (let i = 0; i < each_value.length; i += 1) {
       let child_ctx = get_each_context(ctx, each_value, i);
       let key = get_key(child_ctx);
       each_1_lookup.set(key, each_blocks[i] = create_each_block(key, child_ctx));
     }
+    function select_block_type(ctx2, dirty) {
+      if (
+        /*$_turnPage*/
+        ctx2[3]
+      )
+        return create_if_block$2;
+      if (
+        /*isButtonDisabled*/
+        ctx2[1]
+      )
+        return create_if_block_1$1;
+      return create_else_block$1;
+    }
+    let current_block_type = select_block_type(ctx);
+    let if_block = current_block_type(ctx);
     return {
       c() {
         for (let i = 0; i < each_blocks.length; i += 1) {
           each_blocks[i].c();
         }
-        each_1_anchor = empty();
+        t = space();
+        div = element("div");
+        button = element("button");
+        if_block.c();
+        attr(button, "id", "turnPage");
+        button.disabled = button_disabled_value = /*$_turnPage*/
+        ctx[3] || /*isButtonDisabled*/
+        ctx[1];
+        attr(button, "class", "svelte-kydsmq");
       },
       m(target, anchor) {
         for (let i = 0; i < each_blocks.length; i += 1) {
@@ -9271,17 +9059,45 @@
             each_blocks[i].m(target, anchor);
           }
         }
-        insert(target, each_1_anchor, anchor);
+        insert(target, t, anchor);
+        insert(target, div, anchor);
+        append(div, button);
+        if_block.m(button, null);
         current = true;
+        if (!mounted) {
+          dispose = listen(
+            button,
+            "click",
+            /*turnPage*/
+            ctx[5]
+          );
+          mounted = true;
+        }
       },
       p(ctx2, dirty) {
-        if (dirty & /*infoList, CARD, ICON*/
+        if (dirty[0] & /*infoList, CARD*/
         5) {
           each_value = /*infoList*/
           ctx2[2];
           group_outros();
-          each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value, each_1_lookup, each_1_anchor.parentNode, outro_and_destroy_block, create_each_block, each_1_anchor, get_each_context);
+          each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx2, each_value, each_1_lookup, t.parentNode, outro_and_destroy_block, create_each_block, t, get_each_context);
           check_outros();
+        }
+        if (current_block_type === (current_block_type = select_block_type(ctx2)) && if_block) {
+          if_block.p(ctx2, dirty);
+        } else {
+          if_block.d(1);
+          if_block = current_block_type(ctx2);
+          if (if_block) {
+            if_block.c();
+            if_block.m(button, null);
+          }
+        }
+        if (!current || dirty[0] & /*$_turnPage, isButtonDisabled*/
+        10 && button_disabled_value !== (button_disabled_value = /*$_turnPage*/
+        ctx2[3] || /*isButtonDisabled*/
+        ctx2[1])) {
+          button.disabled = button_disabled_value;
         }
       },
       i(local) {
@@ -9303,348 +9119,125 @@
           each_blocks[i].d(detaching);
         }
         if (detaching)
-          detach(each_1_anchor);
-      }
-    };
-  }
-  function create_each_block_1(key_1, ctx) {
-    let first;
-    let mteam;
-    let current;
-    mteam = new Mteam({
-      props: {
-        torrentInfo: (
-          /*info*/
-          ctx[24]
-        ),
-        cardWidth: (
-          /*CARD*/
-          ctx[0].CARD_WIDTH
-        ),
-        ICON
-      }
-    });
-    return {
-      key: key_1,
-      first: null,
-      c() {
-        first = empty();
-        create_component(mteam.$$.fragment);
-        this.first = first;
-      },
-      m(target, anchor) {
-        insert(target, first, anchor);
-        mount_component(mteam, target, anchor);
-        current = true;
-      },
-      p(new_ctx, dirty) {
-        ctx = new_ctx;
-        const mteam_changes = {};
-        if (dirty & /*infoList*/
-        4)
-          mteam_changes.torrentInfo = /*info*/
-          ctx[24];
-        if (dirty & /*CARD*/
-        1)
-          mteam_changes.cardWidth = /*CARD*/
-          ctx[0].CARD_WIDTH;
-        mteam.$set(mteam_changes);
-      },
-      i(local) {
-        if (current)
-          return;
-        transition_in(mteam.$$.fragment, local);
-        current = true;
-      },
-      o(local) {
-        transition_out(mteam.$$.fragment, local);
-        current = false;
-      },
-      d(detaching) {
-        if (detaching)
-          detach(first);
-        destroy_component(mteam, detaching);
-      }
-    };
-  }
-  function create_each_block(key_1, ctx) {
-    let first;
-    let kamept;
-    let current;
-    kamept = new Kamept({
-      props: {
-        torrentInfo: (
-          /*info*/
-          ctx[24]
-        ),
-        cardWidth: (
-          /*CARD*/
-          ctx[0].CARD_WIDTH
-        ),
-        ICON
-      }
-    });
-    return {
-      key: key_1,
-      first: null,
-      c() {
-        first = empty();
-        create_component(kamept.$$.fragment);
-        this.first = first;
-      },
-      m(target, anchor) {
-        insert(target, first, anchor);
-        mount_component(kamept, target, anchor);
-        current = true;
-      },
-      p(new_ctx, dirty) {
-        ctx = new_ctx;
-        const kamept_changes = {};
-        if (dirty & /*infoList*/
-        4)
-          kamept_changes.torrentInfo = /*info*/
-          ctx[24];
-        if (dirty & /*CARD*/
-        1)
-          kamept_changes.cardWidth = /*CARD*/
-          ctx[0].CARD_WIDTH;
-        kamept.$set(kamept_changes);
-      },
-      i(local) {
-        if (current)
-          return;
-        transition_in(kamept.$$.fragment, local);
-        current = true;
-      },
-      o(local) {
-        transition_out(kamept.$$.fragment, local);
-        current = false;
-      },
-      d(detaching) {
-        if (detaching)
-          detach(first);
-        destroy_component(kamept, detaching);
-      }
-    };
-  }
-  function create_else_block$1(ctx) {
-    let t_value = (
-      /*LOAD_TEXT*/
-      ctx[5].normal + ""
-    );
-    let t;
-    return {
-      c() {
-        t = text(t_value);
-      },
-      m(target, anchor) {
-        insert(target, t, anchor);
-      },
-      p: noop,
-      d(detaching) {
-        if (detaching)
-          detach(t);
-      }
-    };
-  }
-  function create_if_block_1$1(ctx) {
-    let t_value = (
-      /*LOAD_TEXT*/
-      ctx[5].suspend + ""
-    );
-    let t;
-    return {
-      c() {
-        t = text(t_value);
-      },
-      m(target, anchor) {
-        insert(target, t, anchor);
-      },
-      p: noop,
-      d(detaching) {
-        if (detaching)
-          detach(t);
-      }
-    };
-  }
-  function create_if_block$2(ctx) {
-    let t_value = (
-      /*LOAD_TEXT*/
-      ctx[5].disable + ""
-    );
-    let t;
-    return {
-      c() {
-        t = text(t_value);
-      },
-      m(target, anchor) {
-        insert(target, t, anchor);
-      },
-      p: noop,
-      d(detaching) {
-        if (detaching)
-          detach(t);
-      }
-    };
-  }
-  function create_fragment$2(ctx) {
-    let current_block_type_index;
-    let if_block0;
-    let t;
-    let div;
-    let button;
-    let button_disabled_value;
-    let current;
-    let mounted;
-    let dispose;
-    const if_block_creators = [create_if_block_2, create_if_block_3, create_else_block_1];
-    const if_blocks = [];
-    function select_block_type(ctx2, dirty) {
-      if (
-        /*$_current_domain*/
-        ctx2[3] == "kamept.com"
-      )
-        return 0;
-      if (
-        /*$_current_domain*/
-        ctx2[3] == "kp.m-team.cc"
-      )
-        return 1;
-      return 2;
-    }
-    current_block_type_index = select_block_type(ctx);
-    if_block0 = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
-    function select_block_type_1(ctx2, dirty) {
-      if (
-        /*$_turnPage*/
-        ctx2[4]
-      )
-        return create_if_block$2;
-      if (
-        /*isButtonDisabled*/
-        ctx2[1]
-      )
-        return create_if_block_1$1;
-      return create_else_block$1;
-    }
-    let current_block_type = select_block_type_1(ctx);
-    let if_block1 = current_block_type(ctx);
-    return {
-      c() {
-        if_block0.c();
-        t = space();
-        div = element("div");
-        button = element("button");
-        if_block1.c();
-        attr(button, "id", "turnPage");
-        button.disabled = button_disabled_value = /*$_turnPage*/
-        ctx[4] || /*isButtonDisabled*/
-        ctx[1];
-        attr(button, "class", "svelte-kydsmq");
-      },
-      m(target, anchor) {
-        if_blocks[current_block_type_index].m(target, anchor);
-        insert(target, t, anchor);
-        insert(target, div, anchor);
-        append(div, button);
-        if_block1.m(button, null);
-        current = true;
-        if (!mounted) {
-          dispose = listen(
-            button,
-            "click",
-            /*turnPage*/
-            ctx[6]
-          );
-          mounted = true;
-        }
-      },
-      p(ctx2, [dirty]) {
-        let previous_block_index = current_block_type_index;
-        current_block_type_index = select_block_type(ctx2);
-        if (current_block_type_index === previous_block_index) {
-          if_blocks[current_block_type_index].p(ctx2, dirty);
-        } else {
-          group_outros();
-          transition_out(if_blocks[previous_block_index], 1, 1, () => {
-            if_blocks[previous_block_index] = null;
-          });
-          check_outros();
-          if_block0 = if_blocks[current_block_type_index];
-          if (!if_block0) {
-            if_block0 = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx2);
-            if_block0.c();
-          } else {
-            if_block0.p(ctx2, dirty);
-          }
-          transition_in(if_block0, 1);
-          if_block0.m(t.parentNode, t);
-        }
-        if (current_block_type === (current_block_type = select_block_type_1(ctx2)) && if_block1) {
-          if_block1.p(ctx2, dirty);
-        } else {
-          if_block1.d(1);
-          if_block1 = current_block_type(ctx2);
-          if (if_block1) {
-            if_block1.c();
-            if_block1.m(button, null);
-          }
-        }
-        if (!current || dirty & /*$_turnPage, isButtonDisabled*/
-        18 && button_disabled_value !== (button_disabled_value = /*$_turnPage*/
-        ctx2[4] || /*isButtonDisabled*/
-        ctx2[1])) {
-          button.disabled = button_disabled_value;
-        }
-      },
-      i(local) {
-        if (current)
-          return;
-        transition_in(if_block0);
-        current = true;
-      },
-      o(local) {
-        transition_out(if_block0);
-        current = false;
-      },
-      d(detaching) {
-        if_blocks[current_block_type_index].d(detaching);
-        if (detaching)
           detach(t);
         if (detaching)
           detach(div);
-        if_block1.d();
+        if_block.d();
         mounted = false;
         dispose();
       }
     };
   }
+  function __normalizeTorrent(it) {
+    if (!it)
+      return it;
+    if (it.imageList || it.status)
+      return it;
+    const status = it.status || {};
+    return {
+      name: it.torrent_name || it.name || "",
+      // keyed each 需要稳定唯一 key: 优先 torrentId, 其次原始链接兜底(防止 torrentId 全为 null 时 key 重复致渲染异常)
+      id: it.torrentId != null ? it.torrentId : it.id != null ? it.id : it.torrentLink || it.categoryLink || "",
+      size: typeof it.size === "number" ? it.size : __parseSize(it.size),
+      smallDescr: it.description || "",
+      labels: it.labels || 0,
+      category: it.categoryNumber != null ? it.categoryNumber : it.category,
+      imageList: it.picLink ? [it.picLink] : [],
+      status: {
+        seeders: it.seeders || 0,
+        leechers: it.leechers || 0,
+        comments: it.comments || 0,
+        discount: status.discount || __mapDiscount(it.free_type),
+        toppingLevel: 0,
+        createdDate: it.upload_date || "",
+        discountEndTime: null
+      },
+      torrentLink: it.torrentLink || "",
+      collection: it.collectState === "Bookmarked"
+    };
+  }
+  function __parseSize(s) {
+    if (s == null)
+      return 0;
+    if (typeof s === "number")
+      return s;
+    const m = String(s).trim().toUpperCase().match(/([\d.]+)\s*(B|KB|MB|GB|TB)/);
+    if (!m)
+      return 0;
+    const mult = {
+      B: 1,
+      KB: 1024,
+      MB: 1048576,
+      GB: 1073741824,
+      TB: 1099511627776
+    }[m[2]] || 1;
+    return Math.round(parseFloat(m[1]) * mult);
+  }
+  function __mapDiscount(free_type) {
+    const t = String(free_type || "").toUpperCase();
+    if (t.indexOf("FREE") !== -1)
+      return "FREE";
+    if (t.indexOf("50") !== -1 || t.indexOf("2X") !== -1)
+      return "PERCENT_50";
+    return "NORMAL";
+  }
+  function currentPageFromUrl() {
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      const v = parseInt(sp.get("page") || sp.get("pageNumber") || sp.get("p") || "", 10);
+      return isNaN(v) || v < 1 ? 1 : v;
+    } catch (e) {
+      return 1;
+    }
+  }
   function instance$2($$self, $$props, $$invalidate) {
     var _a;
     let $_Global_Masonry;
-    let $_card_width;
+    let $_animated;
+    let $_card_layout;
     let $_current_domain;
     let $_turnPage;
     let $_current_bgColor;
-    component_subscribe($$self, _Global_Masonry, ($$value) => $$invalidate(14, $_Global_Masonry = $$value));
-    component_subscribe($$self, _card_width, ($$value) => $$invalidate(10, $_card_width = $$value));
-    component_subscribe($$self, _current_domain, ($$value) => $$invalidate(3, $_current_domain = $$value));
-    component_subscribe($$self, _turnPage, ($$value) => $$invalidate(4, $_turnPage = $$value));
-    component_subscribe($$self, _current_bgColor, ($$value) => $$invalidate(15, $_current_bgColor = $$value));
+    component_subscribe($$self, _Global_Masonry, ($$value) => $$invalidate(17, $_Global_Masonry = $$value));
+    component_subscribe($$self, _animated, ($$value) => $$invalidate(9, $_animated = $$value));
+    component_subscribe($$self, _card_layout, ($$value) => $$invalidate(10, $_card_layout = $$value));
+    component_subscribe($$self, _current_domain, ($$value) => $$invalidate(18, $_current_domain = $$value));
+    component_subscribe($$self, _turnPage, ($$value) => $$invalidate(3, $_turnPage = $$value));
+    component_subscribe($$self, _current_bgColor, ($$value) => $$invalidate(19, $_current_bgColor = $$value));
     let { originTable } = $$props;
     let { waterfallNode } = $$props;
-    function GET_CARD_GUTTER(containerDom, card_width) {
-      const _width = containerDom.clientWidth;
-      const card_real_width = card_width + CARD.CARD_BORDER;
-      const columns = Math.floor(_width / card_real_width);
-      const gutter = (_width - columns * card_real_width) / (columns - 1);
-      console.log(`列数:${columns} 间隔:${gutter}`);
-      console.log(`容器宽:${_width} 列宽:${masonry2 ? masonry2.columnWidth : "对象"}`);
-      return Math.floor(gutter);
+    function computeCardWidth(column, gap) {
+      if (!waterfallNode)
+        return 0;
+      const _wf = waterfallNode;
+      const _margin = $_card_layout.margin ?? 20;
+      _wf.style.width = "calc(100vw - " + 2 * _margin + "px)";
+      _wf.style.marginLeft = _margin - _wf.getBoundingClientRect().left + "px";
+      _wf.style.marginRight = "0px";
+      if (column <= 1 || gap <= 1) {
+        console.warn("卡片列数或卡片间隔过小, 列数不小于2, 间隔不小于1");
+        return 0;
+      }
+      const U = (_wf.clientWidth - (column - 1) * gap) / column;
+      if (waterfallNode) {
+        Array.from(waterfallNode.querySelectorAll(".card")).forEach((W) => {
+          W.style.width = U + "px";
+        });
+      }
+      return U;
     }
     function CHANGE_CARD_LAYOUT() {
-      $$invalidate(9, masonry2.options.gutter = GET_CARD_GUTTER(waterfallNode, $_card_width), masonry2);
-      $$invalidate(9, masonry2.options.columnWidth = $_card_width, masonry2);
+      const { column, gap } = $_card_layout;
+      const U = computeCardWidth(column, gap);
+      if (U <= 0)
+        return;
+      $$invalidate(0, CARD.CARD_WIDTH = U, CARD);
+      if (masonry2) {
+        $$invalidate(8, masonry2.options.columnWidth = U, masonry2);
+        $$invalidate(8, masonry2.options.gutter = gap, masonry2);
+        $$invalidate(8, masonry2.options.transitionDuration = $_animated ? 0.4 : 0, masonry2);
+        masonry2.layout();
+      }
       sortMasonry("fast");
       sortMasonry("fast");
     }
@@ -9673,12 +9266,20 @@
     window.turnPage = turnPage;
     set_store_value(_current_domain, $_current_domain = GET_CURRENT_PT_DOMAIN(), $_current_domain);
     const mainOuterDOM = document.querySelector("table.mainouter");
-    const themeColor = window.getComputedStyle(mainOuterDOM)["background-color"];
+    const themeColor = mainOuterDOM ? window.getComputedStyle(mainOuterDOM)["background-color"] : "#1a1a1a";
     set_store_value(_current_bgColor, $_current_bgColor = themeColor, $_current_bgColor);
     console.log("背景颜色:", themeColor);
     const config = SITE[$_current_domain];
     let infoList = [];
-    infoList = [...infoList, ...config.TORRENT_LIST_TO_JSON(originTable)];
+    const isMT2 = IS_MT($_current_domain);
+    if (isMT2) {
+      console.log("M-Team NEW_MT 站: 走劫持 /search 数据源路由");
+    } else {
+      infoList = [
+        ...infoList,
+        ...__isPTT ? __pttParse(originTable) : config.TORRENT_LIST_TO_JSON(originTable).map(__normalizeTorrent)
+      ];
+    }
     console.log("---> 环境:	", "production");
     (_a = SITE[$_current_domain]) == null ? void 0 : _a.special();
     let masonry2;
@@ -9718,15 +9319,37 @@
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, "text/html");
         const table = doc.querySelector(GET_TORRENT_LIST_SELECTOR());
+        if (__isPTT) {
+          const objs = __pttParse(doc);
+          if (objs.length) {
+            $$invalidate(2, infoList = [...infoList, ...objs]);
+            PAGE.IS_ORIGIN = false;
+            PAGE.PAGE_CURRENT = PAGE.PAGE_NEXT;
+            onMountSignal = true;
+            setTimeout(
+              () => {
+                onMountSignal = false;
+              },
+              1e3
+            );
+          } else {
+            console.log("获取不到下页信息, 可能到头了");
+          }
+          __kesaSavePageState(PAGE.PAGE_NEXT);
+          __kesaPageInd(PAGE.PAGE_NEXT);
+          return;
+        }
         const list = Array.from(table.cloneNode(true).children[0].children);
         list[0].children[1].textContent = `
         ↓ 新加载第${PAGE.PAGE_NEXT - PAGE.PAGE_ORIGIN}页`;
         console.log(PAGE.PAGE_ORIGIN);
         originTable.children[0].append(...list);
         typeof ((_a2 = SITE[$_current_domain]) == null ? void 0 : _a2.pageLoaded) === "function" ? (_b = SITE[$_current_domain]) == null ? void 0 : _b.pageLoaded() : null;
-        $$invalidate(2, infoList = [...infoList, ...config.TORRENT_LIST_TO_JSON(table)]);
+        $$invalidate(2, infoList = [...infoList, ...config.TORRENT_LIST_TO_JSON(table).map(__normalizeTorrent)]);
         PAGE.IS_ORIGIN = false;
         PAGE.PAGE_CURRENT = PAGE.PAGE_NEXT;
+        __kesaSavePageState(PAGE.PAGE_NEXT);
+        __kesaPageInd(PAGE.PAGE_NEXT);
         onMountSignal = true;
         setTimeout(
           () => {
@@ -9740,18 +9363,38 @@
       });
     }
     onMount(() => {
-      $$invalidate(9, masonry2 = new Masonry(
+      $$invalidate(8, masonry2 = new Masonry(
         waterfallNode,
         {
           itemSelector: ".card",
-          columnWidth: $_card_width,
-          gutter: GET_CARD_GUTTER(waterfallNode, $_card_width)
+          columnWidth: computeCardWidth($_card_layout.column, $_card_layout.gap),
+          gutter: $_card_layout.gap,
+          transitionDuration: $_animated ? 0.4 : 0
         }
       ));
       window.masonry = masonry2;
       set_store_value(_Global_Masonry, $_Global_Masonry = masonry2, $_Global_Masonry);
       masonry2.layout("fast");
       masonry2.layout("fast");
+      __kesaRestorePage();
+      __kesaSavePageState(currentPageFromUrl());
+      __kesaPageInd(currentPageFromUrl());
+      if (!window.__kesaResizeBound) {
+        window.__kesaResizeBound = true;
+        let rTimer = null;
+        window.addEventListener("resize", function() {
+          clearTimeout(rTimer);
+          rTimer = setTimeout(
+            function() {
+              window.CHANGE_CARD_LAYOUT && window.CHANGE_CARD_LAYOUT();
+            },
+            120
+          );
+        });
+      }
+      if (isMT2) {
+        __mteamBoot();
+      }
       waterfallNode.addEventListener("click", (event) => {
         if (event.target === event.currentTarget) {
           if (masonry2)
@@ -9765,6 +9408,42 @@
       NEXUS_TOOLS();
       window.NEXUS_TOOLS = NEXUS_TOOLS;
     });
+    let __mteamReqListener = null;
+    let __mteamResListener = null;
+    let __mteamIsAccept = false;
+    function __mteamBoot() {
+      Launch_Hijack({ path: "/search", method: "POST" });
+      __mteamReqListener = (e) => {
+        const url = e.detail && e.detail.url || "";
+        const body = e.detail && e.detail.body || "";
+        if (url.includes("api/torrent/search") && !String(body).includes('"mode":"waterfall"')) {
+          __mteamIsAccept = true;
+        } else {
+          __mteamIsAccept = false;
+        }
+      };
+      window.addEventListener("req>POST->/search", __mteamReqListener);
+      __mteamResListener = (e) => {
+        if (!__mteamIsAccept)
+          return;
+        try {
+          const rawObject = JSON.parse(e.detail.data);
+          const list = rawObject && rawObject.data ? rawObject.data : [];
+          if (!Array.isArray(list))
+            return;
+          $$invalidate(2, infoList = list.map(__normalizeTorrent));
+          if (masonry2) {
+            masonry2.reloadItems();
+            masonry2.layout("fast");
+            masonry2.layout("fast");
+          }
+          setTimeout(NEXUS_TOOLS, 600);
+        } catch (err) {
+          console.warn("M-Team 响应解析失败:", err);
+        }
+      };
+      window.addEventListener("res>POST->/search", __mteamResListener);
+    }
     afterUpdate(() => {
       console.log("afterUpdate-------------------->");
       if (masonry2 && onMountSignal) {
@@ -9776,15 +9455,21 @@
     });
     $$self.$$set = ($$props2) => {
       if ("originTable" in $$props2)
-        $$invalidate(7, originTable = $$props2.originTable);
+        $$invalidate(6, originTable = $$props2.originTable);
       if ("waterfallNode" in $$props2)
-        $$invalidate(8, waterfallNode = $$props2.waterfallNode);
+        $$invalidate(7, waterfallNode = $$props2.waterfallNode);
     };
     $$self.$$.update = () => {
-      if ($$self.$$.dirty & /*masonry, $_card_width, CARD*/
-      1537) {
+      if ($$self.$$.dirty[0] & /*masonry, $_animated*/
+      768) {
         if (masonry2) {
-          $$invalidate(0, CARD.CARD_WIDTH = $_card_width, CARD);
+          $$invalidate(8, masonry2.options.transitionDuration = $_animated ? 0.4 : 0, masonry2);
+        }
+      }
+      if ($$self.$$.dirty[0] & /*masonry, $_card_layout, CARD*/
+      1281) {
+        if (masonry2) {
+          $$invalidate(0, CARD.CARD_WIDTH = computeCardWidth($_card_layout.column, $_card_layout.gap), CARD);
           console.log("卡片宽度:	", CARD.CARD_WIDTH);
           CHANGE_CARD_LAYOUT();
         }
@@ -9794,20 +9479,20 @@
       CARD,
       isButtonDisabled,
       infoList,
-      $_current_domain,
       $_turnPage,
       LOAD_TEXT,
       turnPage,
       originTable,
       waterfallNode,
       masonry2,
-      $_card_width
+      $_animated,
+      $_card_layout
     ];
   }
   class Index extends SvelteComponent {
     constructor(options) {
       super();
-      init(this, options, instance$2, create_fragment$2, safe_not_equal, { originTable: 7, waterfallNode: 8 });
+      init(this, options, instance$2, create_fragment$2, safe_not_equal, { originTable: 6, waterfallNode: 7 }, null, [-1, -1]);
     }
   }
   function create_else_block(ctx) {
@@ -9955,7 +9640,7 @@
       suspend: `下一页加载CD: ${GAP} ms`,
       disable: "不可用"
     };
-    function func2(event) {
+    function func(event) {
       event.preventDefault();
       window.turnPage(event);
       if (!isButtonDisabled) {
@@ -9968,7 +9653,7 @@
         );
       }
     }
-    return [isButtonDisabled, $_turnPage, LOAD_TEXT, func2];
+    return [isButtonDisabled, $_turnPage, LOAD_TEXT, func];
   }
   class BtnTurnPage extends SvelteComponent {
     constructor(options) {
@@ -9976,41 +9661,46 @@
       init(this, options, instance$1, create_fragment$1, safe_not_equal, {});
     }
   }
+  const { window: window_1 } = globals;
   function create_if_block(ctx) {
-    let div;
+    let div1;
+    let div0;
     let iframe;
     let iframe_src_value;
-    let div_transition;
+    let div1_transition;
     let current;
     let mounted;
     let dispose;
     return {
       c() {
-        div = element("div");
+        div1 = element("div");
+        div0 = element("div");
         iframe = element("iframe");
         if (!src_url_equal(iframe.src, iframe_src_value = /*$_iframe_url*/
-        ctx[1]))
+        ctx[2]))
           attr(iframe, "src", iframe_src_value);
         attr(iframe, "frameborder", "0");
         attr(iframe, "title", "wow");
         set_style(iframe, "width", (SITE[
           /*$_current_domain*/
-          ctx[2]
+          ctx[0]
         ] ? SITE[
           /*$_current_domain*/
-          ctx[2]
+          ctx[0]
         ].Iframe_Width : 1e3) + "px");
-        attr(iframe, "class", "svelte-1wevt6e");
-        attr(div, "id", "_iframe");
-        attr(div, "class", "svelte-1wevt6e");
+        attr(iframe, "class", "svelte-zv560o");
+        attr(div0, "class", "_iframe svelte-zv560o");
+        attr(div1, "id", "_iframe");
+        attr(div1, "class", "svelte-zv560o");
       },
       m(target, anchor) {
-        insert(target, div, anchor);
-        append(div, iframe);
+        insert(target, div1, anchor);
+        append(div1, div0);
+        append(div0, iframe);
         current = true;
         if (!mounted) {
           dispose = listen(
-            div,
+            div1,
             "click",
             /*toggleIframe*/
             ctx[3]
@@ -10020,18 +9710,18 @@
       },
       p(ctx2, dirty) {
         if (!current || dirty & /*$_iframe_url*/
-        2 && !src_url_equal(iframe.src, iframe_src_value = /*$_iframe_url*/
-        ctx2[1])) {
+        4 && !src_url_equal(iframe.src, iframe_src_value = /*$_iframe_url*/
+        ctx2[2])) {
           attr(iframe, "src", iframe_src_value);
         }
         if (!current || dirty & /*$_current_domain*/
-        4) {
+        1) {
           set_style(iframe, "width", (SITE[
             /*$_current_domain*/
-            ctx2[2]
+            ctx2[0]
           ] ? SITE[
             /*$_current_domain*/
-            ctx2[2]
+            ctx2[0]
           ].Iframe_Width : 1e3) + "px");
         }
       },
@@ -10041,23 +9731,23 @@
         add_render_callback(() => {
           if (!current)
             return;
-          if (!div_transition)
-            div_transition = create_bidirectional_transition(div, fade, { duration: 300 }, true);
-          div_transition.run(1);
+          if (!div1_transition)
+            div1_transition = create_bidirectional_transition(div1, fade, { duration: 300 }, true);
+          div1_transition.run(1);
         });
         current = true;
       },
       o(local) {
-        if (!div_transition)
-          div_transition = create_bidirectional_transition(div, fade, { duration: 300 }, false);
-        div_transition.run(0);
+        if (!div1_transition)
+          div1_transition = create_bidirectional_transition(div1, fade, { duration: 300 }, false);
+        div1_transition.run(0);
         current = false;
       },
       d(detaching) {
         if (detaching)
-          detach(div);
-        if (detaching && div_transition)
-          div_transition.end();
+          detach(div1);
+        if (detaching && div1_transition)
+          div1_transition.end();
         mounted = false;
         dispose();
       }
@@ -10070,7 +9760,7 @@
     let dispose;
     let if_block = (
       /*$_iframe_switch*/
-      ctx[0] && create_if_block(ctx)
+      ctx[1] && create_if_block(ctx)
     );
     return {
       c() {
@@ -10085,7 +9775,7 @@
         current = true;
         if (!mounted) {
           dispose = listen(
-            window,
+            window_1,
             "keydown",
             /*key_closePanels*/
             ctx[4],
@@ -10097,12 +9787,12 @@
       p(ctx2, [dirty]) {
         if (
           /*$_iframe_switch*/
-          ctx2[0]
+          ctx2[1]
         ) {
           if (if_block) {
             if_block.p(ctx2, dirty);
             if (dirty & /*$_iframe_switch*/
-            1) {
+            2) {
               transition_in(if_block, 1);
             }
           } else {
@@ -10140,18 +9830,21 @@
     };
   }
   function instance($$self, $$props, $$invalidate) {
+    let $_current_domain;
     let $_show_configPanel;
     let $_iframe_switch;
     let $_show_mode;
     let $_iframe_url;
-    let $_current_domain;
+    component_subscribe($$self, _current_domain, ($$value) => $$invalidate(0, $_current_domain = $$value));
     component_subscribe($$self, _show_configPanel, ($$value) => $$invalidate(9, $_show_configPanel = $$value));
-    component_subscribe($$self, _iframe_switch, ($$value) => $$invalidate(0, $_iframe_switch = $$value));
-    component_subscribe($$self, _show_mode, ($$value) => $$invalidate(5, $_show_mode = $$value));
-    component_subscribe($$self, _iframe_url, ($$value) => $$invalidate(1, $_iframe_url = $$value));
-    component_subscribe($$self, _current_domain, ($$value) => $$invalidate(2, $_current_domain = $$value));
+    component_subscribe($$self, _iframe_switch, ($$value) => $$invalidate(1, $_iframe_switch = $$value));
+    component_subscribe($$self, _show_mode, ($$value) => $$invalidate(6, $_show_mode = $$value));
+    component_subscribe($$self, _iframe_url, ($$value) => $$invalidate(2, $_iframe_url = $$value));
     console.log(`[${( new Date()).toLocaleTimeString()}]<--------------------------HMR-------------------------->`);
-    const _ORIGIN_TL_Node2 = document.querySelector(GET_TORRENT_LIST_SELECTOR());
+    let _ORIGIN_TL_Node2 = document.querySelector(GET_TORRENT_LIST_SELECTOR());
+    if (!_ORIGIN_TL_Node2 && IS_MT(window.location.hostname)) {
+      _ORIGIN_TL_Node2 = document.querySelector("#__kesaMTPlaceholder");
+    }
     while (!Masonry) {
       console.log("等待初始化......");
     }
@@ -10172,6 +9865,28 @@
         set_store_value(_show_configPanel, $_show_configPanel = false, $_show_configPanel);
       }
     }
+    _previewWidth.subscribe((__pwV) => {
+      try {
+        const __site = SITE[$_current_domain];
+        if (__site && __pwV > 0)
+          __site.Iframe_Width = __pwV;
+        const __def = __site && __site.Iframe_Width || 1e3;
+        document.documentElement.style.setProperty("--pw", (__pwV > 0 ? __pwV : __def) + "px");
+      } catch (e) {
+      }
+    });
+    _previewHeight.subscribe((__phV) => {
+      try {
+        document.documentElement.style.setProperty("--ph", (__phV > 0 ? __phV : 96) + "%");
+      } catch (e) {
+      }
+    });
+    if (!document.getElementById("__pwSizeCss")) {
+      const __pwStyle = document.createElement("style");
+      __pwStyle.id = "__pwSizeCss";
+      __pwStyle.textContent = "div#_iframe ._iframe{width:min(var(--pw,1600px),94vw)!important;height:var(--ph,96%)!important}div#_iframe ._iframe iframe{width:100%!important;height:100%}";
+      (document.head || document.documentElement).appendChild(__pwStyle);
+    }
     onMount(() => {
       new Sidepanel({
         target: document.body,
@@ -10189,23 +9904,28 @@
         }
       });
       new BtnTurnPage({ target: nextPageNode });
+      __wdvAutoSync();
+      window.addEventListener("pagehide", __wdvAutoPush);
     });
     $$self.$$.update = () => {
-      if ($$self.$$.dirty & /*$_show_mode*/
-      32) {
+      if ($$self.$$.dirty & /*_ORIGIN_TL_Node, $_show_mode*/
+      96) {
         {
-          _ORIGIN_TL_Node2.style.display = $_show_mode ? "none" : "block";
+          if (_ORIGIN_TL_Node2) {
+            $$invalidate(5, _ORIGIN_TL_Node2.style.display = $_show_mode ? "none" : "block", _ORIGIN_TL_Node2);
+          }
           nextPageNode.style.display = $_show_mode ? "none" : "block";
           waterfallNode.style.display = $_show_mode ? "block" : "none";
         }
       }
     };
     return [
+      $_current_domain,
       $_iframe_switch,
       $_iframe_url,
-      $_current_domain,
       toggleIframe,
       key_closePanels,
+      _ORIGIN_TL_Node2,
       $_show_mode
     ];
   }
@@ -10217,17 +9937,41 @@
   }
   console.log("________PT-TorrentList-Masonry________");
   const list_selector = GET_TORRENT_LIST_SELECTOR();
-  const _ORIGIN_TL_Node = document.querySelector(list_selector);
-  if (list_selector && !!_ORIGIN_TL_Node) {
+  let _ORIGIN_TL_Node = null;
+  const isMT = IS_MT(window.location.hostname);
+  function mountApp() {
     new Main({
       target: (() => {
-        const app2 = document.createElement("div");
-        document.body.append(app2);
-        return app2;
+        const div = document.createElement("div");
+        document.body.append(div);
+        return div;
       })()
     });
+  }
+  if (isMT) {
+    _ORIGIN_TL_Node = document.createElement("div");
+    _ORIGIN_TL_Node.id = "__kesaMTPlaceholder";
+    _ORIGIN_TL_Node.style.display = "none";
+    document.body.append(_ORIGIN_TL_Node);
+    console.log("M-Team NEW_MT 站: 已创建瀑布流挂载占位节点");
+    mountApp();
+  } else if (!list_selector) {
+    console.log("未识别到种子列表 selector 捏~");
   } else {
-    console.log("未识别到种子列表捏~");
+    let tries = 0;
+    const MAX_TRIES = 100;
+    const waitTimer = setInterval(() => {
+      tries++;
+      _ORIGIN_TL_Node = document.querySelector(list_selector);
+      if (_ORIGIN_TL_Node || tries > MAX_TRIES) {
+        clearInterval(waitTimer);
+        if (_ORIGIN_TL_Node) {
+          mountApp();
+        } else {
+          console.log("等待超时: 未识别到种子列表 DOM 捏~");
+        }
+      }
+    }, 100);
   }
 
 })();

@@ -33,11 +33,11 @@ function mountApp() {
   });
 }
 
-// 没有相应站点的种子列表 selector 就不进行整个程序
-if (!list_selector) {
-  console.log('未识别到种子列表 selector 捏~');
-} else if (isMT) {
-  // M-Team NEW_MT 站: document-start 时无 table.torrents, 但占位节点可立即创建,
+// M-Team NEW_MT 站优先判断: SPA 无原始种子表格, 不依赖 list_selector。
+// (list_selector 需精确命中 SITE[domain], 若访问的 m-team 子域不在白名单
+//  list_selector 为 null, 但劫持 /search 数据源仍可用, 必须能正常挂载)
+if (isMT) {
+  // document-start 时无 table.torrents, 但占位节点可立即创建,
   // 数据由 _index.svelte 的劫持路由填充。占位节点创建后即可挂载。
   _ORIGIN_TL_Node = document.createElement("div");
   _ORIGIN_TL_Node.id = "__kesaMTPlaceholder";
@@ -45,6 +45,9 @@ if (!list_selector) {
   document.body.append(_ORIGIN_TL_Node);
   console.log("M-Team NEW_MT 站: 已创建瀑布流挂载占位节点");
   mountApp();
+} else if (!list_selector) {
+  // 没有相应站点的种子列表 selector 就不进行整个程序
+  console.log('未识别到种子列表 selector 捏~');
 } else {
   // NexusPHP DOM 站: 轮询等待原种子表格出现后再挂载(避免 document-start 时序问题)
   let tries = 0;

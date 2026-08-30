@@ -29,11 +29,12 @@ function IS_NEXUSPHP(domain) {
 }
 
 /** 判断是否为 M-Team NEW_MT 站
+ * 任意 *.m-team.cc 子域均视为 M-Team 站(SPA, 劫持 /search 数据源, 不依赖精确域名白名单)。
  * @param {string} domain 域名
  * @returns {boolean}
  */
 function IS_MT(domain) {
-  return /(?:kp|xp|ap|test2)\.m-team\.cc/i.test(domain || "");
+  return /(?:^|\.)m-team\.cc$/i.test(domain || "") || /\.m-team\.cc/i.test(domain || "");
 }
 
 /** 判断该域名是否为受支持的站点

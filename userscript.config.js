@@ -1,4 +1,4 @@
-export let version = '1.2.11b';
+export let version = '1.2.12b';
 
 export function config(mode) {
   return {
@@ -22,11 +22,8 @@ export function config(mode) {
       "https://www.nicept.net/*",
       "https://www.ptfans.cc/*",
       "https://ptfans.cc/*",
-      // M-Team 系(NEW_MT, 劫持 /search JSON)
-      "https://kp.m-team.cc/*",
-      "https://xp.m-team.cc/*",
-      "https://ap.m-team.cc/*",
-      "https://test2.m-team.cc/*",
+      // M-Team 系(NEW_MT, 劫持 /search JSON) - 用 *.m-team.cc 通配所有子域(kp/xp/ap/zp/hp 等)
+      "https://*.m-team.cc/*",
       "https://mua.xloli.cc/*",
     ],
     exclude: [

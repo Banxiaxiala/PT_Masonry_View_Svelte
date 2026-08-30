@@ -50,9 +50,10 @@ const CONFIG = {
   /** NOTE: 站点特殊操作 */
   special: function () {
     // 给龟站的搜索箱默认设置为"不扩展", 否则平常占地方(from tg by LNN)
+    // 防御: 部分环境可能无 jQuery 全局 $, 用原生 querySelector 兜底
     // $('ksearchboxmain').style.display = 'none'
-    // @ts-ignore
-    $('ksearchboxmain') ? $('ksearchboxmain').style.display = 'none' : null;
+    const _box = (typeof $ === "function" && $('ksearchboxmain')) || document.getElementById('ksearchboxmain');
+    _box ? _box.style.display = 'none' : null;
 
     // "点此查看即将断种资源" 文字设置为黑色(from tg by LNN)
     const link = document.querySelector('a[href="?sort=7&type=asc&seeders_begin=1"]');
@@ -148,18 +149,23 @@ function TORRENT_LIST_TO_JSON(torrent_list_Dom) {
     // console.log(torrentLink);
 
     // 获取种子id
-    const pattern = /id=(\d+)&hit/;
+    // 兼容 details.php?id=123 与 details.php?id=123&hit=1 等格式, 若解析不到则用整个链接兜底
+    const pattern = /id=(\d+)/;
     const match = torrentLink.match(pattern);
     const torrentId = match ? parseInt(match[1]) : null;
 
     // 获取预览图片链接
-    const picLink = row.querySelector(".torrentname img").getAttribute("data-src");
+    // 防御: 某些行可能无封面图元素, 避免 getAttribute 报 null 导致整页解析崩溃
+    const _picImg = row.querySelector(".torrentname img");
+    const picLink = _picImg ? (_picImg.getAttribute("data-src") || "") : "";
 
     // 获取描述
     const desCell = row.querySelector(".torrentname td:nth-child(2)");
+    // 防御: desCell 缺失时跳过该行, 不让整体解析中断
+    if (!desCell) return;
     const length = desCell.childNodes.length - 1;
     const desDom = desCell.childNodes[length];
-    const description = desDom.nodeName == '#text' ? desDom.textContent.trim() : "";
+    const description = desDom && desDom.nodeName == '#text' ? desDom.textContent.trim() : "";
 
     // 获取置顶信息
     const place_at_the_top = row.querySelectorAll(".torrentname img.sticky");
@@ -208,8 +214,12 @@ function TORRENT_LIST_TO_JSON(torrent_list_Dom) {
     // 获取收藏链接
     const collectLink = `javascript: bookmark(${torrentId},${torrentIndex});`;
     // 获取收藏状态
+    // 防御: 收藏按钮缺失时(非列表行/未登录等)用空串兜底, 避免 .children[0].alt 报 null
     const collectDOM = row.querySelector(".torrentname a[id^='bookmark']");
-    const collectState = collectDOM.children[0].alt;
+    const collectState =
+      collectDOM && collectDOM.children && collectDOM.children[0]
+        ? collectDOM.children[0].alt
+        : "";
     // console.log(collectState);
 
     // 获取评论数量

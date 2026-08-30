@@ -55,10 +55,11 @@
     const status = it.status || {};
     return {
       name: it.torrent_name || it.name || "",
-      id: it.torrentId != null ? it.torrentId : it.id,
+      // keyed each 需要稳定唯一 key: 优先 torrentId, 其次原始链接兜底(防止 torrentId 全为 null 时 key 重复致渲染异常)
+      id: it.torrentId != null ? it.torrentId : (it.id != null ? it.id : (it.torrentLink || it.categoryLink || "")) ,
       size: typeof it.size === "number" ? it.size : __parseSize(it.size),
       smallDescr: it.description || "",
-      labels: it.tags ? 0 : (it.labels || 0),
+      labels: it.labels || 0,
       category: it.categoryNumber != null ? it.categoryNumber : it.category,
       imageList: it.picLink ? [it.picLink] : [],
       status: {
