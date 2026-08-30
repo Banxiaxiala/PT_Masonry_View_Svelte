@@ -68,10 +68,39 @@ export const _pic_failed_showInfo = persistStore('_pic_failed_showInfo', 1);
 /** 预览大图默认状态: true=铺满(contain) false=尽量原图大小(scale-down) */
 export const _state_hover_pic = persistStore('_state_hover_pic', false);
 
+/** 预览大图方式: true=局部悬浮预览区域 false=全图悬浮预览 */
+export const _preview_style = persistStore('_preview_style', true);
+
 // 卡片类变量 -------------------------------------
 /** 卡片宽度 */
 // export const _card_width = writable(200);
 export const _card_width = persistStore('_card_width', 200);
+
+/** 卡片移动动画: true=开启缓动动画(默认) false=关闭 */
+export const _animated = persistStore('_animated', true);
+
+/** 卡片布局(列数驱动): { column: 列数, gap: 卡片间距px, margin: 浏览器边距px } */
+const default_card_layout = { column: 4, gap: 20, margin: 20 };
+export const _card_layout = persistStore('_card_layout', default_card_layout);
+
+/** 预览窗口宽度: 0=站点默认(Iframe_Width) 其他=自定义px */
+export const _previewWidth = persistStore('_previewWidth', 0);
+
+/** 预览窗口高度: 0=默认(96%) 其他=自定义% */
+export const _previewHeight = persistStore('_previewHeight', 0);
+
+// 卡片布局变化 -> 重算瀑布流(列数/间距/边距)
+let mark_layout = false;
+_card_layout.subscribe(value => {
+  if (!mark_layout) {
+    mark_layout = true;
+  }
+  else {
+    if (typeof window !== 'undefined' && window.CHANGE_CARD_LAYOUT) {
+      window.CHANGE_CARD_LAYOUT();
+    }
+  }
+});
 
 /** 卡片设置: 全站点配置 & 各个站点配置 */
 const site_setting = {

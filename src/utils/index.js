@@ -3,7 +3,7 @@
  */
 
 import { get } from 'svelte/store'
-import { _show_nexus_pic, _delay_nexus_pic, _state_hover_pic } from '../stores'
+import { _show_nexus_pic, _delay_nexus_pic, _state_hover_pic, _preview_style } from '../stores'
 
 export { debounce, throttle, sortMasonry, NEXUS_TOOLS }
 /**瀑布流执行次数 */
@@ -557,9 +557,22 @@ function NEXUS_TOOLS() {
 
     /** timer 用来搞延迟加载图片的 */
     let buffer = null;
+    // 预览大图方式: 局部悬浮(悬停 .hover-trigger 触发) 或 全图悬浮(悬停整张图触发)
+    // 两种目标都要绑定; 局部模式下 .hover-trigger 覆盖在图上(pointer-events:auto), 悬停它即触发, 不会遮挡整图信息
+    const triggerSel = "div.hover-trigger";
+    /** 从触发元素解析出对应卡片封面图 */
+    function resolvePreviewImg(el) {
+      const card = el && el.closest ? el.closest(".card") : null;
+      const img = card ? card.querySelector("img.preview_Kesa, img.card-image--img.nexus-lazy-load_Kesa") : null;
+      return jQuery(img || el);
+    }
     jQuery("body")
-      .on("mouseover", selector, function (e) {
-        imgEle = jQuery(this);
+      .on("mouseover", selector + "," + triggerSel, function (e) {
+        // 局部悬浮模式下仅接受 hover-trigger 触发; 全图模式下仅接受整图触发
+        const isTrigger = jQuery(this).is(triggerSel);
+        if (get(_preview_style) && !isTrigger) return;
+        if (!get(_preview_style) && isTrigger) return;
+        imgEle = resolvePreviewImg(this);
         // NOTE: 加一个延迟, 让突然划过去的指针不被大图干扰
         buffer = setTimeout(() => {
 
@@ -580,14 +593,15 @@ function NEXUS_TOOLS() {
           }
         }, get(_delay_nexus_pic));
       })
-      .on("mouseout", selector, function (e) {
+      .on("mouseout", selector + "," + triggerSel, function (e) {
         // FIXME: 2选1: 渐变 or 直接出现消失
         // previewEle.hide();// previewEle.fadeOut();
         kesa_preview.hide();// kesa_preview.fadeOut()
 
         if (buffer) clearTimeout(buffer)
       })
-      .on("mousemove", selector, function (e) {
+      .on("mousemove", selector + "," + triggerSel, function (e) {
+        if (!imgEle || !imgEle.length) return;
         imgPosition = getImgPosition(e, imgEle);
         let position = getPosition(e, imgPosition);
 

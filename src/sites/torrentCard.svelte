@@ -145,6 +145,13 @@
           on:error={onPicError}
         />
       {/if}
+      <!-- 局部悬浮预览触发区(预览大图方式=局部悬浮时, 鼠标悬停此处触发大图预览) -->
+      <div class="hover-trigger">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+      </div>
       <!-- 折扣角标 -->
       {#if it.status.discount && it.status.discount != "NORMAL"}
         <div class="card-discount" class:isFree={it.status.discount == "FREE"} class:is50={it.status.discount == "PERCENT_50"}>
@@ -327,6 +334,27 @@
     font-size: 12px;
     color: #fff;
     pointer-events: none;
+  }
+
+  /* 局部悬浮预览触发区: 固定在封面右下角, 悬停触发大图预览 */
+  .hover-trigger {
+    position: absolute;
+    right: 4px;
+    bottom: 4px;
+    z-index: 3;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    background-color: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    cursor: pointer;
+    pointer-events: auto;
+  }
+  .hover-trigger:hover {
+    background-color: rgba(0, 0, 0, 0.8);
   }
   .card-discount.isFree { background-color: rgb(16, 142, 233); }
   .card-discount.is50 { background-color: rgb(255, 85, 0); }

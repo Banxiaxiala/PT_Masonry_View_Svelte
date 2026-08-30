@@ -19,10 +19,16 @@
     _current_domain,
     _pic_failed_showInfo,
     _state_hover_pic,
+    _animated,
+    _card_layout,
+    _previewWidth,
+    _previewHeight,
+    _preview_style,
   } from "./stores";
 
   import { sortMasonry } from "./utils";
   import Switch from "./component/switch.svelte";
+  import { GLOBAL_SITE } from "./sites";
   // 同步/已读/名称过滤/TAG 过滤 面板填充函数 (来自独立同步模块 sync.js)
   import {
     __initReadTracking,
@@ -435,6 +441,13 @@
             green_state={false}
           />
           <Switch
+            title_fixed={"卡片移动动画"}
+            title_green="开启"
+            title_red="关闭"
+            label="开启关闭瀑布流卡片高度变化时的缓动动画"
+            bind:checked={$_animated}
+          />
+          <Switch
             title_fixed={"侧边栏debug按钮"}
             title_green="隐藏(默认)"
             title_red="显示(开发用)"
@@ -449,7 +462,15 @@
           />
           {#if $_show_nexus_pic}
             <Switch
-              title_fixed={`悬浮预览延迟${
+              title_fixed={"预览大图方式"}
+              title_green="局部悬浮预览区域"
+              title_red="全图悬浮预览"
+              label="开发中 <br> 为优化用户预览大图体验 <br> 鼠标放到图片上就显示大图会遮挡信息 <br> 指定在图片的局部 区域放大"
+              bind:checked={$_preview_style}
+            />
+          {/if}
+          <Switch
+            title_fixed={`悬浮预览延迟${
                 $_delay_nexus_pic ? ":" + $_delay_nexus_pic + "ms" : ""
               }`}
               title_red={`${$_delay_nexus_pic ? "" : "无延迟"}`}
@@ -465,7 +486,6 @@
                 list="values"
               />
             </Switch>
-          {/if}
 
           <!-- 图片加载失败时显示标题 -->
           <Switch
@@ -568,6 +588,94 @@
               {/if}
             </button>
           {/if}
+        </div>
+      </div>
+
+      <!-- ---------------- 卡片布局 ---------------- -->
+      <div class="section">
+        <h1 class="s_title">卡片布局</h1>
+        <div class="s_panel">
+          <Switch
+            title_fixed={`卡片列数: {$_card_layout.column}`}
+            label="范围: 2~7 列"
+            type="range"
+          >
+            <input
+              type="range"
+              min="2"
+              max="7"
+              step="1"
+              list="values"
+              bind:value={$_card_layout.column}
+              on:change={() => { $_card_layout = { ...$_card_layout }; }}
+            />
+          </Switch>
+
+          <Switch
+            title_fixed={`卡片间距: {$_card_layout.gap}px`}
+            label="范围: 2~100 px"
+            type="range"
+          >
+            <input
+              type="range"
+              min="2"
+              max="100"
+              step="1"
+              list="values"
+              bind:value={$_card_layout.gap}
+              on:change={() => { $_card_layout = { ...$_card_layout }; }}
+            />
+          </Switch>
+
+          <Switch
+            title_fixed={`浏览器边距: {$_card_layout.margin ?? 20}px`}
+            label="范围: 0~500 px(可输入)"
+            type="range"
+          >
+            <input
+              type="range"
+              min="0"
+              max="500"
+              step="1"
+              list="values"
+              bind:value={$_card_layout.margin}
+              on:change={() => { $_card_layout = { ...$_card_layout }; }}
+            />
+          </Switch>
+
+          <Switch
+            title_fixed={`预览窗口宽度: {$_previewWidth > 0 ? $_previewWidth : (GLOBAL_SITE[$_current_domain] ? GLOBAL_SITE[$_current_domain].Iframe_Width : 1000)}px`}
+            label="范围: 400~2000 px(0=站点默认)"
+            type="range"
+          >
+            <input
+              type="range"
+              min="400"
+              max="2000"
+              step="10"
+              list="values"
+              value={$_previewWidth > 0 ? $_previewWidth : (GLOBAL_SITE[$_current_domain] ? GLOBAL_SITE[$_current_domain].Iframe_Width : 1000)}
+              on:input={e => { $_previewWidth = Number(e.target.value); }}
+              on:change={e => { $_previewWidth = Number(e.target.value); }}
+            />
+          </Switch>
+
+          <Switch
+            title_fixed={`预览窗口高度: {$_previewHeight > 0 ? $_previewHeight : 96}%`}
+            label="范围: 40~100 %(0=默认)"
+            type="range"
+          >
+            <input
+              type="range"
+              min="40"
+              max="100"
+              step="1"
+              list="values"
+              value={$_previewHeight > 0 ? $_previewHeight : 96}
+              on:input={e => { $_previewHeight = Number(e.target.value); }}
+              on:change={e => { $_previewHeight = Number(e.target.value); }}
+            />
+          </Switch>
         </div>
       </div>
 

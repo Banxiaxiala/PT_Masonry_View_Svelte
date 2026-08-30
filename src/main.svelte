@@ -11,6 +11,8 @@
     _iframe_url,
     _current_domain,
     _show_configPanel,
+    _previewWidth,
+    _previewHeight,
   } from "./stores";
   import { GET_TORRENT_LIST_SELECTOR, GLOBAL_SITE, IS_MT } from "./sites";
   import { __wdvAutoSync, __wdvAutoPush } from "./lib/sync";
@@ -83,6 +85,32 @@
 
   // ------------------------------------------------
   let masonry;
+
+  // 预览窗口大小(参考 1.2.3b): 订阅 store 注入全局 CSS 变量 --pw/--ph 并同步站点 Iframe_Width
+  // 宽度: 0=站点默认(Iframe_Width) 其他=自定义; 高度: 0=默认96% 其他=自定义%
+  _previewWidth.subscribe((__pwV) => {
+    try {
+      const __site = GLOBAL_SITE[$_current_domain];
+      if (__site && __pwV > 0) __site.Iframe_Width = __pwV;
+      const __def = (__site && __site.Iframe_Width) || 1000;
+      document.documentElement.style.setProperty("--pw", (__pwV > 0 ? __pwV : __def) + "px");
+    } catch (e) {}
+  });
+  _previewHeight.subscribe((__phV) => {
+    try {
+      document.documentElement.style.setProperty("--ph", (__phV > 0 ? __phV : 96) + "%");
+    } catch (e) {}
+  });
+  // 全局注入预览窗口尺寸样式(跨站点生效, 否则宽度/高度滑块失效)
+  if (!document.getElementById("__pwSizeCss")) {
+    const __pwStyle = document.createElement("style");
+    __pwStyle.id = "__pwSizeCss";
+    __pwStyle.textContent =
+      "div#_iframe ._iframe{width:min(var(--pw,1600px),94vw)!important;height:var(--ph,96%)!important}" +
+      "div#_iframe ._iframe iframe{width:100%!important;height:100%}";
+    (document.head || document.documentElement).appendChild(__pwStyle);
+  }
+
   /** 启动项目配置*/
   onMount(() => {
     // UI -> 1. 边栏配置
@@ -119,15 +147,17 @@
 {#if $_iframe_switch}
   <!-- svelte-ignore a11y-click-events-have-key-events -->
   <div id="_iframe" on:click={toggleIframe} transition:fade={{ duration: 300 }}>
-    <iframe
-      src={$_iframe_url}
-      frameborder="0"
-      title="wow"
-      style="width:
-        {GLOBAL_SITE[$_current_domain]
-        ? GLOBAL_SITE[$_current_domain].Iframe_Width
-        : 1000}px"
-    />
+    <div class="_iframe">
+      <iframe
+        src={$_iframe_url}
+        frameborder="0"
+        title="wow"
+        style="width:
+          {GLOBAL_SITE[$_current_domain]
+          ? GLOBAL_SITE[$_current_domain].Iframe_Width
+          : 1000}px"
+      />
+    </div>
   </div>
 {/if}
 
@@ -147,10 +177,17 @@
     display: flex;
   }
 
-  iframe {
-    /* width: 1246px; */
-    height: 96%;
+  /* 预览窗口大小由全局 --pw/--ph 控制(侧边栏"预览窗口宽度/高度"滑块) */
+  ._iframe {
+    width: min(var(--pw, 1600px), 94vw);
+    height: var(--ph, 96%);
+    margin: auto;
+  }
 
+  ._iframe iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
     margin: auto;
   }
 </style>
