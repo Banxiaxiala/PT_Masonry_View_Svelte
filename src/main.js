@@ -1,5 +1,6 @@
 import App from './main.svelte';
 import { GET_TORRENT_LIST_SELECTOR, IS_MT, __isPTT, __pttBoot } from './sites/index.js';
+import { __initReadTracking } from './lib/sync';
 // -------------------------------------------------------------
 
 export { _ORIGIN_TL_Node };
@@ -7,6 +8,41 @@ export { _ORIGIN_TL_Node };
 // -------------------------------------------------------------
 
 console.log("________PT-TorrentList-Masonry________");
+
+/**
+ * 关键: __initReadTracking 必须独立于侧边栏挂载, 在脚本启动早期就执行,
+ * 这样无论用户是否打开过侧边栏的"详细配置"面板, __historyReadSnapshot 都
+ * 能被正确记录, "隐藏历史观看"开关首次开启即生效(不需要手动重启开关)。
+ *
+ * 修复前该函数在 sidepanel.svelte 的 onMount 异步调用, 依赖于:
+ *   1) main.svelte 的 onMount 已被 Svelte 调度执行
+ *   2) Sidepanel 组件已实例化 + onMount 已跑
+ * 时序风险: 1.2.27b 前 __applyHideReadCards 只遍历 .card.pt-read, 若快照
+ * 记录与卡片渲染间出现顺序错位/快照为空(.pt-read 未及时标), "隐藏历史
+ * 观看" 首次开启时不生效, 必须手动重启开关重新触发 __applyHideReadCards。
+ * 修复: 提前到 main.js 入口, 与侧边栏解耦, 保证快照最先记录。
+ *
+ * run-at: document-start 模式下 document.head 通常已存在, 注入 style
+ * 仍包一层 try/catch 兜底, 避免极端时序下 document.head 还未创建报错。
+ * __applyReadClasses() 此时卡片可能还没渲染, 这次遍历是 no-op; 真正生效
+ * 靠 _index.svelte afterUpdate 与 MutationObserver 后续触发(1.2.27b 已修复,
+ * 直接遍历所有 .card 不依赖 .pt-read 类)。
+ */
+try {
+  __initReadTracking();
+} catch (e) {
+  // 极端 document-start 时序 (document.head 不存在等) 兜底, 推迟到
+  // DOMContentLoaded 后再试一次, 保证快照记录与样式注入都成功。
+  console.warn("[kesa] __initReadTracking 首次执行失败, 推迟到 DOMContentLoaded 重试:", e);
+  const __retryInit = () => {
+    try { __initReadTracking(); } catch (e2) { console.error("[kesa] __initReadTracking 重试仍失败:", e2); }
+  };
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", __retryInit, { once: true });
+  } else {
+    setTimeout(__retryInit, 0);
+  }
+}
 
 // -------------------------------------------------------------
 /** 相应站点的种子列表 selector */

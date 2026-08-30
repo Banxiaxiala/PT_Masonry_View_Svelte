@@ -162,17 +162,27 @@ function __markRead(id) {
 function __applyHideReadCards() {
   const hide = __storeVal(__hideReadCards),
     hideHist = __storeVal(__hideHistoryRead);
-  // 两个开关都关闭时不做任何干预(避免覆盖 gayHidden 等其它隐藏逻辑的内联 display)
-  if (!hide && !hideHist) return;
   // 遍历范围用所有 .card 而非 .card.pt-read: 直接由卡片自身 id 与快照比对判定历史观看,
   // 不依赖 __applyReadClasses 先打上 .pt-read 类(手工翻页/点击加载下一页后若该标记未及时
   // 应用, 仅遍历 .card.pt-read 会漏掉新卡片, 导致历史观看不隐藏); 名称过滤(.__nameFiltered)
   // 的隐藏需保留, 不与历史观看互相覆盖。
+  //
+  // 关键: 用 el.__readHidden 标记区分"我们隐藏的"和"其他逻辑隐藏的(gayHidden 等)"。
+  // 两开关全关时不再直接 return, 而是重置所有"我们之前隐藏的"卡片, 修复"关闭'隐藏历史
+  // 观看'后卡片仍隐藏" BUG; 不会破坏 gayHidden 等其他 inline display 隐藏。
   document.querySelectorAll(".card").forEach((el) => {
     const id = __extractId(el);
     const isHist = hideHist && id && __historyReadSnapshot.includes(id);
     const shouldHide = hide || isHist;
-    el.style.display = shouldHide ? "none" : el.__nameFiltered ? "none" : "";
+    if (shouldHide) {
+      el.style.display = "none";
+      el.__readHidden = true;
+    } else if (el.__readHidden) {
+      // 仅当我们之前隐藏过该卡片才重置, 避免破坏其他隐藏逻辑(gayHidden 等)
+      // 的内联 display; 名称过滤(.__nameFiltered) 命中仍保持 hidden。
+      el.style.display = el.__nameFiltered ? "none" : "";
+      el.__readHidden = false;
+    }
   });
 }
 
@@ -232,7 +242,8 @@ function __initReadTracking() {
   s.id = "pt-read-style";
   s.textContent =
     ".card.pt-read{opacity:0.55!important;filter:grayscale(0.6)!important;transition:opacity .3s ease,filter .3s ease!important}.card.pt-read:hover{opacity:0.75!important;filter:grayscale(0.3)!important}";
-  document.head.appendChild(s);
+  // 兜底 document.documentElement: run-at: document-start 时 document.head 可能尚未存在
+  (document.head || document.documentElement).appendChild(s);
   // 首次加载即标记已读并应用隐藏(含"隐藏历史观看"), 否则需开关一次才生效
   __applyReadClasses();
   // 点击/中键标记已读(中键视为同款标记); 标记后由 __applyReadClasses 统一更新卡片状态与隐藏
@@ -305,9 +316,20 @@ function __mkSwitch(checked, onChange) {
 // 开关行 (label + checkbox 样式开关)
 function __mkSwitchRow(labelText, checked, onChange, desc) {
   const row = document.createElement("div");
-  row.className = "switch svelte-2vaqag svelte-2vaqag";
+  // 复刻 component/switch.svelte 的 .switch 样式: 高度 30px, flex 两端对齐,
+  // 与侧边栏其他开关行(如 Switch 组件渲染的"瀑布流/原有列表")的视觉格式一致。
+  // 之前用 .switch svelte-2vaqag class 是依赖组件 scoped 样式, 但纯 DOM 创建的
+  // 元素不会继承 Svelte scoped 样式, 导致"隐藏已读/隐藏历史观看"两个开关的
+  // 文字位置(垂直居中、高度、宽度)与侧边栏其他开关不一致, 改为 inline 样式。
+  row.className = "switch svelte-2vaqag";
+  row.style.cssText =
+    "width:100%;height:30px;display:flex;align-items:center;justify-content:space-between;";
   const lb = document.createElement("div");
+  // 复刻 Switch 组件 .s_title 样式: font-size:14px, display:flex, align-items:center,
+  // position:relative(为了 title 提示浮层定位)
   lb.className = "s_title svelte-2vaqag";
+  lb.style.cssText =
+    "display:flex;align-items:center;font-size:14px;position:relative;flex:1;min-width:0;";
   lb.textContent = labelText;
   if (desc) lb.title = desc;
   const sw = __mkSwitch(checked, function (v) {

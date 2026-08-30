@@ -167,8 +167,9 @@
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup", onMouseUp);
 
-    // 读取追踪(已读样式/点击标记/隐藏历史观看快照) + 隐藏已读/历史观看 开关注入"卡片信息"面板
-    __initReadTracking();
+    // 已读样式/点击标记/隐藏历史观看快照: 由 main.js 入口统一调用 __initReadTracking,
+    // 不再依赖侧边栏挂载时序(用户不打开侧边栏也能正确记录 __historyReadSnapshot,
+    // 修复"首次开启'隐藏历史观看'开关需手动重启才生效" BUG)
     __fillCardInfoSectionObserver();
 
     // 注入"同步(WebDAV) / 已读标记 / TAG 过滤 / 名称过滤" 四个配置面板(各自挂在对应容器内)
