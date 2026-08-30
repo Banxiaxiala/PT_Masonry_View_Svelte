@@ -1,6 +1,6 @@
 # 为 PT 站点 打造的种子列表瀑布流视图 (现支持 Kame & MT)
 
-> 本仓库为 [KesaubeEire/PT_Masonry_View_Svelte](https://github.com/KesaubeEire/PT_Masonry_View_Svelte) 的 **fork 分支**（用户 `Banxiaxiala`），在其基础上增量补全 PTT/NicePT/ptfans 站点适配与多设备同步功能。编译好的 `.user.js` 产物见本仓库 `releases/` 目录（命名 `PT种子列表瀑布流视图(Svelte重构)-<版本>-PTTT适配.user.js`）。
+> 本仓库为 [KesaubeEire/PT_Masonry_View_Svelte](https://github.com/KesaubeEire/PT_Masonry_View_Svelte) 的 **fork 分支**（用户 `Banxiaxiala`），在其基础上增量补全 PTT/NicePT/ptfans 站点适配与多设备同步功能。编译好的产物发布到本仓库的 **GitHub Releases**（asset 命名 `PT_Masonry_View_Svelte-<版本>.js`），同时 `releases/` 目录保留各版本产物副本。
 
 ## 分支变更说明（相对原版 fork 基线）
 
