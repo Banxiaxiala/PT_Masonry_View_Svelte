@@ -1,4 +1,6 @@
 import { _iframe_switch, _iframe_url } from '../stores'
+import { get } from 'svelte/store'
+import { __aTags, __bTags } from '../lib/sync'
 export { CONFIG as config };
 const CONFIG = {
   /** 默认的种子表格 dom selector */
@@ -117,6 +119,12 @@ function TORRENT_LIST_TO_JSON(torrent_list_Dom) {
     const category = categoryImg ? categoryImg.alt : "";
     // 若没有分类则退出
     if (!category) return;
+
+    // [TAG过滤] 收集分类到全部标签(供侧边栏 TAG 面板展示)
+    const _all = get(__aTags);
+    if (!_all.includes(category)) __aTags.set([..._all, category]);
+    // [TAG过滤] 若该分类已被屏蔽则跳过(不生成卡片)
+    if (get(__bTags).includes(category)) return;
 
     // 获取种子分类链接 / 分类号
     const categoryLinkDOM = categoryImg.parentNode;
