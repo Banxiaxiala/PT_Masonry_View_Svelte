@@ -1,13 +1,16 @@
 // ==UserScript==
 // @name            PT种子列表瀑布流视图(Svelte重构)
 // @name:en         PT_Masonry_View_Svelte
-// @namespace       https://github.com/KesaubeEire/PT_Masonry_View_Svelte
+// @namespace       https://github.com/Banxiaxiala/PT_Masonry_View_Svelte
 // @version         1.2.29b
-// @author          Kesa
-// @description     PT种子列表无限下拉瀑布流视图(Svelte重构) [M-Team数据源: 劫持站点自身请求(原作者逻辑)]
-// @description:en  PT Masonry View by Svelte.
+// @author          Banxiaxiala
+// @description     PT种子列表无限下拉瀑布流视图(Svelte重构)。适配站点: M-Team(m-team.cc/mua.xloli.cc, 劫持 /search API)✅、KamePT(kamept.com)✅、PTT(pttime.org)✅、NicePT(nicept.net)✅、PTFans(ptfans.cc)✅。
+// @description:en  PT Masonry View by Svelte. Supported sites: M-Team✅, KamePT✅, PTT✅, NicePT✅, PTFans✅.
 // @license         MIT
-// @icon            https://avatars.githubusercontent.com/u/23617963
+// @icon            https://avatars.githubusercontent.com/u/35516655
+// @homepage        https://github.com/Banxiaxiala/PT_Masonry_View_Svelte
+// @homepageURL     https://github.com/Banxiaxiala/PT_Masonry_View_Svelte
+// @source          https://github.com/Banxiaxiala/PT_Masonry_View_Svelte.git
 // @match           https://kamept.com/*
 // @match           https://www.pttime.org/*
 // @match           https://pttime.org/*

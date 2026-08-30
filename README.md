@@ -1,10 +1,10 @@
-# 为 PT 站点 打造的种子列表瀑布流视图 (现支持 Kame & MT)
+# 为 PT 站点 打造的种子列表瀑布流视图 (支持 M-Team / KamePT / PTT / NicePT / PTFans)
 
-> 本仓库为 [KesaubeEire/PT_Masonry_View_Svelte](https://github.com/KesaubeEire/PT_Masonry_View_Svelte) 的 **fork 分支**（用户 `Banxiaxiala`），在其基础上增量补全 PTT/NicePT/ptfans 站点适配与多设备同步功能。编译好的产物发布到本仓库的 **GitHub Releases**（asset 命名 `PT_Masonry_View_Svelte-<版本>.js`），同时 `releases/` 目录保留各版本产物副本。
+> 本仓库为 [KesaubeEire/PT_Masonry_View_Svelte](https://github.com/KesaubeEire/PT_Masonry_View_Svelte) 的 **fork 分支**（作者 `Banxiaxiala`），在其基础上增量补全 PTT/NicePT/ptfans 站点适配与多设备同步功能。编译好的产物发布到本仓库的 **GitHub Releases**（asset 命名 `PT_Masonry_View_Svelte-<版本>.js`），同时 `releases/` 目录保留各版本产物副本。
 
 ## 分支变更说明（相对原版 fork 基线）
 
-- **架构**：原版为 Svelte 编译压缩产物；本分支重建为可构建的 Svelte 源码工程（`src/` 各模块化 `.svelte`/`.js`），构建命令 `npx vite build --minify false`，产物输出到 `dist/sveltegreasytest.user.js`（油猴头由 `userscript.config.js` 生成）。
+- **架构**：原版为 Svelte 编译压缩产物；本分支重建为可构建的 Svelte 源码工程（`src/` 各模块化 `.svelte`/`.js`），构建命令 `npx vite build`（压缩版），产物输出到 `dist/sveltegreasytest.user.js`（油猴头由 `userscript.config.js` 生成）。
 - **站点适配层**：新增 `src/sites/index.js`（7 站注册表，`IS_NEXUSPHP`/`IS_MT` 分流）、`src/sites/ptt.js`（PTT/NicePT/ptfans NexusPHP DOM 解析）、`src/sites/_index.svelte`（M-Team 劫持 `/search` JSON 路由）。
 - **M-Team 数据源**：移植 `src/lib/mteamHijack.js`（劫持站点自身 `/search` POST 请求，`Launch_Hijack` 派发 `req>POST->/search` / `res>POST->/search` 事件），M-Team SPA 无 `table.torrents` 时由 `main.js` 创建占位节点挂载瀑布流。
 - **多设备同步**：`src/lib/sync.js` 承载 WebDAV 已读标记/设置/页码统一文件 `PT_Masonry_Sync.json` 的同步与「同步(WebDAV) / 已读标记 / TAG / 名称过滤」面板注入（sidepanel 集成）。
@@ -21,9 +21,9 @@ https://user-images.githubusercontent.com/20382002/236703818-427840b9-aaee-4133-
 <!-- https://raw.githubusercontent.com/KesaubeEire/PT_TorrentList_Masonry/main/preview/_input.mov -->
 <!-- https://github.com/KesaubeEire/PT_TorrentList_Masonry/blob/main/preview/_input.mov?raw=true -->
 
-| 新版 | 旧版 |
+| 新版 | 旧版(原作者) |
 |-----|-----|
-| [github 项目地址~](https://github.com/KesaubeEire/PT_Masonry_View_Svelte) | [旧版 github 项目地址~](https://github.com/KesaubeEire/PT_TorrentList_Masonry) |
+| [本分支 github 项目地址~](https://github.com/Banxiaxiala/PT_Masonry_View_Svelte) | [原作者 github 项目地址~](https://github.com/KesaubeEire/PT_Masonry_View_Svelte) |
 | [油猴 项目地址~](https://greasyfork.org/zh-CN/scripts/470821) | [旧版 油猴 项目地址~](https://greasyfork.org/zh-CN/scripts/465249-pt种子列表无限下拉瀑布流视图) |
 
 
@@ -32,7 +32,15 @@ https://user-images.githubusercontent.com/20382002/236703818-427840b9-aaee-4133-
 ## 简介
 
 RT, 本油猴脚本专为 PT 打造, 让你顺畅划划点点, 一页爽逛种子超市!
-欢迎为项目提 [issue](https://github.com/KesaubeEire/PT_Masonry_View_Svelte/issues) 以及留言配置您想适配的站点~
+目前适配站点如下，欢迎为项目提 [issue](https://github.com/Banxiaxiala/PT_Masonry_View_Svelte/issues) 以及留言配置您想适配的站点~
+
+| 网站 | 站点域名 | 是否适配 |
+|------|----------|:--------:|
+| M-Team | m-team.cc（各子域）/ mua.xloli.cc | ✅ |
+| KamePT | kamept.com | ✅ |
+| PTT | pttime.org | ✅ |
+| NicePT | nicept.net | ✅ |
+| PTFans | ptfans.cc | ✅ |
 
 相关事宜如果您在 tg 能找到我也可以直接联系我~
 

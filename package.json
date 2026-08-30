@@ -3,6 +3,12 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "author": "Banxiaxiala",
+  "homepage": "https://github.com/Banxiaxiala/PT_Masonry_View_Svelte",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Banxiaxiala/PT_Masonry_View_Svelte.git"
+  },
   "scripts": {
     "dev": "vite",
     "build": "sh ./build.sh",
