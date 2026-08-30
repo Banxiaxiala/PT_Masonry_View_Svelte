@@ -2,7 +2,7 @@
 // @name            PT种子列表瀑布流视图(Svelte重构)
 // @name:en         PT_Masonry_View_Svelte
 // @namespace       https://github.com/KesaubeEire/PT_Masonry_View_Svelte
-// @version         1.2.22b
+// @version         1.2.23b
 // @author          Kesa
 // @description     PT种子列表无限下拉瀑布流视图(Svelte重构) [M-Team数据源: 劫持站点自身请求(原作者逻辑)]
 // @description:en  PT Masonry View by Svelte.
@@ -4634,14 +4634,13 @@
             prevBtn.disabled = c <= 1;
           return;
         }
+        const wf = document.querySelector("div.waterfall");
         let wrap = null;
         let afterWf = false;
-        const wf = document.querySelector("div.waterfall");
         if (wf && wf.parentNode) {
-          afterWf = false;
+          afterWf = true;
           wrap = wf;
-        }
-        if (!wrap) {
+        } else {
           const btn0 = document.getElementById("turnPage");
           if (btn0) {
             wrap = btn0.parentElement || btn0.parentNode;
@@ -4652,8 +4651,6 @@
             console.log("[kesa] 页码选择器: 未找到可注入位置");
           return;
         }
-        if (!wrap)
-          return;
         const box = document.createElement("div");
         box.id = "kesaMtPageSel";
         box.style.cssText = "display:flex;align-items:center;gap:6px;justify-content:center;margin-top:8px;flex-wrap:wrap;position:relative;z-index:20000;";
@@ -10368,12 +10365,20 @@
     component_subscribe($$self, _show_mode, ($$value) => $$invalidate(6, $_show_mode = $$value));
     component_subscribe($$self, _iframe_url, ($$value) => $$invalidate(2, $_iframe_url = $$value));
     console.log(`[${( new Date()).toLocaleTimeString()}]<--------------------------HMR-------------------------->`);
-    let _ORIGIN_TL_Node2 = document.querySelector("div.app-content__inner");
-    if (!_ORIGIN_TL_Node2 && IS_MT(window.location.hostname)) {
-      _ORIGIN_TL_Node2 = document.querySelector("#__kesaMTPlaceholder");
-    }
-    if (!_ORIGIN_TL_Node2) {
+    let _ORIGIN_TL_Node2;
+    if (__isPTT) {
       _ORIGIN_TL_Node2 = document.querySelector(GET_TORRENT_LIST_SELECTOR());
+      if (!_ORIGIN_TL_Node2) {
+        _ORIGIN_TL_Node2 = document.querySelector("div.app-content__inner");
+      }
+    } else {
+      _ORIGIN_TL_Node2 = document.querySelector("div.app-content__inner");
+      if (!_ORIGIN_TL_Node2 && IS_MT(window.location.hostname)) {
+        _ORIGIN_TL_Node2 = document.querySelector("#__kesaMTPlaceholder");
+      }
+      if (!_ORIGIN_TL_Node2) {
+        _ORIGIN_TL_Node2 = document.querySelector(GET_TORRENT_LIST_SELECTOR());
+      }
     }
     while (!Masonry) {
       console.log("等待初始化......");

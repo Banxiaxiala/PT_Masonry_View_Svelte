@@ -1263,19 +1263,18 @@ function __kesaPageInd(n) {
         if (prevBtn) prevBtn.disabled = c <= 1;
         return;
       }
+      // 页码选择器(上一页/下一页/跳转)注入位置: 插到瀑布流容器 div.waterfall 之后作为兄弟节点,
+      // 使其位于"卡片框架外面"且紧跟在"点击加载下一页"按钮下方, 符合正常阅读顺序。
+      // 说明: 不能 append 到 waterfall 内部(_index.svelte 的 #turnPage 包在一层内层 <div> 里且
+      // position:absolute, append 会把它放进内层 div 顶部或卡片网格中, 位置错乱);
+      // 统一 insertAdjacentElement("afterend") 放到 waterfall 之后(卡片框架外、加载按钮下方)。
+      const wf = document.querySelector("div.waterfall");
       let wrap = null;
       let afterWf = false;
-      // 优先把页码选择器注入到瀑布流容器末尾(即"点击加载下一页"按钮下方)。
-      // 说明: _index.svelte 的 #turnPage 被包在一层内层 <div> 里且按钮 position:absolute,
-      // 若 wrap=btn.parentElement 会把 box append 到内层 div 顶部(按钮脱离文档流, 出现在 div 顶部)
-      // 而非按钮下方。参照参考版 1.2.3b: #turnPage 直接在 div.waterfall 容器内, box append 到容器
-      // 底部即按钮下方, 故统一改为 append 到 div.waterfall 末尾。
-      const wf = document.querySelector("div.waterfall");
       if (wf && wf.parentNode) {
-        afterWf = false;
+        afterWf = true;
         wrap = wf;
-      }
-      if (!wrap) {
+      } else {
         // 兜底: 无瀑布流容器时退回 #turnPage 父元素(参考版逻辑)
         const btn0 = document.getElementById("turnPage");
         if (btn0) {
@@ -1286,7 +1285,6 @@ function __kesaPageInd(n) {
         if (__pmSelLog++ < 3) console.log("[kesa] 页码选择器: 未找到可注入位置");
         return;
       }
-      if (!wrap) return;
       const box = document.createElement("div");
       box.id = "kesaMtPageSel";
       // position:relative + z-index 参照参考版 1.2.3b: 页码选择器(上一页/下一页/跳转)需置于卡片之上,

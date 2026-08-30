@@ -30,12 +30,24 @@
   // 轮询等到出现后才挂载), 瀑布流作为其兄弟节点插入; 这样瀑布流模式隐藏原生表格时,
   // 瀑布流自然显示在内容区, 而非被原生表格埋在下方面不可见。
   // SPA 页(/search 等)无 div.app-content__inner 时 fallback 到 #__kesaMTPlaceholder。
-  let _ORIGIN_TL_Node = document.querySelector("div.app-content__inner");
-  if (!_ORIGIN_TL_Node && IS_MT(window.location.hostname)) {
-    _ORIGIN_TL_Node = document.querySelector("#__kesaMTPlaceholder");
-  }
-  if (!_ORIGIN_TL_Node) {
+  let _ORIGIN_TL_Node;
+  if (__isPTT) {
+    // PTT(pttime/nicept/ptfans) 专属架构: __pttBoot 伪造的 div.app-content__inner 只是空宿主,
+    // 不含原列表。_ORIGIN_TL_Node 必须指向真实原种子表格(#torrenttable / table.torrents),
+    // 瀑布流模式的隐藏逻辑(display:none)才能隐藏原列表, 否则原始列表会残留可见。
+    // main.js 已轮询等原表格出现后才 mountApp, 此处应能取到; 兜底再退回宿主。
     _ORIGIN_TL_Node = document.querySelector(GET_TORRENT_LIST_SELECTOR());
+    if (!_ORIGIN_TL_Node) {
+      _ORIGIN_TL_Node = document.querySelector("div.app-content__inner");
+    }
+  } else {
+    _ORIGIN_TL_Node = document.querySelector("div.app-content__inner");
+    if (!_ORIGIN_TL_Node && IS_MT(window.location.hostname)) {
+      _ORIGIN_TL_Node = document.querySelector("#__kesaMTPlaceholder");
+    }
+    if (!_ORIGIN_TL_Node) {
+      _ORIGIN_TL_Node = document.querySelector(GET_TORRENT_LIST_SELECTOR());
+    }
   }
   // 隐藏原有视图
   // @ts-ignore
