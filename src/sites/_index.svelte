@@ -771,16 +771,11 @@
 </div>
 
 <style>
-  /* 加载下一页按钮: 参照参考版 1.2.3b 加 z-index, 避免在非 M-Team 站点被卡片盖住(卡片 z 层更高时按钮"被压到卡片下面") */
+  /* 加载下一页按钮: 参照参考版 1.2.3b 加 z-index, 避免在非 M-Team 站点被卡片盖住(卡片 z 层更高时按钮"被压到卡片下面")
+     但该 #turnPage 是 position:absolute 占位, 会被定位到瀑布流容器底部而压在最后一行卡片上(重叠)。
+     真实"点击加载下一页"按钮是 BtnTurnPage 组件的 #_turnPage(普通文档流, 位于 .nextPage, 在卡片下方),
+     故隐藏此绝对定位占位, 避免与卡片重叠。 */
   #turnPage {
-    width: 100%;
-    height: 32px;
-    border-radius: 16px;
-    line-height: 20px;
-    font-size: 14px;
-
-    position: absolute;
-    bottom: 0px;
-    z-index: 20000;
+    display: none;
   }
 </style>

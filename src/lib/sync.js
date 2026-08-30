@@ -1263,22 +1263,25 @@ function __kesaPageInd(n) {
         if (prevBtn) prevBtn.disabled = c <= 1;
         return;
       }
-      // 页码选择器(上一页/下一页/跳转)注入位置: 插到瀑布流容器 div.waterfall 之后作为兄弟节点,
-      // 使其位于"卡片框架外面"且紧跟在"点击加载下一页"按钮下方, 符合正常阅读顺序。
-      // 说明: 不能 append 到 waterfall 内部(_index.svelte 的 #turnPage 包在一层内层 <div> 里且
-      // position:absolute, append 会把它放进内层 div 顶部或卡片网格中, 位置错乱);
-      // 统一 insertAdjacentElement("afterend") 放到 waterfall 之后(卡片框架外、加载按钮下方)。
-      const wf = document.querySelector("div.waterfall");
+      // 页码选择器(上一页/下一页/跳转)注入位置: 放到"点击加载下一页"按钮(#_turnPage)之后,
+      // 即瀑布流卡片框架外面、加载下一页按钮下方, 符合"卡片 → 点击加载下一页 → 页码导航"的阅读顺序。
+      // 说明: 真实的"点击加载下一页"按钮是 BtnTurnPage 组件的 #_turnPage(普通文档流, 位于 .nextPage 容器内);
+      // 而 _index.svelte 里的 #turnPage 是 position:absolute 的占位, 不能作为定位依据。
+      // 定位 #_turnPage 后取其容器(.nextPage), 用 insertAdjacentElement("afterend") 把页码导航
+      // 插到该容器之后(卡片框架外、按钮下方); 若不存在(兜底)则插到瀑布流容器 div.waterfall 之后。
+      const btn0 = document.getElementById("_turnPage") || document.getElementById("turnPage");
       let wrap = null;
-      let afterWf = false;
-      if (wf && wf.parentNode) {
-        afterWf = true;
-        wrap = wf;
+      let afterWrap = false;
+      if (btn0) {
+        // 定位"点击加载下一页"按钮的容器(.nextPage / 按钮父元素), 页码导航插到容器之后
+        wrap = btn0.parentElement || btn0.parentNode;
+        afterWrap = true;
       } else {
-        // 兜底: 无瀑布流容器时退回 #turnPage 父元素(参考版逻辑)
-        const btn0 = document.getElementById("turnPage");
-        if (btn0) {
-          wrap = btn0.parentElement || btn0.parentNode;
+        const wf = document.querySelector("div.waterfall");
+        if (wf && wf.parentNode) {
+          // 无按钮时兜底: 插到瀑布流容器之后
+          wrap = wf;
+          afterWrap = true;
         }
       }
       if (!wrap) {
@@ -1331,8 +1334,9 @@ function __kesaPageInd(n) {
       box.appendChild(next);
       box.appendChild(inp);
       box.appendChild(go);
-      if (afterWf) wrap.insertAdjacentElement("afterend", box);
-      else wrap.appendChild(box);
+      // 注入位置: 统一用 insertAdjacentElement("afterend") 插到"点击加载下一页"按钮容器
+      // (.nextPage)之后, 即卡片框架外、按钮下方; 兜底时插到瀑布流容器之后。
+      wrap.insertAdjacentElement("afterend", box);
       prev.disabled = __pmCurrentPage() <= 1;
       console.log("[kesa] 页码选择器已注入");
     } catch (e) {}

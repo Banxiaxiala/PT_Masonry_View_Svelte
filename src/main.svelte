@@ -89,8 +89,10 @@
   // 保证"加载下一页"按钮在所有站点(尤其非 M-Team)不被瀑布流卡片盖住
   nextPageNode.style.position = "relative";
   nextPageNode.style.zIndex = "20000";
-  // 将瀑布流节点放置在表格节点上面
-  parentNode.insertBefore(nextPageNode, _ORIGIN_TL_Node.nextSibling);
+  // 将"加载下一页"按钮节点放在瀑布流节点之后(卡片框架外面、卡片下方),
+  // 符合"卡片 → 点击加载下一页 → 页码导航"的正常阅读顺序;
+  // 若插到 waterfallNode 之前(即瀑布流上方), 按钮会与卡片重叠/盖住卡片。
+  parentNode.insertBefore(nextPageNode, waterfallNode.nextSibling);
 
   // console.log(waterfallNode);
 
