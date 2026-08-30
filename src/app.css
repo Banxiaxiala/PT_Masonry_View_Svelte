@@ -12,6 +12,18 @@ div.waterfall {
   transition: height 0.3s;
 }
 
+/* PTT(www.pttime.org)/NEW_MT 专属布局: 参照参考版 1.2.3b
+   PTT 结构与其他 NexusPHP 站不同(adults.php 等), 采用 waterfall_newMT 布局,
+   去掉 height:100% 与上下内边距, 避免瀑布流高度撑满父容器导致
+   "上一页/下一页/跳转"(kesaMtPageSel)被绝对定位的卡片盖住。 */
+div.waterfall.waterfall_newMT,
+div.waterfall_newMT {
+  padding-top: 0;
+  padding-bottom: 0;
+  margin: 10px auto;
+  height: auto !important;
+}
+
 /* 调试按键统一样式 */
 button.debug {
   position: fixed;

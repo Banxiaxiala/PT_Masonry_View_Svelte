@@ -1293,7 +1293,9 @@ function __kesaPageInd(n) {
       if (!wrap) return;
       const box = document.createElement("div");
       box.id = "kesaMtPageSel";
-      box.style.cssText = "display:flex;align-items:center;gap:6px;justify-content:center;margin-top:8px;flex-wrap:wrap;";
+      // position:relative + z-index 参照参考版 1.2.3b: 页码选择器(上一页/下一页/跳转)需置于卡片之上,
+      // 否则会被 Masonry 绝对定位的卡片盖住(尤其非 M-Team 站"被压到卡片下面")。
+      box.style.cssText = "display:flex;align-items:center;gap:6px;justify-content:center;margin-top:8px;flex-wrap:wrap;position:relative;z-index:20000;";
       const btnStyle =
         "border:none;background:#3fa7d6;color:#fff;border-radius:4px;padding:4px 12px;font-size:12px;cursor:pointer;";
       const prev = document.createElement("button");

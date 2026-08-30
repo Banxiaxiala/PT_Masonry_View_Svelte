@@ -711,7 +711,7 @@
 </div>
 
 <style>
-  /* 卡片: 收藏按钮 */
+  /* 加载下一页按钮: 参照参考版 1.2.3b 加 z-index, 避免在非 M-Team 站点被卡片盖住(卡片 z 层更高时按钮"被压到卡片下面") */
   #turnPage {
     width: 100%;
     height: 32px;
@@ -721,5 +721,6 @@
 
     position: absolute;
     bottom: 0px;
+    z-index: 20000;
   }
 </style>

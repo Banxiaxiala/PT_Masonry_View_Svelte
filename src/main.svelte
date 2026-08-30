@@ -14,7 +14,7 @@
     _previewWidth,
     _previewHeight,
   } from "./stores";
-  import { GET_TORRENT_LIST_SELECTOR, GLOBAL_SITE, IS_MT } from "./sites";
+  import { GET_TORRENT_LIST_SELECTOR, GLOBAL_SITE, IS_MT, __isPTT } from "./sites";
   import { __wdvAutoSync, __wdvAutoPush } from "./lib/sync";
   import { __kesaWatchLazy } from "./lib/lazyImage";
   import BtnTurnPage from "./component/btnTurnPage.svelte";
@@ -63,6 +63,9 @@
   const waterfallNode = document.createElement("div");
   // 添加class
   waterfallNode.classList.add("waterfall");
+  // PTT(www.pttime.org 等)结构与其他站点不同(adults.php 等专属架构),
+  // 参照参考版 1.2.3b 采用 waterfall_newMT 专属布局(高度自适应), 避免卡片盖住页码导航
+  if (__isPTT) waterfallNode.classList.add("waterfall_newMT");
   // 将瀑布流节点放置在表格节点上面
   parentNode.insertBefore(waterfallNode, _ORIGIN_TL_Node.nextSibling);
 
@@ -70,6 +73,10 @@
   const nextPageNode = document.createElement("div");
   // 添加class
   nextPageNode.classList.add("nextPage");
+  // 参照参考版 1.2.3b: .nextPage{position:relative;z-index:20000}
+  // 保证"加载下一页"按钮在所有站点(尤其非 M-Team)不被瀑布流卡片盖住
+  nextPageNode.style.position = "relative";
+  nextPageNode.style.zIndex = "20000";
   // 将瀑布流节点放置在表格节点上面
   parentNode.insertBefore(nextPageNode, _ORIGIN_TL_Node.nextSibling);
 
