@@ -159,30 +159,26 @@ function __markRead(id) {
 }
 
 // 应用"隐藏已读卡片 / 隐藏历史观看"
+// 重构(v1.2.29b): 不再直接改内联 style.display, 而是 toggle `.kesa-hide` class。
+// 卡片根元素是 Svelte 组件, 模板 style 带 "display:{gayHidden?'none':''}", 每次 Svelte 重渲染
+// (点击标记已读/懒加载 onload/翻页 each 更新)都会用 '' 覆盖内联 display:none, 这是"隐藏历史
+// 观看/隐藏已读"反复修不好、需手动重启开关才生效的根因。改用 CSS class + !important 后:
+//   - class 优先级高于内联 display, 永不被子组件重渲染覆盖;
+//   - 不再需要 el.__readHidden / el.__nameFiltered 这类脆弱的内联 display 协调标记;
+//   - 隐藏逻辑各自 toggle 独立 class, 与 gayHidden(内联 display) 天然共存。
 function __applyHideReadCards() {
   const hide = __storeVal(__hideReadCards),
     hideHist = __storeVal(__hideHistoryRead);
-  // 遍历范围用所有 .card 而非 .card.pt-read: 直接由卡片自身 id 与快照比对判定历史观看,
-  // 不依赖 __applyReadClasses 先打上 .pt-read 类(手工翻页/点击加载下一页后若该标记未及时
-  // 应用, 仅遍历 .card.pt-read 会漏掉新卡片, 导致历史观看不隐藏); 名称过滤(.__nameFiltered)
-  // 的隐藏需保留, 不与历史观看互相覆盖。
-  //
-  // 关键: 用 el.__readHidden 标记区分"我们隐藏的"和"其他逻辑隐藏的(gayHidden 等)"。
-  // 两开关全关时不再直接 return, 而是重置所有"我们之前隐藏的"卡片, 修复"关闭'隐藏历史
-  // 观看'后卡片仍隐藏" BUG; 不会破坏 gayHidden 等其他 inline display 隐藏。
+  const readSet = __storeVal(__readIds);
+  // 遍历所有 .card, 直接由卡片自身 id 与快照/已读集合比对判定, 不依赖 .pt-read 类是否已应用
+  // (手工翻页/点击加载下一页后若标记未及时打上, 仅遍历 .card.pt-read 会漏掉新卡片)。
   document.querySelectorAll(".card").forEach((el) => {
     const id = __extractId(el);
-    const isHist = hideHist && id && __historyReadSnapshot.includes(id);
-    const shouldHide = hide || isHist;
-    if (shouldHide) {
-      el.style.display = "none";
-      el.__readHidden = true;
-    } else if (el.__readHidden) {
-      // 仅当我们之前隐藏过该卡片才重置, 避免破坏其他隐藏逻辑(gayHidden 等)
-      // 的内联 display; 名称过滤(.__nameFiltered) 命中仍保持 hidden。
-      el.style.display = el.__nameFiltered ? "none" : "";
-      el.__readHidden = false;
-    }
+    // 隐藏已读卡片: id 在已读集合即隐藏; 隐藏历史观看: id 在进入页面时的快照即隐藏
+    const isRead = !!id && readSet.includes(id);
+    const isHist = !!id && __historyReadSnapshot.includes(id);
+    const shouldHide = (hide && isRead) || (hideHist && isHist);
+    el.classList.toggle("kesa-hide-read", shouldHide);
   });
 }
 
@@ -196,20 +192,18 @@ function __cardName(el) {
 }
 
 // 应用名称过滤：命中任一关键词即隐藏卡片
+// (v1.2.29b 重构: 与隐藏已读/历史观看统一用 .kesa-hide class + !important, 不再改内联 display,
+//  也不再用 __nameFiltered 标记协调; 各隐藏逻辑独立, 关闭过滤时只移除本 class 即可恢复显示)
 function __applyHideNameFilter() {
   const kws = (__storeVal(__nameFilter) || []).filter((k) => (k || "").trim());
   document.querySelectorAll(".card").forEach((el) => {
     if (!kws.length) {
-      if (el.__nameFiltered) {
-        el.style.display = "";
-        el.__nameFiltered = false;
-      }
+      el.classList.remove("kesa-hide");
       return;
     }
     const name = __cardName(el).toLowerCase();
     const hit = kws.some((k) => name.indexOf(String(k).toLowerCase()) !== -1);
-    el.style.display = hit ? "none" : "";
-    el.__nameFiltered = hit;
+    el.classList.toggle("kesa-hide", hit);
   });
 }
 
@@ -241,7 +235,15 @@ function __initReadTracking() {
   const s = document.createElement("style");
   s.id = "pt-read-style";
   s.textContent =
-    ".card.pt-read{opacity:0.55!important;filter:grayscale(0.6)!important;transition:opacity .3s ease,filter .3s ease!important}.card.pt-read:hover{opacity:0.75!important;filter:grayscale(0.3)!important}";
+    // 已读变灰(不隐藏)
+    ".card.pt-read{opacity:0.55!important;filter:grayscale(0.6)!important;transition:opacity .3s ease,filter .3s ease!important}.card.pt-read:hover{opacity:0.75!important;filter:grayscale(0.3)!important}" +
+    // 程序隐藏: 用 CSS class + !important, 而非内联 style.display。
+    // 原因: 卡片根元素是 Svelte 组件, 其模板 style 里带 "display:{gayHidden?'none':''}", 每次
+    // Svelte 重渲染都会用 '' 覆盖掉我们内联设置的 display:none, 导致"隐藏历史观看/隐藏已读"
+    // 在翻页/点击标记已读等触发 Svelte 更新后失效(需手动重启开关才短暂生效)。
+    // 改用 class + !important 后, class 优先级高于内联 display, 永不被子组件重渲染覆盖。
+    // kesa-hide(名称过滤) 与 kesa-hide-read(隐藏已读/历史观看) 各自独立 toggle, 互不覆盖。
+    ".card.kesa-hide{display:none!important}.card.kesa-hide-read{display:none!important}";
   // 兜底 document.documentElement: run-at: document-start 时 document.head 可能尚未存在
   (document.head || document.documentElement).appendChild(s);
   // 首次加载即标记已读并应用隐藏(含"隐藏历史观看"), 否则需开关一次才生效
@@ -616,7 +618,8 @@ function __fillNameFilterSection(container) {
     renderChips();
     const kws = (__storeVal(__nameFilter) || []).filter((k) => (k || "").trim());
     const total = document.querySelectorAll(".card").length;
-    const hidden = document.querySelectorAll(".card[style*='display: none']").length;
+    // v1.2.29b: 隐藏改用 CSS class(!important) 而非内联 style.display, 故按 class 统计
+    const hidden = document.querySelectorAll(".card.kesa-hide,.card.kesa-hide-read").length;
     countLabel.textContent = kws.length
       ? `已隐藏 ${hidden} / 共 ${total} 个卡片(命中任一关键词)`
       : `共 ${total} 个卡片`;
