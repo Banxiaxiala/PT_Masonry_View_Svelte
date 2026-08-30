@@ -4,14 +4,14 @@
 
 ## 适配站点
 
-| 网站 | 站点域名 | 是否适配 |
-|------|----------|:--------:|
-| M-Team | m-team.cc（各子域） | ✅ |
-| mua.xloli.cc | mua.xloli.cc（独立站，复用 M-Team 架构） | ✅ |
-| KamePT | kamept.com | ✅ |
-| PTT | pttime.org | ✅ |
-| NicePT | nicept.net | ✅ |
-| PTFans | ptfans.cc | ✅ |
+| 网站 | 是否适配 |
+|------|:--------:|
+| M-Team（馒头） | ✅ |
+| xloli（萝莉） | ✅ |
+| KamePT（龟🐢） | ✅ |
+| PTT（PT时间） | ✅ |
+| NicePT | ✅ |
+| PTFans | ✅ |
 
 ---
 
