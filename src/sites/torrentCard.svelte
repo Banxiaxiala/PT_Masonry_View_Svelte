@@ -5,6 +5,7 @@
     _iframe_switch,
     _iframe_url,
     _SITE_SETTING,
+    _pic_failed_showInfo,
   } from "../stores";
   import { sortMasonry } from "../utils";
   import { config } from "./mteam";
@@ -50,6 +51,13 @@
   /** 封面图 */
   let picSrc = "";
   $: picSrc = (it.imageList && it.imageList[0]) || "";
+
+  /** 图片加载失败占位 */
+  let picError = false;
+  const onPicError = () => {
+    picError = true;
+    sort_masonry();
+  };
 
   /** 根据背景颜色动态调整文字黑白 */
   function getTextColor(background) {
@@ -123,13 +131,20 @@
     <!-- 封面图(懒加载) -->
     <!-- svelte-ignore a11y-click-events-have-key-events -->
     <div class="card-image" on:click={onClickCard}>
-      <img
-        class="card-image--img nexus-lazy-load_Kesa"
-        src={config.LOADING_PIC}
-        data-src={picSrc}
-        alt={it.name}
-        on:load={sort_masonry}
-      />
+      {#if picError}
+        <div class="pic_error">
+          {$_pic_failed_showInfo ? (it.name || "图片加载失败") : "图片加载失败"}
+        </div>
+      {:else}
+        <img
+          class="card-image--img nexus-lazy-load_Kesa"
+          src={config.LOADING_PIC}
+          data-src={picSrc}
+          alt={it.name}
+          on:load={sort_masonry}
+          on:error={onPicError}
+        />
+      {/if}
       <!-- 折扣角标 -->
       {#if it.status.discount && it.status.discount != "NORMAL"}
         <div class="card-discount" class:isFree={it.status.discount == "FREE"} class:is50={it.status.discount == "PERCENT_50"}>
@@ -283,6 +298,22 @@
   .card-image img {
     width: 100%;
     object-fit: cover;
+  }
+
+  /* 图片加载失败占位 */
+  .pic_error {
+    width: 100%;
+    height: 100%;
+    min-height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-size: 13px;
+    color: #999;
+    background-color: rgba(0, 0, 0, 0.06);
+    padding: 8px;
+    box-sizing: border-box;
   }
 
   /* 折扣角标 */

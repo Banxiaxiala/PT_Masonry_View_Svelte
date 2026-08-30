@@ -62,6 +62,12 @@ export const _show_nexus_pic = persistStore('_show_nexus_pic', 1);
 /** 是否延迟显示悬浮预览大图 */
 export const _delay_nexus_pic = persistStore('_delay_nexus_pic', 600);
 
+/** 图片加载失败时显示标题(默认1=显示) */
+export const _pic_failed_showInfo = persistStore('_pic_failed_showInfo', 1);
+
+/** 预览大图默认状态: true=铺满(contain) false=尽量原图大小(scale-down) */
+export const _state_hover_pic = persistStore('_state_hover_pic', false);
+
 // 卡片类变量 -------------------------------------
 /** 卡片宽度 */
 // export const _card_width = writable(200);

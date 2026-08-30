@@ -17,6 +17,8 @@
     _delay_nexus_pic,
     _show_configPanel,
     _current_domain,
+    _pic_failed_showInfo,
+    _state_hover_pic,
   } from "./stores";
 
   import { sortMasonry } from "./utils";
@@ -395,7 +397,7 @@
       <!-- ---------------- 站点专业配置 ---------------- -->
 
       <!-- MT 专用配置 -->
-      {#if $_current_domain == "kp.m-team.cc"}
+      {#if /m-team\.cc/i.test($_current_domain)}
         <div class="section">
           <h1 class="s_title">MT专用配置</h1>
           <div class="s_panel">
@@ -464,6 +466,25 @@
               />
             </Switch>
           {/if}
+
+          <!-- 图片加载失败时显示标题 -->
+          <Switch
+            title_fixed="图片加载失败时显示标题"
+            title_green="显示标题"
+            title_red="仅提示加载失败"
+            bind:checked={$_pic_failed_showInfo}
+            green_state={false}
+          />
+
+          <!-- 预览大图默认状态 -->
+          <Switch
+            title_fixed="预览大图默认状态"
+            title_green="铺满(contain)"
+            title_red="尽量原图大小"
+            label="开启=铺满(contain); 关闭=尽量原图大小(scale-down)"
+            bind:checked={$_state_hover_pic}
+            green_state={false}
+          />
 
           <!-- 按钮: 切换宽度 -->
           <button class="sideP__btn" on:click={config_changeWidth}>

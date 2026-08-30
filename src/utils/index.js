@@ -3,7 +3,7 @@
  */
 
 import { get } from 'svelte/store'
-import { _show_nexus_pic, _delay_nexus_pic } from '../stores'
+import { _show_nexus_pic, _delay_nexus_pic, _state_hover_pic } from '../stores'
 
 export { debounce, throttle, sortMasonry, NEXUS_TOOLS }
 /**瀑布流执行次数 */
@@ -526,7 +526,8 @@ function NEXUS_TOOLS() {
           pointerEvents: 'none',
           width: '100%',
           height: '100%',
-          objectFit: 'contain',
+          // 预览大图默认状态: 开启=铺满(contain) 关闭=尽量原图大小(scale-down)
+          objectFit: get(_state_hover_pic) ? 'contain' : 'scale-down',
         }
       }))
       parent.append(jQuery('<img>', {
@@ -547,6 +548,12 @@ function NEXUS_TOOLS() {
     // const kesa_preview = createKesaPreview('')
     const kesa_preview = (jQuery('#kp_container').length > 0) ? jQuery('#kp_container') : createKesaPreview('')
     jQuery("body").append(kesa_preview)
+
+    // 预览大图默认状态切换: 开启=铺满(contain) 关闭=尽量原图大小(scale-down)
+    _state_hover_pic.subscribe(v => {
+      const __im = document.querySelectorAll("#kp_container .kp_img")[0];
+      if (__im) __im.style.objectFit = v ? "contain" : "scale-down";
+    });
 
     /** timer 用来搞延迟加载图片的 */
     let buffer = null;

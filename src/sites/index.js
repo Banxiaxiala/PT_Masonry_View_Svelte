@@ -9,7 +9,6 @@ const SITE = {
   "xp.m-team.cc": config_Mteam,
   "ap.m-team.cc": config_Mteam,
   "test2.m-team.cc": config_Mteam,
-  "mua.xloli.cc": config_Mteam,
 
   // ---- NexusPHP DOM 站 (ptt.js 的 __pttParse 逻辑) ----
   "kamept.com": config_Kame,
@@ -17,6 +16,8 @@ const SITE = {
   "www.pttime.org": { ...config_Kame, torrentListTable: "#torrenttable" },
   "nicept.net": { ...config_Kame, torrentListTable: "table.torrents" },
   "ptfans.cc": { ...config_Kame, torrentListTable: "table.torrents" },
+  // mua.xloli.cc 为 NexusPHP(torrents.php), 列结构与 kamept 一致
+  "mua.xloli.cc": config_Kame,
 };
 
 /** 判断是否为 NexusPHP DOM 站
@@ -32,7 +33,7 @@ function IS_NEXUSPHP(domain) {
  * @returns {boolean}
  */
 function IS_MT(domain) {
-  return /(?:kp|xp|ap|test2)\.m-team\.cc|mua\.xloli\.cc/i.test(domain || "");
+  return /(?:kp|xp|ap|test2)\.m-team\.cc/i.test(domain || "");
 }
 
 /** 判断该域名是否为受支持的站点
