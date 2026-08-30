@@ -172,7 +172,9 @@
     __fillCardInfoSectionObserver();
 
     // 注入"同步(WebDAV) / 已读标记 / TAG 过滤 / 名称过滤" 四个配置面板(各自挂在对应容器内)
-    const secMount = () => {
+    // NOTE: 配置面板默认关闭(#if $_show_configPanel), onMount 时占位 div 尚不在 DOM,
+    // 因此不能只调一次, 需用 MutationObserver 持续监听, 等占位 div 出现后再填充(已填充的跳过)
+    const secFill = () => {
       const webdav = document.getElementById("kesaPanelWebdav");
       const read = document.getElementById("kesaPanelRead");
       const tag = document.getElementById("kesaPanelTag");
@@ -182,11 +184,27 @@
       if (tag && !tag.dataset.filled) { tag.dataset.filled = "1"; __fillTagSection(tag); }
       if (name && !name.dataset.filled) { name.dataset.filled = "1"; __fillNameFilterSection(name); }
     };
-    secMount();
+    secFill();
+    const secObs = new MutationObserver(() => {
+      // 配置面板展开后占位 div 才会被 Svelte 创建, 出现时触发填充
+      if (!document.getElementById("kesaPanelWebdav")) return;
+      secFill();
+      // 四个都已填充后不再监听
+      if (
+        document.getElementById("kesaPanelWebdav")?.dataset.filled &&
+        document.getElementById("kesaPanelRead")?.dataset.filled &&
+        document.getElementById("kesaPanelTag")?.dataset.filled &&
+        document.getElementById("kesaPanelName")?.dataset.filled
+      ) {
+        secObs.disconnect();
+      }
+    });
+    secObs.observe(document.body, { childList: true, subtree: true });
 
     return () => {
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
+      secObs.disconnect();
     };
   });
 </script>
@@ -451,6 +469,7 @@
             title_fixed={"侧边栏debug按钮"}
             title_green="隐藏(默认)"
             title_red="显示(开发用)"
+            label="显示/隐藏侧边栏上的调试按钮(开发用)"
             bind:checked={$_show_debug_btn}
             green_state={false}
           />
@@ -458,6 +477,7 @@
             title_fixed={"悬浮预览大图"}
             title_green="默认开启"
             title_red="核心功能->确定不用再关"
+            label="鼠标悬浮到种子图片时显示大图预览"
             bind:checked={$_show_nexus_pic}
           />
           {#if $_show_nexus_pic}
@@ -492,6 +512,7 @@
             title_fixed="图片加载失败时显示标题"
             title_green="显示标题"
             title_red="仅提示加载失败"
+            label="图片加载失败时在卡片上显示种子标题"
             bind:checked={$_pic_failed_showInfo}
             green_state={false}
           />
@@ -505,11 +526,6 @@
             bind:checked={$_state_hover_pic}
             green_state={false}
           />
-
-          <!-- 按钮: 切换宽度 -->
-          <button class="sideP__btn" on:click={config_changeWidth}>
-            切换宽度(开发中)
-          </button>
 
           <!-- NOTE: 废弃的旧型样式 -->
           {#if false}

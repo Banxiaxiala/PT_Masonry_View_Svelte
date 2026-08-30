@@ -284,15 +284,15 @@ function __initReadTracking() {
 // 复刻原 bundle 的 __mkSwitch: 标签 + checkbox 样式的开关
 function __mkSwitch(checked, onChange) {
   const w = document.createElement("div");
-  w.className = "s_switch svelte-zt6zlx svelte-zt6zlx";
+  w.className = "s_switch svelte-2vaqag svelte-2vaqag";
   const inp = document.createElement("input");
   inp.type = "checkbox";
-  inp.className = "svelte-zt6zlx svelte-zt6zlx";
+  inp.className = "svelte-2vaqag svelte-2vaqag";
   inp.checked = !!checked;
   const id = "_kesa_sw_" + Math.random().toString(36).slice(2, 10);
   inp.id = id;
   const lb = document.createElement("label");
-  lb.className = "svelte-zt6zlx svelte-zt6zlx";
+  lb.className = "svelte-2vaqag svelte-2vaqag";
   lb.setAttribute("for", id);
   inp.addEventListener("change", function () {
     onChange(inp.checked);
@@ -305,9 +305,9 @@ function __mkSwitch(checked, onChange) {
 // 开关行 (label + checkbox 样式开关)
 function __mkSwitchRow(labelText, checked, onChange, desc) {
   const row = document.createElement("div");
-  row.className = "switch svelte-zt6zlx svelte-zt6zlx";
+  row.className = "switch svelte-2vaqag svelte-2vaqag";
   const lb = document.createElement("div");
-  lb.className = "s_title svelte-zt6zlx";
+  lb.className = "s_title svelte-2vaqag";
   lb.textContent = labelText;
   if (desc) lb.title = desc;
   const sw = __mkSwitch(checked, function (v) {
