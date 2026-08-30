@@ -21,6 +21,15 @@
 
   import { sortMasonry } from "./utils";
   import Switch from "./component/switch.svelte";
+  // 同步/已读/名称过滤/TAG 过滤 面板填充函数 (来自独立同步模块 sync.js)
+  import {
+    __initReadTracking,
+    __fillWebDAVSection,
+    __fillReadSection,
+    __fillTagSection,
+    __fillNameFilterSection,
+    __fillCardInfoSectionObserver,
+  } from "./lib/sync";
 
   // 配置拖拽侧边栏 ------------------------------------------------
   /** 侧边栏的 dom 对象 */
@@ -149,6 +158,24 @@
     // 拖拽边栏监听
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup", onMouseUp);
+
+    // 读取追踪(已读样式/点击标记/隐藏历史观看快照) + 隐藏已读/历史观看 开关注入"卡片信息"面板
+    __initReadTracking();
+    __fillCardInfoSectionObserver();
+
+    // 注入"同步(WebDAV) / 已读标记 / TAG 过滤 / 名称过滤" 四个配置面板(各自挂在对应容器内)
+    const secMount = () => {
+      const webdav = document.getElementById("kesaPanelWebdav");
+      const read = document.getElementById("kesaPanelRead");
+      const tag = document.getElementById("kesaPanelTag");
+      const name = document.getElementById("kesaPanelName");
+      if (webdav && !webdav.dataset.filled) { webdav.dataset.filled = "1"; __fillWebDAVSection(webdav); }
+      if (read && !read.dataset.filled) { read.dataset.filled = "1"; __fillReadSection(read); }
+      if (tag && !tag.dataset.filled) { tag.dataset.filled = "1"; __fillTagSection(tag); }
+      if (name && !name.dataset.filled) { name.dataset.filled = "1"; __fillNameFilterSection(name); }
+    };
+    secMount();
+
     return () => {
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
@@ -658,6 +685,12 @@
           </div>
         </div>
       </div>
+
+      <!-- ---------------- 同步/已读/TAG/名称过滤 (由 sync.js 填充) ---------------- -->
+      <div class="section" id="kesaPanelWebdav" />
+      <div class="section" id="kesaPanelRead" />
+      <div class="section" id="kesaPanelTag" />
+      <div class="section" id="kesaPanelName" />
     </div>
   </div>
 {/if}

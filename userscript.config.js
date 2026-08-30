@@ -1,30 +1,54 @@
-export const config = {
-  name: {
-    "": "PT种子列表瀑布流视图(Svelte重构)",
-    en: "PT_Masonry_View_Svelte",
-  },
-  icon: "https://avatars.githubusercontent.com/u/23617963",
-  namespace: "https://github.com/KesaubeEire/PT_Masonry_View_Svelte",
-  description: {
-    "": "PT种子列表无限下拉瀑布流视图(Svelte重构)",
-    en: "PT Masonry View by Svelte.",
-  },
-  author: "Kesa",
-  match: [
-    "https://kamept.com/*",
-    "https://kp.m-team.cc/*",
-    "https://pterclub.com/*",
-  ],
-  exclude: [
-    "*/offers.php*",
-    "*/index.php*",
-    "*/forums.php*",
-    "*/viewrequests.php*",
-    "*/seek.php*",
-  ],
-  grant: "none",
-  license: "MIT",
+export let version = '1.2.4b';
 
-  // NOTE: 经常修改这里就行了
-  version: "1.1.0",
+export function config(mode) {
+  return {
+    version,
+    name: {
+      "": "PT种子列表瀑布流视图(Svelte重构)",
+      en: "PT_Masonry_View_Svelte",
+    },
+    icon: "https://avatars.githubusercontent.com/u/23617963",
+    namespace: "https://github.com/KesaubeEire/PT_Masonry_View_Svelte",
+    description: {
+      "": "PT种子列表无限下拉瀑布流视图(Svelte重构) [M-Team数据源: 劫持站点自身请求(原作者逻辑)]",
+      en: "PT Masonry View by Svelte.",
+    },
+    author: "Kesa",
+    match: [
+      // NexusPHP 站
+      "https://kamept.com/*",
+      "https://www.pttime.org/*",
+      "https://pttime.org/*",
+      "https://www.nicept.net/*",
+      "https://www.ptfans.cc/*",
+      "https://ptfans.cc/*",
+      // M-Team 系(NEW_MT, 劫持 /search JSON)
+      "https://kp.m-team.cc/*",
+      "https://xp.m-team.cc/*",
+      "https://ap.m-team.cc/*",
+      "https://test2.m-team.cc/*",
+      "https://mua.xloli.cc/*",
+    ],
+    exclude: [
+      "*/offers.php*",
+      "*/index.php*",
+      "*/forums.php*",
+      "*/viewrequests.php*",
+      "*/seek.php*",
+      "*m-team*/detail/*",
+      "*/detail/*",
+      "*details.php*",
+      "*preview.php*",
+      "*torrent-details*",
+    ],
+    grant: [
+      "GM_xmlhttpRequest",
+      "GM_getValue",
+      "GM_setValue",
+    ],
+    license: "MIT",
+    "run-at": "document-start",
+
+    // NOTE: 经常修改这里就行了
+  };
 }

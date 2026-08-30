@@ -16,14 +16,14 @@
     GLOBAL_SITE,
     GET_CURRENT_PT_DOMAIN,
     GET_TORRENT_LIST_SELECTOR,
+    IS_MT,
   } from "./index";
   import "../utils/masonry.pkgd.Kesa";
 
-  import { CARD, PAGE, ICON } from "../default.config";
+  import { CARD, PAGE } from "../default.config";
+  import { Launch_Hijack } from "../lib/mteamHijack";
 
-  // import { config as config_Kame } from "./kamept";
-  import Kamept from "./kamept.svelte";
-  import Mteam from "./mteam.svelte";
+  import TorrentCard from "./torrentCard.svelte";
 
   // 父子参数 ------------------------------------------------
 
@@ -34,6 +34,60 @@
   export let waterfallNode;
 
   // 组件函数 ------------------------------------------------
+
+  /** 旧结构 -> 新结构 归一化适配 (供统一卡片消费)
+   * 新结构: {name, id, size(数字), smallDescr, labels, category, imageList:[url],
+   *          status:{seeders, leechers, comments, discount, toppingLevel, createdDate, discountEndTime},
+   *          torrentLink}
+   * 若已是新结构(有 imageList/status), 原样返回
+   * @param {object} it 种子信息对象
+   * @returns {object} 新结构种子对象
+   */
+  function __normalizeTorrent(it) {
+    if (!it) return it;
+    // 已是新结构: 直接消费
+    if (it.imageList || it.status) return it;
+    // 旧结构(kamept/mteam 的 config.TORRENT_LIST_TO_JSON 输出) -> 转新结构
+    const status = it.status || {};
+    return {
+      name: it.torrent_name || it.name || "",
+      id: it.torrentId != null ? it.torrentId : it.id,
+      size: typeof it.size === "number" ? it.size : __parseSize(it.size),
+      smallDescr: it.description || "",
+      labels: it.tags ? 0 : (it.labels || 0),
+      category: it.categoryNumber != null ? it.categoryNumber : it.category,
+      imageList: it.picLink ? [it.picLink] : [],
+      status: {
+        seeders: it.seeders || 0,
+        leechers: it.leechers || 0,
+        comments: it.comments || 0,
+        discount: (status.discount) || __mapDiscount(it.free_type),
+        toppingLevel: 0,
+        createdDate: it.upload_date || "",
+        discountEndTime: null,
+      },
+      torrentLink: it.torrentLink || "",
+      collection: it.collectState === "Bookmarked",
+    };
+  }
+
+  /** 解析大小字符串为数字(如 "1.5 GB" -> 字节数) */
+  function __parseSize(s) {
+    if (s == null) return 0;
+    if (typeof s === "number") return s;
+    const m = String(s).trim().toUpperCase().match(/([\d.]+)\s*(B|KB|MB|GB|TB)/);
+    if (!m) return 0;
+    const mult = { B: 1, KB: 1024, MB: 1048576, GB: 1073741824, TB: 1099511627776 }[m[2]] || 1;
+    return Math.round(parseFloat(m[1]) * mult);
+  }
+
+  /** 旧 free_type(如 "_FREE") -> 新 discount(FREE/PERCENT_50/NORMAL) */
+  function __mapDiscount(free_type) {
+    const t = String(free_type || "").toUpperCase();
+    if (t.indexOf("FREE") !== -1) return "FREE";
+    if (t.indexOf("50") !== -1 || t.indexOf("2X") !== -1) return "PERCENT_50";
+    return "NORMAL";
+  }
 
   /** 根据容器宽度和卡片宽度动态调整卡片间隔 gutter
    * @param {object} containerDom 容器dom
@@ -114,14 +168,30 @@
 
   /** 获取主题背景色 */
   const mainOuterDOM = document.querySelector("table.mainouter");
-  const themeColor = window.getComputedStyle(mainOuterDOM)["background-color"];
+  const themeColor = mainOuterDOM
+    ? window.getComputedStyle(mainOuterDOM)["background-color"]
+    : "#1a1a1a";
   $_current_bgColor = themeColor;
   console.log("背景颜色:", themeColor);
 
   // 2. 根据当前域名拿到对应的数据 --------------------------------------------------------------------------------------
   const config = GLOBAL_SITE[$_current_domain];
   let infoList = [];
-  infoList = [...infoList, ...config.TORRENT_LIST_TO_JSON(originTable)];
+
+  /** 当前是否为 M-Team NEW_MT 站(SPA, 数据来自劫持 /search 请求) */
+  const isMT = IS_MT($_current_domain);
+
+  if (isMT) {
+    // M-Team 路由: 数据来自对站点自身 /search 请求的劫持(res>POST->/search 事件),
+    // 而非 NexusPHP 的 DOM 解析。初始 infoList 为空, 等首个响应事件填充。
+    console.log("M-Team NEW_MT 站: 走劫持 /search 数据源路由");
+  } else {
+    // NexusPHP 路由: 直接解析原表格 DOM
+    infoList = [
+      ...infoList,
+      ...config.TORRENT_LIST_TO_JSON(originTable).map(__normalizeTorrent),
+    ];
+  }
 
   console.log("---> 环境:\t", import.meta.env.VITE_APP_ENV);
 
@@ -238,7 +308,10 @@
           : null;
 
         // NOTE: 瀑布流
-        infoList = [...infoList, ...config.TORRENT_LIST_TO_JSON(table)];
+        infoList = [
+          ...infoList,
+          ...config.TORRENT_LIST_TO_JSON(table).map(__normalizeTorrent),
+        ];
 
         // // |--|-- 4.2.3 渲染 下一页信息 并 加到 waterfallNode 里面来
         // PUT_TORRENT_INTO_MASONRY(table, waterfallNode, false, masonry);
@@ -285,6 +358,11 @@
     masonry.layout("fast");
     masonry.layout("fast");
 
+    // M-Team 路由: 启动劫持, 监听 /search 请求与响应
+    if (isMT) {
+      __mteamBoot();
+    }
+
     // 给瀑布流节点放一个手动点击整理的功能
     waterfallNode.addEventListener("click", (event) => {
       // 模拟 self, 只有在点击本身而非子元素的时候时触发效果
@@ -306,6 +384,57 @@
     // @ts-ignore
     window.NEXUS_TOOLS = NEXUS_TOOLS;
   });
+
+  /**
+   * M-Team NEW_MT 站数据源: 启动 Launch_Hijack 劫持站点自身的 /search POST 请求,
+   * 监听 req/res 自定义事件, 从响应 JSON(rawObject.data 种子数组)填充 infoList 并刷新瀑布流。
+   * 参考 PT_Fall-View/src/views/Entry_Mteam.svelte 的 launchFallView 逻辑。
+   */
+  let __mteamReqListener = null;
+  let __mteamResListener = null;
+  /** 是否接受本次 /search 响应(仅种子列表请求, 过滤 "mode":"waterfall" 等非列表请求) */
+  let __mteamIsAccept = false;
+  function __mteamBoot() {
+    // 启动劫持(XHR + fetch), 无需清理(脚本生命周期与页面一致)
+    Launch_Hijack({ path: "/search", method: "POST" });
+
+    // 请求事件: 判断是否种子列表请求
+    __mteamReqListener = (e) => {
+      const url = (e.detail && e.detail.url) || "";
+      const body = (e.detail && e.detail.body) || "";
+      // 仅接受 /api/torrent/search 的种子列表请求, 过滤 "mode":"waterfall"(瀑布流辅助请求)
+      if (url.includes("api/torrent/search") && !String(body).includes('"mode":"waterfall"')) {
+        __mteamIsAccept = true;
+      } else {
+        __mteamIsAccept = false;
+      }
+    };
+    window.addEventListener("req>POST->/search", __mteamReqListener);
+
+    // 响应事件: 填充数据
+    __mteamResListener = (e) => {
+      if (!__mteamIsAccept) return; // 非种子列表请求不处理
+      try {
+        const rawObject = JSON.parse(e.detail.data);
+        const list = rawObject && rawObject.data ? rawObject.data : [];
+        if (!Array.isArray(list)) return;
+
+        // 每个 /search 响应即一页完整数据, 整体替换(分页导航由站点发起新请求, 触发新响应)
+        infoList = list.map(__normalizeTorrent);
+
+        if (masonry) {
+          masonry.reloadItems();
+          masonry.layout("fast");
+          masonry.layout("fast");
+        }
+        // 整理懒加载
+        setTimeout(NEXUS_TOOLS, 600);
+      } catch (err) {
+        console.warn("M-Team 响应解析失败:", err);
+      }
+    };
+    window.addEventListener("res>POST->/search", __mteamResListener);
+  }
 
   /** 更新项目配置*/
   afterUpdate(() => {
@@ -335,17 +464,9 @@
 </script>
 
 <!-- 卡片渲染模版 -->
-{#if $_current_domain == "kamept.com"}
-  {#each infoList as info (info.torrentIndex)}
-    <Kamept torrentInfo={info} cardWidth={CARD.CARD_WIDTH} {ICON} />
-  {/each}
-{:else if $_current_domain == "kp.m-team.cc"}
-  {#each infoList as info (info.torrentIndex)}
-    <Mteam torrentInfo={info} cardWidth={CARD.CARD_WIDTH} {ICON} />
-  {/each}
-{:else}
-  <div>else</div>
-{/if}
+{#each infoList as info (info.id)}
+  <TorrentCard torrentInfo={info} cardWidth={CARD.CARD_WIDTH} />
+{/each}
 
 <!-- 点击加载下一页的按钮 -->
 <div>

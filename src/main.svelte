@@ -12,7 +12,7 @@
     _current_domain,
     _show_configPanel,
   } from "./stores";
-  import { GET_TORRENT_LIST_SELECTOR, GLOBAL_SITE } from "./sites";
+  import { GET_TORRENT_LIST_SELECTOR, GLOBAL_SITE, IS_MT } from "./sites";
   import BtnTurnPage from "./component/btnTurnPage.svelte";
   import { fade } from "svelte/transition";
   // ------------------------------------------------
@@ -22,12 +22,18 @@
   );
 
   // 1. 隐藏原种子列表并进行前置操作 --------------------------------------------------------------------------------------
-  const _ORIGIN_TL_Node = document.querySelector(GET_TORRENT_LIST_SELECTOR());
+  let _ORIGIN_TL_Node = document.querySelector(GET_TORRENT_LIST_SELECTOR());
+  // M-Team NEW_MT 站: 无原始种子表格, 复用 main.js 创建的占位节点, 保证瀑布流正常挂载
+  if (!_ORIGIN_TL_Node && IS_MT(window.location.hostname)) {
+    _ORIGIN_TL_Node = document.querySelector("#__kesaMTPlaceholder");
+  }
   // 隐藏原有视图
   // @ts-ignore
   // _ORIGIN_TL_Node.style.display = "none";
   $: {
-    _ORIGIN_TL_Node.style.display = $_show_mode ? "none" : "block";
+    if (_ORIGIN_TL_Node) {
+      _ORIGIN_TL_Node.style.display = $_show_mode ? "none" : "block";
+    }
     nextPageNode.style.display = $_show_mode ? "none" : "block";
 
     waterfallNode.style.display = $_show_mode ? "block" : "none";
