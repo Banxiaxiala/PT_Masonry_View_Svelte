@@ -57,7 +57,11 @@
     if (_ORIGIN_TL_Node) {
       _ORIGIN_TL_Node.style.display = $_show_mode ? "none" : "block";
     }
-    nextPageNode.style.display = $_show_mode ? "none" : "block";
+    // 注意: nextPageNode 承载的是 BtnTurnPage 组件的 #_turnPage("点击加载下一页"按钮),
+    // 它是瀑布流 UI 的一部分, 应与瀑布流同步显示(瀑布流模式=block), 不能跟随原表格隐藏。
+    // 若写成 $_show_mode ? "none" : "block", 瀑布流模式下会把加载按钮连同样隐藏掉,
+    // 用户就看不到"点击加载下一页"了(同时紧随其后的页码导航 #kesaMtPageSel 也随之下移/不可见)。
+    nextPageNode.style.display = $_show_mode ? "block" : "none";
 
     waterfallNode.style.display = $_show_mode ? "block" : "none";
   }
