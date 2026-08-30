@@ -15,6 +15,8 @@
   export let torrentInfo;
   /** 父传值: 卡片宽度 */
   export let cardWidth;
+  /** 父传值: 卡片在列表中的序号(供左上角黄色序号角标) */
+  export let index = 0;
 
   // ------------------------------------------------
   // 安全的 torrentInfo: 防止访问 undefined 属性
@@ -111,13 +113,16 @@
   class="card"
   style="
     width: {cardWidth}px;
+    border-color: {cateColor && cateColor !== 'transparent' ? cateColor : '#000'};
     background-color:{$_current_bgColor};
+    background: linear-gradient(to bottom, {cateColor && cateColor !== 'transparent' ? cateColor : '#000'} 18px, {$_current_bgColor} 18px);
     display: {gayHidden ? 'none' : ''}"
 >
   <div class="card-holder">
-    <!-- 分类标签 -->
+    <!-- 分类标签(顶部 18px 色条, 内含分类小图标 + 分类文本) -->
     <div
       class="card-category"
+      data-href="/browse?cat={it.category}"
       style="background-color: {cateColor}; color: {cateFontColor}"
     >
       {it.category}
@@ -147,6 +152,8 @@
           on:load={sort_masonry}
         />
       {/if}
+      <!-- 左上角序号角标(黑色圆角, 黄色数字) -->
+      <div class="card-index">{index + 1}</div>
       <!-- 局部悬浮预览触发区(预览大图方式=局部悬浮时, 鼠标悬停此处触发大图预览) -->
       <div class="hover-trigger">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
@@ -206,18 +213,18 @@
 <style>
   /* 卡片 */
   .card {
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    border: 2px solid;
     border-radius: 16px;
     margin: 6px 0;
     overflow: hidden;
     cursor: pointer;
-    box-shadow: rgba(0, 0, 0, 0.3) 3px 3px 0px, rgba(0, 0, 0, 0.1) -1px -1px 0px;
+    box-shadow: rgba(0, 0, 0, 0.3) 0px 6px 0px 0px, rgba(0, 0, 0, 0.1) -1px -1px 0px 0px;
     transition: box-shadow 0.2s;
   }
 
   /* 指针卡片悬浮效果 */
   .card:hover {
-    box-shadow: rgba(115, 0, 255, 0.3) 5px 5px 0px, rgba(0, 0, 0, 0.1) -1px -1px 0px;
+    box-shadow: rgba(115, 0, 255, 0.3) 5px 5px 0px 0px, rgba(0, 0, 0, 0.1) -1px -1px 0px 0px;
   }
 
   /* 卡片标题 */
@@ -225,20 +232,27 @@
     padding: 2px 0;
   }
 
-  /* 卡片内部容器 */
+  /* 卡片内部容器(半透明白覆盖在顶部色条下方的卡片底色上) */
   .card-holder {
     background-color: rgba(255, 255, 255, 0.5);
-    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0));
   }
 
-  /* 卡片分类 */
+  /* 卡片分类(顶部 18px 色条, 黑色底承载分类小图标, 文字居中加粗) */
   .card-category {
+    height: 18px;
+    padding: 0 2px;
+    border: 1px;
+    background-color: black;
+    color: #fff;
+    font-weight: 900;
     text-align: center;
     letter-spacing: 2px;
-    font-weight: 700;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   /* 卡片行默认样式 */
@@ -258,6 +272,7 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
     transition: color 0.3s;
+    color: black;
   }
 
   /* 卡片标题: hover时变为正常 */
@@ -268,12 +283,12 @@
   /* 卡片信息行: 标签行 */
   .cl-tags {
     display: flex;
-    justify-content: left;
+    justify-content: center;
     align-items: center;
     flex-wrap: wrap;
     gap: 2px;
-    transform: translateX(4px);
-    padding-top: 2px;
+    padding-top: 4px;
+    padding-bottom: 4px;
   }
 
   /* 标签 */
@@ -338,18 +353,18 @@
     pointer-events: none;
   }
 
-  /* 局部悬浮预览触发区: 固定在封面右下角, 悬停触发大图预览 */
+  /* 局部悬浮预览触发区: 固定在封面右下角, 悬停触发大图预览(参照参考版圆形样式) */
   .hover-trigger {
     position: absolute;
-    right: 4px;
-    bottom: 4px;
+    right: 8px;
+    bottom: 8px;
     z-index: 3;
-    width: 24px;
-    height: 24px;
+    width: 40px;
+    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 6px;
+    border-radius: 9999px;
     background-color: rgba(0, 0, 0, 0.55);
     color: #fff;
     cursor: pointer;
@@ -358,15 +373,37 @@
   .hover-trigger:hover {
     background-color: rgba(0, 0, 0, 0.8);
   }
+
+  /* 左上角序号角标(黑色圆角, 黄色数字) */
+  .card-index {
+    position: absolute;
+    top: 0;
+    left: 0;
+    padding-right: 9px;
+    padding-left: 2px;
+    margin: 0;
+    height: 20px;
+    line-height: 16px;
+    font-size: 16px;
+    background-color: #000;
+    color: #ffff00;
+    border-top-right-radius: 100px;
+    border-bottom-right-radius: 100px;
+    display: flex;
+    align-items: center;
+    pointer-events: none;
+  }
   .card-discount.isFree { background-color: rgb(16, 142, 233); }
   .card-discount.is50 { background-color: rgb(255, 85, 0); }
 
   /* 卡片索引 / 副标题 */
   .card-description {
-    padding-left: 4px;
-    padding-right: 4px;
+    padding: 2px 4px;
     display: block;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+  .card-description, .card-description:hover {
+    color: black;
   }
 </style>

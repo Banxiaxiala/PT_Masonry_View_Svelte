@@ -26,7 +26,12 @@
 
   import { CARD, PAGE } from "../default.config";
   import { Launch_Hijack } from "../lib/mteamHijack";
-  import { __kesaRestorePage, __kesaSavePageState, __kesaPageInd } from "../lib/sync";
+  import {
+    __kesaRestorePage,
+    __kesaSavePageState,
+    __kesaPageInd,
+    __applyReadClasses,
+  } from "../lib/sync";
 
   import TorrentCard from "./torrentCard.svelte";
 
@@ -652,6 +657,14 @@
     // (去重由 __kesaQueue 内部 __kesaQueued/__kesaFail 标志保证, 重复调用无副作用)
     try { __kesaWatchLazy(); } catch (e) {}
 
+    // 已读标记 + 隐藏历史观看: 每次 svelte 更新后重新应用。
+    // 修复"点击加载下一页后, 新加载的下一页历史观看没有被隐藏"的 BUG——
+    // svelte 非 keyed each 复用了已有 .card 节点(只更新内容不增删节点),
+    // MutationObserver 只监听 childList(节点增删)看不到这种就地更新, 导致 __applyReadClasses
+    // 不触发; 在 afterUpdate(svelte 每次更新后必触发)里主动重新应用即可覆盖。
+    // (__applyReadClasses 按 __historyReadSnapshot 实时判定历史观看, 幂等可重复调用)
+    try { __applyReadClasses(); } catch (e) {}
+
     // 配置 onMount 和 翻页的协同响应, 避免被其他 dom 刷新干扰重复调用
     if (masonry && onMountSignal) {
       console.log("reload Items-------------------->");
@@ -676,8 +689,8 @@
 </script>
 
 <!-- 卡片渲染模版 -->
-{#each infoList as info (info.id)}
-  <TorrentCard torrentInfo={info} cardWidth={CARD.CARD_WIDTH} />
+{#each infoList as info, i (info.id)}
+  <TorrentCard torrentInfo={info} cardWidth={CARD.CARD_WIDTH} index={i} />
 {/each}
 
 <!-- 点击加载下一页的按钮 -->
