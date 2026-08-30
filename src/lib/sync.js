@@ -162,18 +162,18 @@ function __markRead(id) {
 function __applyHideReadCards() {
   const hide = __storeVal(__hideReadCards),
     hideHist = __storeVal(__hideHistoryRead);
-  // 每次应用都按"进入页面时的已读快照"实时判定历史观看, 不依赖一次性卡片标记,
-  // 从而保证无论卡片何时渲染/已读何时合并都能正确隐藏(修复"刷新后需点配置才生效")
-  document.querySelectorAll(".card.pt-read").forEach((el) => {
+  // 两个开关都关闭时不做任何干预(避免覆盖 gayHidden 等其它隐藏逻辑的内联 display)
+  if (!hide && !hideHist) return;
+  // 遍历范围用所有 .card 而非 .card.pt-read: 直接由卡片自身 id 与快照比对判定历史观看,
+  // 不依赖 __applyReadClasses 先打上 .pt-read 类(手工翻页/点击加载下一页后若该标记未及时
+  // 应用, 仅遍历 .card.pt-read 会漏掉新卡片, 导致历史观看不隐藏); 名称过滤(.__nameFiltered)
+  // 的隐藏需保留, 不与历史观看互相覆盖。
+  document.querySelectorAll(".card").forEach((el) => {
     const id = __extractId(el);
     const isHist = hideHist && id && __historyReadSnapshot.includes(id);
-    el.style.display = hide || isHist ? "none" : "";
+    const shouldHide = hide || isHist;
+    el.style.display = shouldHide ? "none" : el.__nameFiltered ? "none" : "";
   });
-  if (hide || hideHist) {
-    document.querySelectorAll(".card:not(.pt-read)").forEach((el) => {
-      if (el.style.display === "none") el.style.display = "";
-    });
-  }
 }
 
 // 取卡片标题文字
