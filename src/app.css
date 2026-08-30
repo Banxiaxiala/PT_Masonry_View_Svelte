@@ -21,7 +21,13 @@ div.waterfall_newMT {
   padding-top: 0;
   padding-bottom: 0;
   margin: 10px auto;
-  height: auto !important;
+  /* 注意: 不能加 !important 强改 height。
+     Masonry 会用内联 style 给容器计算真实高度(排布绝对定位卡片),
+     若用 height:auto !important 会覆盖 Masonry 的高度 → 容器塌陷为 0,
+     导致"点击加载下一页"(#_turnPage)与页码导航被挤到瀑布流顶部、与卡片重叠。
+     这里用无 !important 的 height:auto: Masonry 内联高度优先于样式表,
+     容器保持真实高度, 加载按钮/页码导航自然落到卡片下方。 */
+  height: auto;
 }
 
 /* 调试按键统一样式 */
