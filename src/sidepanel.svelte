@@ -596,7 +596,7 @@
         <h1 class="s_title">卡片布局</h1>
         <div class="s_panel">
           <Switch
-            title_fixed={`卡片列数: {$_card_layout.column}`}
+            title_fixed={`卡片列数: ${$_card_layout.column}`}
             label="范围: 2~7 列"
             type="range"
           >
@@ -612,7 +612,7 @@
           </Switch>
 
           <Switch
-            title_fixed={`卡片间距: {$_card_layout.gap}px`}
+            title_fixed={`卡片间距: ${$_card_layout.gap}px`}
             label="范围: 2~100 px"
             type="range"
           >
@@ -628,7 +628,7 @@
           </Switch>
 
           <Switch
-            title_fixed={`浏览器边距: {$_card_layout.margin ?? 20}px`}
+            title_fixed={`浏览器边距: ${$_card_layout.margin ?? 20}px`}
             label="范围: 0~500 px(可输入)"
             type="range"
           >
@@ -644,7 +644,7 @@
           </Switch>
 
           <Switch
-            title_fixed={`预览窗口宽度: {$_previewWidth > 0 ? $_previewWidth : (GLOBAL_SITE[$_current_domain] ? GLOBAL_SITE[$_current_domain].Iframe_Width : 1000)}px`}
+            title_fixed={`预览窗口宽度: ${$_previewWidth > 0 ? $_previewWidth : (GLOBAL_SITE[$_current_domain] ? GLOBAL_SITE[$_current_domain].Iframe_Width : 1000)}px`}
             label="范围: 400~2000 px(0=站点默认)"
             type="range"
           >
@@ -661,7 +661,7 @@
           </Switch>
 
           <Switch
-            title_fixed={`预览窗口高度: {$_previewHeight > 0 ? $_previewHeight : 96}%`}
+            title_fixed={`预览窗口高度: ${$_previewHeight > 0 ? $_previewHeight : 96}%`}
             label="范围: 40~100 %(0=默认)"
             type="range"
           >

@@ -46,6 +46,11 @@ function __mkLocalStore(key, defaultValue) {
     },
     subscribe(cb) {
       subs.add(cb);
+      // 立即以当前值通知订阅者(复刻 svelte writable store 语义),
+      // 否则 svelte/store 的 get()(经 subscribe 取值) 会因收不到首值而返回 undefined
+      try {
+        cb(value);
+      } catch (e) {}
       return function () {
         subs.delete(cb);
       };
