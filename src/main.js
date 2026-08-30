@@ -11,30 +11,54 @@ console.log("________PT-TorrentList-Masonry________");
 // -------------------------------------------------------------
 /** 相应站点的种子列表 selector */
 const list_selector = GET_TORRENT_LIST_SELECTOR();
-/**原种子列表DOM */
-let _ORIGIN_TL_Node = document.querySelector(list_selector);
+
+/**原种子列表DOM(初始为 null, 待等待到真实表格后赋值) */
+let _ORIGIN_TL_Node = null;
 
 /** 当前是否为 M-Team NEW_MT 站(SPA, 无原始种子表格, 数据来自劫持 /search) */
 const isMT = IS_MT(window.location.hostname);
 
-// M-Team SPA 在 document-start 时无 table.torrents, 但有种子列表 selector。
-// 为其创建隐藏占位节点, 使 main.svelte 正常挂载瀑布流; 数据由 _index.svelte 的劫持路由填充。
-if (isMT && !_ORIGIN_TL_Node) {
+/**
+ * 挂载瀑布流 App。
+ * 说明: 脚本 run-at 为 document-start, 此时页面 DOM 尚未解析完,
+ * NexusPHP 站的 table.torrents 还不存在, 需等待其出现后再挂载。
+ */
+function mountApp() {
+  const app = new App({
+    target: (() => {
+      const div = document.createElement('div');
+      document.body.append(div);
+      return div;
+    })(),
+  });
+}
+
+// 没有相应站点的种子列表 selector 就不进行整个程序
+if (!list_selector) {
+  console.log('未识别到种子列表 selector 捏~');
+} else if (isMT) {
+  // M-Team NEW_MT 站: document-start 时无 table.torrents, 但占位节点可立即创建,
+  // 数据由 _index.svelte 的劫持路由填充。占位节点创建后即可挂载。
   _ORIGIN_TL_Node = document.createElement("div");
   _ORIGIN_TL_Node.id = "__kesaMTPlaceholder";
   _ORIGIN_TL_Node.style.display = "none";
   document.body.append(_ORIGIN_TL_Node);
   console.log("M-Team NEW_MT 站: 已创建瀑布流挂载占位节点");
+  mountApp();
+} else {
+  // NexusPHP DOM 站: 轮询等待原种子表格出现后再挂载(避免 document-start 时序问题)
+  let tries = 0;
+  const MAX_TRIES = 100; // 约 10s 上限, 防止非列表页无限轮询
+  const waitTimer = setInterval(() => {
+    tries++;
+    _ORIGIN_TL_Node = document.querySelector(list_selector);
+    if (_ORIGIN_TL_Node || tries > MAX_TRIES) {
+      clearInterval(waitTimer);
+      if (_ORIGIN_TL_Node) {
+        mountApp();
+      } else {
+        console.log('等待超时: 未识别到种子列表 DOM 捏~');
+      }
+    }
+  }, 100);
 }
-
-// 没有相应站点的种子列表 selector 或 种子列表 dom 不存在 就不进行整个程序
-if (list_selector && !!_ORIGIN_TL_Node) {
-  const app = new App({
-    target: (() => {
-      const app = document.createElement('div');
-      document.body.append(app);
-      return app;
-    })(),
-  });
-}
-else { console.log('未识别到种子列表捏~') }
