@@ -1,6 +1,18 @@
 # 为 PT 站点 打造的种子列表瀑布流视图 (支持 M-Team / KamePT / PTT / NicePT / PTFans)
 
-> 本仓库为 [KesaubeEire/PT_Masonry_View_Svelte](https://github.com/KesaubeEire/PT_Masonry_View_Svelte) 的 **fork 分支**（作者 `Banxiaxiala`），在其基础上增量补全 PTT/NicePT/ptfans 站点适配与多设备同步功能。编译好的产物发布到本仓库的 **GitHub Releases**（asset 命名 `PT_Masonry_View_Svelte-<版本>.js`），同时 `releases/` 目录保留各版本产物副本。
+> 本仓库为 [KesaubeEire/PT_Masonry_View_Svelte](https://github.com/KesaubeEire/PT_Masonry_View_Svelte) 的 **fork 分支**（维护者 `Banxiaxiala`），在其基础上增量补全 PTT/NicePT/ptfans 站点适配与多设备同步功能。编译好的产物发布到本仓库的 **GitHub Releases**（asset 命名 `PT_Masonry_View_Svelte-<版本>.js`），同时 `releases/` 目录保留各版本产物副本。
+
+## 适配站点
+
+| 网站 | 站点域名 | 是否适配 |
+|------|----------|:--------:|
+| M-Team | m-team.cc（各子域）/ mua.xloli.cc | ✅ |
+| KamePT | kamept.com | ✅ |
+| PTT | pttime.org | ✅ |
+| NicePT | nicept.net | ✅ |
+| PTFans | ptfans.cc | ✅ |
+
+---
 
 ## 分支变更说明（相对原版 fork 基线）
 
@@ -32,15 +44,7 @@ https://user-images.githubusercontent.com/20382002/236703818-427840b9-aaee-4133-
 ## 简介
 
 RT, 本油猴脚本专为 PT 打造, 让你顺畅划划点点, 一页爽逛种子超市!
-目前适配站点如下，欢迎为项目提 [issue](https://github.com/Banxiaxiala/PT_Masonry_View_Svelte/issues) 以及留言配置您想适配的站点~
-
-| 网站 | 站点域名 | 是否适配 |
-|------|----------|:--------:|
-| M-Team | m-team.cc（各子域）/ mua.xloli.cc | ✅ |
-| KamePT | kamept.com | ✅ |
-| PTT | pttime.org | ✅ |
-| NicePT | nicept.net | ✅ |
-| PTFans | ptfans.cc | ✅ |
+目前已适配站点见文首「适配站点」表格，欢迎为项目提 [issue](https://github.com/Banxiaxiala/PT_Masonry_View_Svelte/issues) 以及留言配置您想适配的站点~
 
 相关事宜如果您在 tg 能找到我也可以直接联系我~
 
