@@ -14,13 +14,12 @@
 
 ---
 
-## 分支变更说明（相对原版 fork 基线）
+## 本分支相比原版的变化
 
-- **架构**：原版为 Svelte 编译压缩产物；本分支重建为可构建的 Svelte 源码工程（`src/` 各模块化 `.svelte`/`.js`），构建命令 `npx vite build`（压缩版），产物输出到 `dist/sveltegreasytest.user.js`（油猴头由 `userscript.config.js` 生成）。
-- **站点适配层**：新增 `src/sites/index.js`（7 站注册表，`IS_NEXUSPHP`/`IS_MT` 分流）、`src/sites/ptt.js`（PTT/NicePT/ptfans NexusPHP DOM 解析）、`src/sites/_index.svelte`（M-Team 劫持 `/search` JSON 路由）。
-- **M-Team 数据源**：移植 `src/lib/mteamHijack.js`（劫持站点自身 `/search` POST 请求，`Launch_Hijack` 派发 `req>POST->/search` / `res>POST->/search` 事件），M-Team SPA 无 `table.torrents` 时由 `main.js` 创建占位节点挂载瀑布流。
-- **多设备同步**：`src/lib/sync.js` 承载 WebDAV 已读标记/设置/页码统一文件 `PT_Masonry_Sync.json` 的同步与「同步(WebDAV) / 已读标记 / TAG / 名称过滤」面板注入（sidepanel 集成）。
-- **卡片增强**：`src/sites/torrentCard.svelte` 支持 M-Team iframe 打开详情 + GAY 分类隐藏开关。
+- **可构建源码**：原版是编译好的成品，本分支改成了可自行修改、编译的源码工程（构建命令 `npx vite build`，产物为压缩版 `dist/sveltegreasytest.user.js`）。
+- **新增站点**：在原版基础上补全了 **PTT、NicePT、PTFans** 的适配，连同 M-Team、KamePT 一起，共支持 5 个站点（见上方表格）。
+- **多设备同步**：支持通过 WebDAV 同步已读标记、设置与页码，多设备状态一致。
+- **卡片增强**：支持 M-Team 站内 iframe 查看详情、GAY 分类隐藏开关。
 
 <!-- TODO: 改为显示边栏的 -->
 ![gif_preview.gif](https://github.com/KesaubeEire/PT_TorrentList_Masonry/blob/main/preview/gif_preview.gif?raw=true)
