@@ -641,6 +641,39 @@
         if (++__polls >= 8) clearInterval(__poll); // 最多约 4 秒
       }, 500);
     }, 3000);
+
+    // ---- M-Team SPA 客户端路由变化监听 ----
+    // M-Team 是 SPA, 切换分组(browse/tvshow -> browse/movie)/分类/页码/排序时 URL 经
+    // history.pushState 变化而脚本不会重载(onMount 不重跑, __mteamGot 仍为 true)。
+    // 若不处理, 切换分组后瀑布流不会自动重新加载(列表模式因原生 React 表格自行重渲染而不受影响)。
+    // 这里轮询 URL 签名, 变化时重置数据标志 + 清空旧分组卡片 + 重新发起数据请求。
+    __mtRouteWatch();
+  }
+
+  /** M-Team URL 签名(pathname + search, 用于判断 SPA 路由是否变化) */
+  function __mtUrlSignature() {
+    return window.location.pathname + window.location.search;
+  }
+
+  /** M-Team SPA 客户端路由变化监听: 轮询 URL, 变化则重置并重新加载瀑布流数据 */
+  let __mtLastRouteSig = "";
+  function __mtRouteWatch() {
+    __mtLastRouteSig = __mtUrlSignature();
+    setInterval(() => {
+      const sig = __mtUrlSignature();
+      if (sig === __mtLastRouteSig) return;
+      __mtLastRouteSig = sig;
+      // 消息页(/message/*)不是种子列表, 跳过(userscript exclude 已拦截, 但 SPA 跳转不重载脚本需运行时再判)
+      if (/\/message\//.test(window.location.pathname)) return;
+      // 路由变化: 清空旧分组卡片 + 重置"已就绪"标志(允许重新填充) + 同步页码指示器
+      __mteamGot = false;
+      __mtLastSig = "";
+      infoList = [];
+      try { __kesaSavePageState(currentPageFromUrl()); } catch (e) {}
+      try { __kesaPageInd(currentPageFromUrl()); } catch (e) {}
+      // 重新发起数据请求: 劫持能捕获则走 /search 响应, 否则签名回退主动拉取当前分组
+      __mtFetchFallback();
+    }, 500);
   }
 
   /** M-Team 沙盒回退: 注入主世界脚本执行签名请求, 结果经 document 自定义事件回传 */
@@ -707,10 +740,16 @@
     }
   }
 
+  /** 上一次已填充数据的 URL 签名(用于忽略同路由重复响应, 区分 SPA 路由跳转) */
+  let __mtLastSig = "";
   /** 填充 infoList 并刷新瀑布流(M-Team 通用) */
   function __mtFill(list) {
-    if (__mteamGot) return;
+    // M-Team SPA 客户端路由跳转(切换分组/分类/页码/排序)不重载脚本, 每次 URL 变化都
+    // 应视为新一页数据整体替换; 仅同 URL 的重复响应才忽略(避免同一路由重复填充)。
+    const __sig = window.location.pathname + window.location.search;
+    if (__mteamGot && __mtLastSig === __sig) return;
     __mteamGot = true;
+    __mtLastSig = __sig;
     try {
       // 一次性诊断: 打印首个原始 M-Team 对象的键与标签相关字段, 便于确认 label/tag 字段名
       if (!window.__kesaMTDiag && list[0]) {
