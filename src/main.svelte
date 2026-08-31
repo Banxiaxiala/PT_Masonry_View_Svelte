@@ -79,9 +79,11 @@
   const waterfallNode = document.createElement("div");
   // 添加class
   waterfallNode.classList.add("waterfall");
-  // PTT(www.pttime.org 等)结构与其他站点不同(adults.php 等专属架构),
-  // 参照参考版 1.2.3b 采用 waterfall_newMT 专属布局(高度自适应), 避免卡片盖住页码导航
-  if (__isPTT) waterfallNode.classList.add("waterfall_newMT");
+  // PTT(www.pttime.org 等)/NEW_MT(M-Team/mua.xloli.cc 等)结构与其他 NexusPHP 站不同,
+  // 参照参考版 1.2.3b 采用 waterfall_newMT 专属布局(高度自适应, 去掉 height:100%/上下内边距),
+  // 否则在 M-Team 的 .ant-layout 固定高度滚动容器内, div.waterfall{height:100%} 会让
+  // 瀑布流撑满容器, "点击加载下一页"(#_turnPage)与"上一页/下一页/跳转"(kesaMtPageSel)位置不对。
+  if (__isPTT || IS_MT(window.location.hostname)) waterfallNode.classList.add("waterfall_newMT");
   // 将瀑布流节点放置在表格节点上面
   parentNode.insertBefore(waterfallNode, _ORIGIN_TL_Node.nextSibling);
 

@@ -1181,6 +1181,12 @@ function __kesaPageInd(n) {
           if (rv > maxCur) maxCur = rv;
         }
         if (changed) __pmSet(st);
+        // 合并远端页码后刷新悬浮"最大N页"按钮文本, 否则按钮停留在启动时的旧值(需求: 最大X页需从webdav同步下来)
+        if (changed) {
+          try {
+            __pmBtn();
+          } catch (e) {}
+        }
         return changed ? "已合并页码(当前站最大 " + maxCur + " 页)" : "";
       }
       if (action === "isDirty") return !!__pmDirty;
