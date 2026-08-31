@@ -298,6 +298,7 @@ function __initReadTracking() {
 function __mkSwitch(checked, onChange) {
   const w = document.createElement("div");
   w.className = "s_switch svelte-2vaqag svelte-2vaqag";
+  w.style.cssText = "flex:0 0 auto;line-height:0;";
   const inp = document.createElement("input");
   inp.type = "checkbox";
   inp.className = "svelte-2vaqag svelte-2vaqag";
@@ -343,7 +344,7 @@ function __mkSwitchRow(labelText, checked, onChange, desc) {
   // 文字位置(垂直居中、高度、宽度)与侧边栏其他开关不一致, 改为 inline 样式。
   row.className = "switch svelte-2vaqag svelte-2vaqag";
   row.style.cssText =
-    "width:100%;height:30px;display:flex;align-items:center;justify-content:space-between;box-sizing:border-box;";
+    "width:100%;height:30px;min-height:30px;display:flex;align-items:center;justify-content:space-between;box-sizing:border-box;max-width:100%;";
   const lb = document.createElement("div");
   // 复刻 Switch 组件 .s_title 样式: display:flex, align-items:center,
   // font-size:14px, position:relative(为了 title 提示浮层定位)。
@@ -351,7 +352,7 @@ function __mkSwitchRow(labelText, checked, onChange, desc) {
   // 否则文字宽度被撑满、开关位置与其他开关行(如"显示种子名称")不对齐。
   lb.className = "s_title svelte-2vaqag svelte-2vaqag";
   lb.style.cssText =
-    "display:flex;align-items:center;font-size:14px;line-height:1;font-weight:400;color:#000;position:relative;";
+    "display:flex;align-items:center;font-size:14px;line-height:1;font-weight:400;color:#000;position:relative;flex:0 0 auto;min-width:0;white-space:nowrap;";
   lb.textContent = labelText;
   if (desc) lb.title = desc;
   const sw = __mkSwitch(checked, function (v) {
@@ -678,7 +679,6 @@ function __fillWebDAVSection(container) {
   panel.style.cssText = "display:flex;flex-direction:column;gap:6px;width:100%;";
   container.appendChild(panel);
   function mkRow(label, key, type) {
-    const c = __storeVal(__wdvCfg);
     const w = document.createElement("div");
     w.style.cssText = "display:flex;align-items:center;gap:6px;width:100%;";
     const lb = document.createElement("span");
@@ -686,22 +686,32 @@ function __fillWebDAVSection(container) {
     lb.textContent = label;
     const inp = document.createElement("input");
     inp.type = type || "text";
-    inp.value = c[key] || "";
-    inp.style.cssText = "flex:1;min-width:0;border:1px solid #ccc;border-radius:4px;padding:3px 6px;font-size:12px;";
+    inp.value = (__storeVal(__wdvCfg) && __storeVal(__wdvCfg)[key]) || "";
+    inp.style.cssText = "flex:1;min-width:0;border:1px solid #ccc;border-radius:4px;padding:3px 6px;font-size:12px;box-sizing:border-box;";
     inp.onchange = () => {
       const cur = __storeVal(__wdvCfg);
       cur[key] = inp.value.trim();
       __wdvCfg.set(cur);
     };
+    // 订阅配置变化, 实时把最新值回填到输入框(修复"服务器地址等所有网站都不显示":
+    // 占位面板每次打开都重新填充, 只要 store 里有值, 输入框就一定能显示出来)。
+    // 用户正在编辑该输入框时跳过回填, 避免光标跳动覆盖输入。
+    const un = __wdvCfg.subscribe((v) => {
+      if (document.activeElement !== inp) {
+        const nv = (v && v[key]) || "";
+        if (inp.value !== nv) inp.value = nv;
+      }
+    });
     w.appendChild(lb);
     w.appendChild(inp);
     panel.appendChild(w);
-    return inp;
+    return { inp, un };
   }
-  mkRow("服务器地址", "url", "text");
-  mkRow("账号", "user", "text");
-  mkRow("密码", "pass", "password");
-  mkRow("文件路径", "path", "text");
+  const unSubs = [];
+  unSubs.push(mkRow("服务器地址", "url", "text").un);
+  unSubs.push(mkRow("账号", "user", "text").un);
+  unSubs.push(mkRow("密码", "pass", "password").un);
+  unSubs.push(mkRow("文件路径", "path", "text").un);
   const status = document.createElement("div");
   status.style.cssText = "color:#3a7;font-size:12px;padding:2px 10px;min-height:16px;word-break:break-all;";
   status.textContent = "";
@@ -754,6 +764,14 @@ function __fillWebDAVSection(container) {
   };
   clearRow.appendChild(clearBtn);
   container.appendChild(clearRow);
+  // 返回清理函数: 面板销毁时取消配置订阅(与其他填充函数一致)
+  return function () {
+    for (let i = 0; i < unSubs.length; i++) {
+      try {
+        unSubs[i]();
+      } catch (e) {}
+    }
+  };
 }
 
 /* ============================================================================

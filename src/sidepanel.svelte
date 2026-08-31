@@ -518,8 +518,6 @@
           <!-- 图片加载失败时显示标题 -->
           <Switch
             title_fixed="图片加载失败时显示标题"
-            title_green="显示标题"
-            title_red="仅提示加载失败"
             label="图片加载失败时在卡片上显示种子标题"
             bind:checked={$_pic_failed_showInfo}
             green_state={false}
@@ -990,6 +988,8 @@
     & p {
       font-size: 18px;
       font-weight: 500;
+      margin: 0;
+      line-height: 1;
     }
 
     & button {

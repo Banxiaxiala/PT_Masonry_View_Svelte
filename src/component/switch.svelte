@@ -113,20 +113,35 @@
 <style scoped>
   .switch {
     width: 100%;
-
     height: 30px;
 
     display: flex;
     align-items: center;
     justify-content: space-between;
+
+    /* 防御: 所有站点共用同一套开关样式, 不被站点全局 CSS 干扰
+       (M-Team 等站点会设 *{box-sizing:border-box} / label / input 等全局规则,
+        导致开关行宽度与其他站点不一致)。这里强制归一。 */
+    box-sizing: border-box;
+    max-width: 100%;
+    flex: 0 0 auto;
+    min-height: 30px;
   }
   .s_title {
     display: flex;
     align-items: center;
 
     font-size: 14px;
+    line-height: 1;
 
     position: relative;
+
+    /* 防御: 文字不随站点 CSS 被撑宽/换行, 开关始终贴右对齐 */
+    flex: 0 0 auto;
+    min-width: 0;
+    white-space: nowrap;
+    font-weight: 400;
+    color: #000;
   }
 
   .title_green {
@@ -136,6 +151,12 @@
   .title_red {
     color: red;
     font-weight: 800;
+  }
+
+  /* 防御: 开关容器不参与拉伸, 始终贴右 */
+  .s_switch {
+    flex: 0 0 auto;
+    line-height: 0;
   }
 
   /* -------------------- */
@@ -168,6 +189,8 @@
     height: 0px;
     display: none;
     visibility: hidden;
+    margin: 0;
+    padding: 0;
   }
 
   label {
@@ -180,6 +203,13 @@
     border-radius: 30px;
 
     transition: all 0.2s;
+
+    /* 防御: 归一化, 避免 M-Team 等站点全局 label/box-sizing 规则改变轨道尺寸 */
+    box-sizing: content-box;
+    flex: 0 0 auto;
+    margin: 0;
+    padding: 0;
+    cursor: pointer;
 
     &::after {
       content: "";
