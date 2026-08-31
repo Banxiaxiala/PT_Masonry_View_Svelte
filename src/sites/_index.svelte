@@ -906,6 +906,13 @@
       console.warn("M-Team 数据归一化失败:", err);
       infoList = list;
     }
+    // 关键(修复"切换页码后刷新瀑布流不出卡"): M-Team 初次填充后必须让 afterUpdate 在卡片
+    // 实际渲染进 DOM 后再 reloadItems + layout, 否则固定 80ms 的 setTimeout 在慢速刷新时可能
+    // 早于 Svelte 渲染完成而失效, 卡片渲染了却看不见(需手动切列表再切瀑布才触发 CHANGE_CARD_LAYOUT)。
+    // onMountSignal=true 时 afterUpdate 会执行 masonry.reloadItems()+layout()(见 afterUpdate 块),
+    // 与 NexusPHP/PTT 首页填充保持一致, 保证布局在卡片就绪后可靠生效。
+    onMountSignal = true;
+    setTimeout(() => { onMountSignal = false; }, 1200);
     // 等 Svelte 把卡片渲染进 DOM 后再重算布局: 首次 masonry 创建时 infoList 为空,
     // 容器 clientWidth=0 曾导致卡片负宽(-15)不可见, 必须在卡片存在后重新计算宽度并排版。
     setTimeout(() => {

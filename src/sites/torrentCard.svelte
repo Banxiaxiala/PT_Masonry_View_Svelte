@@ -169,7 +169,11 @@
     if (_unsubRead) _unsubRead();
   });
 
-  /** 点击左侧已读图标: 已读⇄未读 切换(阻止冒泡, 不触发卡片点击/悬浮) */
+  /** 点击左下角已读图标: 标记该种子已读(与点击卡片效果一致, 仅做已读记号)。
+   *  注意: lib/sync.js 的 __initReadTracking 在 document 上挂了 capture 阶段点击监听(markRead),
+   *  点击卡片内任意位置(含本图标)都会先把 id 加入已读集合; 因此这里只需"只加不删",
+   *  若做 toggle(删)会与 capture 监听互相抵消导致"无效"。stopPropagation/preventDefault
+   *  只负责阻止打开详情 iframe 预览, 不会阻止 capture 监听(已先触发)。 */
   /** @param {any} e */
   function toggleRead(e) {
     if (e && e.stopPropagation) e.stopPropagation();
@@ -178,7 +182,7 @@
     const r = window.__kesaRead;
     if (!r || !r.readIds || !readKey) return;
     const cur = r.readIds.get();
-    r.readIds.set(cur.includes(readKey) ? cur.filter((x) => x !== readKey) : [...cur, readKey]);
+    if (!cur.includes(readKey)) r.readIds.set([...cur, readKey]);
   }
 </script>
 
@@ -194,12 +198,12 @@
     class="card-holder"
     style="background: linear-gradient(to bottom, {cateColor && cateColor !== 'transparent' ? cateColor : cateFallbackBg} 18px, #ffffff 18px);"
   >
-    <!-- 左侧"已读"图标: 点击切换已读/未读(做已读记号, 与卡片变灰 .pt-read 联动) -->
+    <!-- 左下角"已读"图标: 点击标记该种子已读(做已读记号, 与点击卡片效果一致; 不打开详情预览/不触发卡片) -->
     <button
       class="card-read-toggle"
       class:isRead={isRead}
-      title={isRead ? "取消已读" : "标记已读"}
-      aria-label={isRead ? "取消已读" : "标记已读"}
+      title="标记已读"
+      aria-label="标记已读"
       on:click={toggleRead}
     >
       <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
