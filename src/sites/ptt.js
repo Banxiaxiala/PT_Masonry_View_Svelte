@@ -76,7 +76,11 @@ export function __pttParse(doc) {
           const im = imgs[k];
           let s = im.getAttribute("data-src") || im.getAttribute("src") || im.getAttribute("data-original") || "";
           if (!s) continue;
-          if (/pic\/|trans\.gif|spacer|noimage|noposter|blank\.|loading\.gif/i.test(s)) continue;
+          // 过滤占位/无意义图。注意: 不能用笼统的 pic/ 前缀, 否则会误杀合法图床
+          // (如 pic.daxiangjiao.org/pic/2026/.. 含 /pic/ 子路径)。占位图均为相对路径
+          // pic/... 或含 trans.gif/spinner/spacer/noimage 等关键词, 此处精确匹配。
+          if (/^pic\/|^\.?\/pic\//i.test(s)) continue;
+          if (/trans\.gif|spacer|noimage|noposter|blank\.|loading\.gif|^data:/i.test(s)) continue;
           if (s.startsWith("//")) s = location.protocol + s;
           else if (s.startsWith("/")) s = location.origin + s;
           else if (!/^https?:/i.test(s)) s = location.origin + "/" + s;
