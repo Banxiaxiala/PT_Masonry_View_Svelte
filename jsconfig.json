@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
     "moduleResolution": "Node",
-    "ignoreDeprecations": "6.0",
     "target": "ESNext",
     "module": "ESNext",
     "isolatedModules": true,
