@@ -25,35 +25,35 @@ const CONFIG = {
     431: '#19a7ec', // 有码 BluRay
     432: '#19a7ec', // 无码 BluRay
     440: '#f52bcb', // GAY
-    436: '#bb1e9a', // 0 day
-    425: '#bb1e9a', // 写真 video
-    433: '#bb1e9a', // 写真 pic
+    436: '#e85fc0', // 0 day  (原 #bb1e9a 过深, 提亮保证黑字可读)
+    425: '#e85fc0', // 写真 video
+    433: '#e85fc0', // 写真 pic
     411: '#f49800', // H-Game
     412: '#f49800', // H-Anime
     413: '#f49800', // H-Comic
 
     // 综合分类
-    401: '#c74854', // Movie SD
-    419: '#c01a20', // Movie HD
-    420: '#c74854', // Movie DVD    
-    421: '#00a0e9', // Movie BluRay
-    439: '#1b2a51', // Movie Remux
-    403: '#c74854', // TV SD
-    402: '#276fb8', // TV HD
-    435: '#4dbebd ', // TV DVD
-    438: '#1897d6', // TV BluRay
+    401: '#e06a75', // Movie SD   (原 #c74854 偏深)
+    419: '#ee6352', // Movie HD   (原 #c01a20 深红提亮, 参照 mua 红色)
+    420: '#e06a75', // Movie DVD
+    421: '#4d94e6', // Movie BluRay (原 #00a0e9 提亮)
+    439: '#5a78d6', // Movie Remux (原 #1b2a51 深藏青提亮)
+    403: '#e06a75', // TV SD
+    402: '#4d94e6', // TV HD    (原 #276fb8 提亮)
+    435: '#4dbebd', // TV DVD
+    438: '#5fb0e6', // TV BluRay (原 #1897d6 提亮)
     404: '#23ac38', // 纪录教育
-    405: '#996c34', // Anime
+    405: '#d8a25e', // Anime    (原 #996c34 深棕提亮)
     407: '#23ac38', // Sport
     422: '#f39800', // Software
     423: '#f39800', // Game
     427: '#f39800', // EBook
-    409: '#996c34', // Other
+    409: '#d8a25e', // Other    (原 #996c34 提亮)
 
     // 音乐分类
-    406: '#8a57a1', // MV
-    408: '#8a57a1', // Music AAC/ALAC
-    434: '#8a57a1', // Music 无损
+    406: '#a97fd0', // MV        (原 #8a57a1 提亮)
+    408: '#a97fd0', // Music AAC/ALAC
+    434: '#a97fd0', // Music 无损
   },
 
   /** 分类号 -> 中文名(供卡片分类标签显示, 对齐参考版 rhfb99; 未知分类回退显示原数字) */

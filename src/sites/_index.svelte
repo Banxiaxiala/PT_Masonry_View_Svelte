@@ -56,7 +56,8 @@
    */
   function __normalizeTorrent(it) {
     if (!it) return it;
-    // 已是新结构(mteam/PTT 数据源): 仍补齐中文分类名/标签数组等展示字段后消费
+    // 已是新结构(mteam/PTT 数据源): 补齐展示字段并规整 status/size, 保证
+    // 卡片"置顶免费/上传时间/标签/大小/统计"等各类信息在字段缺失或命名不一时也能可靠显示。
     if (it.imageList || it.status) {
       // 分类中文名: 新结构通常只有数字 category, 从站点 CATEGORY_NAME 补
       if (it.categoryName == null && config && config.CATEGORY_NAME) {
@@ -64,6 +65,19 @@
       }
       // 标签数组: PTT/MT 未带原始 tags 数组, 置空即可(卡片按 labels 位掩码渲染)
       if (it.tags == null) it.tags = [];
+      // 规整 size 为字节数(API 可能给数字或带单位字符串, 统一成数字供 getFileSize 计算)
+      if (typeof it.size !== "number") it.size = __parseSize(it.size);
+      // 规整 status: 各字段取原始值并给默认值, 避免字段缺失导致卡片信息不显示
+      const _st = it.status || {};
+      it.status = {
+        seeders: _st.seeders ?? 0,
+        leechers: _st.leechers ?? 0,
+        comments: _st.comments ?? 0,
+        discount: _st.discount || "",
+        toppingLevel: _st.toppingLevel || 0,
+        createdDate: _st.createdDate || "",
+        discountEndTime: _st.discountEndTime || "",
+      };
       return it;
     }
     // 旧结构(kamept/mteam 的 config.TORRENT_LIST_TO_JSON 输出) -> 转新结构

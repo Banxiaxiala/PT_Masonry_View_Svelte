@@ -75,9 +75,11 @@
   $: {
     cateColor = (cfg.CATEGORY && cfg.CATEGORY[it.category]) ?? "transparent";
   }
-  /** 分类文字统一用白色(参考版 rhfb99 风格)。分类条背景已用分类色区分,
-   *  若再用黑字在浅色分类上难以辨认, 故固定白色 + CSS text-shadow 保证可读。 */
-  const cateFontColor = "#ffffff";
+  /** 分类文字: 恢复为原始黑色(用户要求保留原字体色), 分类条背景用分类色区分分区。
+   *  未知分类的色条背景不再用黑色(用浅灰), 保证黑字在任意背景上都可读。 */
+  const cateFontColor = "#000000";
+  /** 未知分类时色条/卡片的回退背景色: 不再用黑色, 用浅灰(#eee)保证黑字可读 */
+  const cateFallbackBg = "#eeeeee";
 
   /** 分类文本: 优先中文名(站点原始分类名/ CATEGORY_NAME), 其次 M-Team CATEGORY_NAME(PTT 分类号), 最后回退数字 */
   $: cateName =
@@ -138,20 +140,20 @@
   class="card"
   style="
     width: {cardWidth}px;
-    border-color: {cateColor && cateColor !== 'transparent' ? cateColor : '#000'};
+    border-color: {cateColor && cateColor !== 'transparent' ? cateColor : cateFallbackBg};
     background-color:#ffffff;
-    background: linear-gradient(to bottom, {cateColor && cateColor !== 'transparent' ? cateColor : '#000'} 18px, #ffffff 18px);
+    background: linear-gradient(to bottom, {cateColor && cateColor !== 'transparent' ? cateColor : cateFallbackBg} 18px, #ffffff 18px);
     display: {gayHidden ? 'none' : ''}"
 >
   <div
     class="card-holder"
-    style="background: linear-gradient(to bottom, {cateColor && cateColor !== 'transparent' ? cateColor : '#000'} 18px, #ffffff 18px);"
+    style="background: linear-gradient(to bottom, {cateColor && cateColor !== 'transparent' ? cateColor : cateFallbackBg} 18px, #ffffff 18px);"
   >
     <!-- 分类标签(顶部 18px 色条, 内含分类小图标 + 分类文本) -->
     <div
       class="card-category"
       data-href="/browse?cat={it.category}"
-      style="background-color: {cateColor && cateColor !== 'transparent' ? cateColor : '#000'}; color: {cateFontColor}"
+      style="background-color: {cateColor && cateColor !== 'transparent' ? cateColor : cateFallbackBg}; color: {cateFontColor}"
     >
       {cateName}
     </div>
@@ -294,13 +296,13 @@
   .card-holder {
   }
 
-  /* 卡片分类(顶部 18px 色条, 背景=分类色, 文字统一白色加粗居中) */
+  /* 卡片分类(顶部 18px 色条, 背景=分类色, 文字=原始黑色; 未知分类回退浅灰) */
   .card-category {
     height: 18px;
     padding: 0 2px;
     border: 1px;
-    background-color: black;
-    color: #fff;
+    background-color: #eee;
+    color: #000;
     font-weight: 900;
     text-align: center;
     letter-spacing: 2px;
@@ -310,7 +312,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    text-shadow: 0 0 2px rgba(0, 0, 0, 0.9), 0 0 1px rgba(0, 0, 0, 0.9);
   }
 
   /* 卡片行默认样式 */

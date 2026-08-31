@@ -105,6 +105,16 @@
 
   // ------------------------------------------------
 
+  /** 配置面板文本颜色: 依据主题背景亮度自动选黑/白, 保证在深色/浅色主题上都可读
+   *  (configP 与 sideP 统一跟随 $_current_bgColor, 此处计算对比文本色) */
+  $: configTextColor = (() => {
+    const bg = $_current_bgColor || "#ffffff";
+    const m = String(bg).match(/\d+(\.\d+)?/g);
+    if (!m || m.length < 3) return "#000000";
+    const lum = (Number(m[0]) * 299 + Number(m[1]) * 587 + Number(m[2]) * 114) / 1000;
+    return lum < 128 ? "#f0f0f0" : "#111111";
+  })();
+
   /** 按钮1函数: 显示原有列表*/
   function __show_originTable() {
     // console.log($_show_originTable);
@@ -387,9 +397,9 @@
     transition:fade={{ duration: 100 }}
     on:click|self={() => ($_show_configPanel = false)}
   >
-    <div class="configP_holder">
+    <div class="configP_holder" style="background-color:{$_current_bgColor}; color:{configTextColor}; border-color: rgba(0,0,0,0.3);">
       <!-- 标题区 -->
-      <div class="configP_title">
+      <div class="configP_title" style="background-color:{$_current_bgColor}; color:{configTextColor}; border-bottom-color: rgba(0,0,0,0.3);">
         <p>详细配置面板</p>
         <!-- ---------------- 返回按钮 ---------------- -->
         <button on:click={() => ($_show_configPanel = false)}>
@@ -940,9 +950,9 @@
     /* border-top-left-radius: 24px; */
     /* border-bottom-left-radius: 24px; */
     border-radius: 24px;
-    border: 2px solid black;
+    border: 2px solid rgba(0, 0, 0, 0.3);
 
-    background-color: rgb(212, 231, 255);
+    /* 背景随站点主题色, 与侧边栏(sideP)统一风格(由内联 $_current_bgColor 设置) */
 
     &::-webkit-scrollbar {
       display: none;
@@ -964,9 +974,9 @@
 
     border-top-left-radius: 24px;
     border-top-right-radius: 24px;
-    border-bottom: 2px solid black;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.3);
 
-    background-color: rgb(154, 198, 255);
+    /* 背景随站点主题色, 与侧边栏(sideP)统一风格(由内联 $_current_bgColor 设置) */
 
     z-index: 2;
 
