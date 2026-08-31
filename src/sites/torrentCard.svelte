@@ -198,19 +198,6 @@
     class="card-holder"
     style="background: linear-gradient(to bottom, {cateColor && cateColor !== 'transparent' ? cateColor : cateFallbackBg} 18px, #ffffff 18px);"
   >
-    <!-- 左下角"已读"图标: 点击标记该种子已读(做已读记号, 与点击卡片效果一致; 不打开详情预览/不触发卡片) -->
-    <button
-      class="card-read-toggle"
-      class:isRead={isRead}
-      title="标记已读"
-      aria-label="标记已读"
-      on:click={toggleRead}
-    >
-      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M20 6L9 17l-5-5"/>
-      </svg>
-    </button>
-
     <!-- 分类标签(顶部 18px 色条, 内含分类小图标 + 分类文本) -->
     <div
       class="card-category"
@@ -246,6 +233,20 @@
       {/if}
       <!-- 左上角序号角标(黑色圆角, 黄色数字) -->
       <div class="card-index">{index + 1}</div>
+      <!-- 左下角"已读"图标: 点击标记该种子已读(做已读记号, 与点击卡片效果一致; 不打开详情预览/不触发卡片)。
+           放在封面内、与右下角"预览图片按钮"(.hover-trigger)同一高度(bottom:8px), 视觉对齐。
+           toggleRead 里已 stopPropagation 阻止冒泡到 card-image 的 onClickCard。 -->
+      <button
+        class="card-read-toggle"
+        class:isRead={isRead}
+        title="标记已读"
+        aria-label="标记已读"
+        on:click={toggleRead}
+      >
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 6L9 17l-5-5"/>
+        </svg>
+      </button>
       <!-- 局部悬浮预览触发区(预览大图方式=局部悬浮时, 鼠标悬停此处触发大图预览) -->
       <div class="hover-trigger">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
@@ -527,12 +528,12 @@
     pointer-events: none;
   }
 
-  /* 左下角"已读"图标: 固定在卡片左下角, 圆形按钮。
+  /* 左下角"已读"图标: 固定在封面左下角, 与右下角"预览图片按钮"(.hover-trigger)同一高度(bottom:8px), 圆形按钮。
      未读=半透明灰描边勾; 已读=绿色实心+白勾(醒目已读记号)。 */
   .card-read-toggle {
     position: absolute;
-    left: 6px;
-    bottom: 6px;
+    left: 8px;
+    bottom: 8px;
     z-index: 4;
     width: 26px;
     height: 26px;
