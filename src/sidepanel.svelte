@@ -190,19 +190,15 @@
       if (name && !name.dataset.filled) { name.dataset.filled = "1"; __fillNameFilterSection(name); }
     };
     secFill();
+    // BUG修复: 不能一次性填充后永久 disconnect。占位 div 位于 {#if $_show_configPanel} 内,
+    // 每次关闭再打开配置面板, Svelte 都会销毁并重建这 4 个占位 div(重建后 dataset.filled 丢失),
+    // 若 observer 已永久断开, 重建的 div 就永远不会被填充 → 下方 WebDAV/已读/TAG/名称过滤
+    // 分区为空(高度0), 面板只能滚动到"卡片信息"结束。故 observer 需一直存活,
+    // secFill 用 dataset.filled 幂等, 每次面板重新展开都会对新建占位 div 重新填充, 开销极低。
     const secObs = new MutationObserver(() => {
-      // 配置面板展开后占位 div 才会被 Svelte 创建, 出现时触发填充
+      // 配置面板展开后占位 div 才会被 Svelte 创建, 出现时触发填充(已填充的跳过)
       if (!document.getElementById("kesaPanelWebdav")) return;
       secFill();
-      // 四个都已填充后不再监听
-      if (
-        document.getElementById("kesaPanelWebdav")?.dataset.filled &&
-        document.getElementById("kesaPanelRead")?.dataset.filled &&
-        document.getElementById("kesaPanelTag")?.dataset.filled &&
-        document.getElementById("kesaPanelName")?.dataset.filled
-      ) {
-        secObs.disconnect();
-      }
     });
     secObs.observe(document.body, { childList: true, subtree: true });
 
