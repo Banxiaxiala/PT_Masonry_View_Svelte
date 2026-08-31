@@ -1,7 +1,6 @@
 <script>
   import {
     _CARD_SHOW,
-    _current_bgColor,
     _iframe_switch,
     _iframe_url,
     _SITE_SETTING,
@@ -71,24 +70,14 @@
   // - onerror 重试 1 次 → 仍失败走 image_proxy.php 端点回退 → 仍失败 SVG 占位
   // 因此此处不主动写 src 也不监听 on:error, 避免和队列冲突。
 
-  /** 根据背景颜色动态调整文字黑白 */
-  function getTextColor(background) {
-    const color = (background || "").replace("#", "");
-    if (!/^[0-9a-fA-F]{6}$/.test(color)) return "black";
-    const red = parseInt(color.substr(0, 2), 16);
-    const green = parseInt(color.substr(2, 2), 16);
-    const blue = parseInt(color.substr(4, 2), 16);
-    const brightness = (red * 299 + green * 587 + blue * 114) / 1000;
-    return brightness < 128 ? "white" : "black";
-  }
-
   /** 分类颜色(优先站点 CATEGORY 映射, 未知用透明) */
   let cateColor = "transparent";
-  let cateFontColor = "black";
   $: {
     cateColor = (cfg.CATEGORY && cfg.CATEGORY[it.category]) ?? "transparent";
-    cateFontColor = cateColor && cateColor !== "transparent" ? getTextColor(cateColor) : "black";
   }
+  /** 分类文字统一用白色(参考版 rhfb99 风格)。分类条背景已用分类色区分,
+   *  若再用黑字在浅色分类上难以辨认, 故固定白色 + CSS text-shadow 保证可读。 */
+  const cateFontColor = "#ffffff";
 
   /** 分类文本: 优先中文名(站点原始分类名/ CATEGORY_NAME), 其次 M-Team CATEGORY_NAME(PTT 分类号), 最后回退数字 */
   $: cateName =
@@ -150,19 +139,19 @@
   style="
     width: {cardWidth}px;
     border-color: {cateColor && cateColor !== 'transparent' ? cateColor : '#000'};
-    background-color:{$_current_bgColor};
-    background: linear-gradient(to bottom, {cateColor && cateColor !== 'transparent' ? cateColor : '#000'} 18px, {$_current_bgColor} 18px);
+    background-color:#ffffff;
+    background: linear-gradient(to bottom, {cateColor && cateColor !== 'transparent' ? cateColor : '#000'} 18px, #ffffff 18px);
     display: {gayHidden ? 'none' : ''}"
 >
   <div
     class="card-holder"
-    style="background: linear-gradient(to bottom, {cateColor && cateColor !== 'transparent' ? cateColor : '#000'} 18px, rgba(255,255,255,0.4) 18px, rgba(255,255,255,0));"
+    style="background: linear-gradient(to bottom, {cateColor && cateColor !== 'transparent' ? cateColor : '#000'} 18px, #ffffff 18px);"
   >
     <!-- 分类标签(顶部 18px 色条, 内含分类小图标 + 分类文本) -->
     <div
       class="card-category"
       data-href="/browse?cat={it.category}"
-      style="background-color: {cateColor}; color: {cateFontColor}"
+      style="background-color: {cateColor && cateColor !== 'transparent' ? cateColor : '#000'}; color: {cateFontColor}"
     >
       {cateName}
     </div>
@@ -299,13 +288,13 @@
     padding: 2px 0;
   }
 
-  /* 卡片内部容器: 背景由内联渐变控制(统一主题=顶部分类色 18px + 白色渐变淡出),
-     参照参考版 rhfb99 / M-Team, 而非实心白, 避免标题背景在浅色主题站被洗白 */
+  /* 卡片内部容器: 背景由内联渐变控制(统一主题=顶部分类色 18px + 白色正文区),
+     参照参考版 rhfb99 / M-Team(白色卡片背景), 而非跟随 $_current_bgColor,
+     避免 M-Team 深色背景(1a1a1a)让标题区呈灰色 */
   .card-holder {
-    /* background-color: rgba(255, 255, 255, 0.5); */
   }
 
-  /* 卡片分类(顶部 18px 色条, 黑色底承载分类小图标, 文字居中加粗) */
+  /* 卡片分类(顶部 18px 色条, 背景=分类色, 文字统一白色加粗居中) */
   .card-category {
     height: 18px;
     padding: 0 2px;
@@ -321,6 +310,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    text-shadow: 0 0 2px rgba(0, 0, 0, 0.9), 0 0 1px rgba(0, 0, 0, 0.9);
   }
 
   /* 卡片行默认样式 */
