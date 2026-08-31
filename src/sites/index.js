@@ -2,7 +2,9 @@ import { config as config_Kame } from "./kamept";
 import { config as config_Mteam } from "./mteam";
 import { __isPTT, __pttParse, __pttBoot, __pttInject } from "./ptt";
 
-/** 站点参数相关参数顶层对象 */
+/** 站点参数相关参数顶层对象
+ * @type {Record<string, any>}
+ */
 const SITE = {
   // ---- M-Team NEW_MT 站 (mteamHijack.js 劫持路由) ----
   "kp.m-team.cc": config_Mteam,

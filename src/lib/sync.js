@@ -13,6 +13,10 @@
 // 所有站点级设置统一存于 localStorage 的 "Kesa:Masonry" JSON 对象下的对应 key
 const __STORE_NS = "Kesa:Masonry";
 
+/**
+ * @param {any} key
+ * @param {any} defaultValue
+ */
 function __mkLocalStore(key, defaultValue) {
   let value = defaultValue;
   // 初始化：从 localStorage 读取
@@ -25,6 +29,9 @@ function __mkLocalStore(key, defaultValue) {
     get() {
       return value;
     },
+    /**
+     * @param {any} v
+     */
     set(v) {
       const changed = v !== value;
       value = v;
@@ -44,6 +51,9 @@ function __mkLocalStore(key, defaultValue) {
       }
       return v;
     },
+    /**
+     * @param {any} cb
+     */
     subscribe(cb) {
       subs.add(cb);
       // 立即以当前值通知订阅者(复刻 svelte writable store 语义),
@@ -55,6 +65,9 @@ function __mkLocalStore(key, defaultValue) {
         subs.delete(cb);
       };
     },
+    /**
+     * @param {any} fn
+     */
     update(fn) {
       return store.set(fn(value));
     },
@@ -63,6 +76,9 @@ function __mkLocalStore(key, defaultValue) {
 }
 
 // 读取 store 当前值 (等价原 bundle 的 it(t))
+/**
+ * @param {any} s
+ */
 function __storeVal(s) {
   return s.get();
 }
@@ -103,6 +119,7 @@ const __nameFilter = __mkLocalStore("_name_filter_keywords", []);
 }
 
 // 进入页面时的已读快照 (module 级数组变量；"隐藏历史观看"据此实时判定)
+/** @type {any[]} */
 let __historyReadSnapshot = [];
 
 // WebDAV 配置 (GM key pt_wdv_cfg 优先，回退 localStorage Kesa:Masonry._webdav_config)
@@ -124,6 +141,9 @@ const __wdvCfg = {
   get() {
     return __wdvCfgValue;
   },
+  /**
+   * @param {any} v
+   */
   set(v) {
     const changed = v !== __wdvCfgValue;
     __wdvCfgValue = v;
@@ -139,18 +159,27 @@ const __wdvCfg = {
     }
     return v;
   },
+  /**
+   * @param {any} cb
+   */
   subscribe(cb) {
     __wdvCfgSubs.add(cb);
     return function () {
       __wdvCfgSubs.delete(cb);
     };
   },
+  /**
+   * @param {any} fn
+   */
   update(fn) {
     return __wdvCfg.set(fn(__wdvCfgValue));
   },
 };
 
 // 标记单个种子为已读
+/**
+ * @param {any} id
+ */
 function __markRead(id) {
   const cur = __storeVal(__readIds);
   if (!cur.includes(id)) {
@@ -183,6 +212,9 @@ function __applyHideReadCards() {
 }
 
 // 取卡片标题文字
+/**
+ * @param {any} el
+ */
 function __cardName(el) {
   const a = el.querySelector(".card-title a.two-lines");
   if (a) return (a.textContent || "").trim();
@@ -195,19 +227,22 @@ function __cardName(el) {
 // (v1.2.29b 重构: 与隐藏已读/历史观看统一用 .kesa-hide class + !important, 不再改内联 display,
 //  也不再用 __nameFiltered 标记协调; 各隐藏逻辑独立, 关闭过滤时只移除本 class 即可恢复显示)
 function __applyHideNameFilter() {
-  const kws = (__storeVal(__nameFilter) || []).filter((k) => (k || "").trim());
+  const kws = (__storeVal(__nameFilter) || []).filter((/** @type {any} */ k) => (k || "").trim());
   document.querySelectorAll(".card").forEach((el) => {
     if (!kws.length) {
       el.classList.remove("kesa-hide");
       return;
     }
     const name = __cardName(el).toLowerCase();
-    const hit = kws.some((k) => name.indexOf(String(k).toLowerCase()) !== -1);
+    const hit = kws.some((/** @type {any} */ k) => name.indexOf(String(k).toLowerCase()) !== -1);
     el.classList.toggle("kesa-hide", hit);
   });
 }
 
 // 从卡片 DOM 提取种子 ID
+/**
+ * @param {any} card
+ */
 function __extractId(card) {
   const link = card.querySelector('a[href*="details.php"],a[href*="/detail/"]');
   if (!link) return null;
@@ -249,6 +284,9 @@ function __initReadTracking() {
   // 首次加载即标记已读并应用隐藏(含"隐藏历史观看"), 否则需开关一次才生效
   __applyReadClasses();
   // 点击/中键标记已读(中键视为同款标记); 标记后由 __applyReadClasses 统一更新卡片状态与隐藏
+  /**
+   * @param {any} e
+   */
   function markRead(e) {
     const card = e.target.closest(".card");
     if (!card) return;
@@ -267,6 +305,7 @@ function __initReadTracking() {
     true,
   );
   // 卡片增删后统一重新应用已读标记与隐藏(含页码跳转导航后渲染的新卡片)
+  /** @type {any} */
   let timer;
   const obs = new MutationObserver(function (muts) {
     const hasCard = muts.some((mu) =>
@@ -295,6 +334,10 @@ function __initReadTracking() {
 
 /* ---------- 开关组件 ---------- */
 // 复刻原 bundle 的 __mkSwitch: 标签 + checkbox 样式的开关
+/**
+ * @param {any} checked
+ * @param {any} onChange
+ */
 function __mkSwitch(checked, onChange) {
   const w = document.createElement("div");
   w.className = "s_switch svelte-2vaqag svelte-2vaqag";
@@ -318,6 +361,9 @@ function __mkSwitch(checked, onChange) {
   knob.style.cssText =
     "position:absolute;left:-2px;top:-6px;width:24px;height:24px;border-radius:50%;background-color:#555;transition:transform .2s;pointer-events:none;box-sizing:border-box;";
   lb.appendChild(knob);
+  /**
+   * @param {any} on
+   */
   function paint(on) {
     lb.style.backgroundColor = on ? "#00a0fc" : "#777";
     lb.style.borderColor = on ? "#006dc9" : "#555";
@@ -335,6 +381,12 @@ function __mkSwitch(checked, onChange) {
 }
 
 // 开关行 (label + checkbox 样式开关)
+/**
+ * @param {any} labelText
+ * @param {any} checked
+ * @param {any} onChange
+ * @param {any} desc
+ */
 function __mkSwitchRow(labelText, checked, onChange, desc) {
   const row = document.createElement("div");
   // 复刻 component/switch.svelte 的 .switch 样式: 高度 30px, flex 两端对齐,
@@ -355,7 +407,7 @@ function __mkSwitchRow(labelText, checked, onChange, desc) {
     "display:flex;align-items:center;font-size:14px;line-height:1;font-weight:400;color:#000;position:relative;flex:0 0 auto;min-width:0;white-space:nowrap;";
   lb.textContent = labelText;
   if (desc) lb.title = desc;
-  const sw = __mkSwitch(checked, function (v) {
+  const sw = __mkSwitch(checked, function (/** @type {any} */ v) {
     onChange(v);
   });
   row.appendChild(lb);
@@ -364,6 +416,9 @@ function __mkSwitchRow(labelText, checked, onChange, desc) {
 }
 
 /* ---------- 已读标记 配置面板 ---------- */
+/**
+ * @param {any} container
+ */
 function __fillReadSection(container) {
   const h1 = document.createElement("h1");
   h1.className = "s_title";
@@ -391,7 +446,7 @@ function __fillReadSection(container) {
   clearBtn.onclick = () => {
     __readIds.set([]);
   };
-  const ua = __readIds.subscribe((v) => {
+  const ua = __readIds.subscribe((/** @type {any} */ v) => {
     countLabel.textContent = `已标记 ${v.length} 个种子`;
     __applyReadClasses();
   });
@@ -401,6 +456,9 @@ function __fillReadSection(container) {
 }
 
 /* ---------- TAG 过滤 配置面板 ---------- */
+/**
+ * @param {any} container
+ */
 function __fillTagSection(container) {
   const h1 = document.createElement("h1");
   h1.className = "s_title";
@@ -426,7 +484,9 @@ function __fillTagSection(container) {
   row.appendChild(inp);
   row.appendChild(addBtn);
   container.appendChild(row);
+  /** @type {any[]} */
   let _a = [],
+    /** @type {any[]} */
     _b = [];
   function render() {
     panel.innerHTML = "";
@@ -438,7 +498,7 @@ function __fillTagSection(container) {
       return;
     }
     const merged = [...new Set([..._a, ..._b])];
-    merged.forEach((tg) => {
+    merged.forEach((/** @type {any} */ tg) => {
       const on = _b.includes(tg);
       const c = document.createElement("span");
       c.textContent = tg;
@@ -453,7 +513,7 @@ function __fillTagSection(container) {
       c.title = on ? "点击取消屏蔽" : "点击屏蔽此TAG";
       c.onclick = () => {
         const cur = __storeVal(__bTags);
-        if (cur.includes(tg)) __bTags.set(cur.filter((x) => x !== tg));
+        if (cur.includes(tg)) __bTags.set(cur.filter((/** @type {any} */ x) => x !== tg));
         else __bTags.set([...cur, tg]);
       };
       panel.appendChild(c);
@@ -469,11 +529,11 @@ function __fillTagSection(container) {
   inp.addEventListener("keydown", (e) => {
     if (e.key === "Enter") addBtn.click();
   });
-  const ua = __aTags.subscribe((v) => {
+  const ua = __aTags.subscribe((/** @type {any} */ v) => {
     _a = v;
     render();
   });
-  const ub = __bTags.subscribe((v) => {
+  const ub = __bTags.subscribe((/** @type {any} */ v) => {
     _b = v;
     render();
   });
@@ -484,6 +544,9 @@ function __fillTagSection(container) {
 }
 
 /* ---------- 名称过滤 配置面板 ---------- */
+/**
+ * @param {any} container
+ */
 function __fillNameFilterSection(container) {
   const h1 = document.createElement("h1");
   h1.className = "s_title";
@@ -519,7 +582,7 @@ function __fillNameFilterSection(container) {
   function renderChips() {
     chipBox.textContent = "";
     const kws = __storeVal(__nameFilter) || [];
-    kws.forEach((kw, idx) => {
+    kws.forEach((/** @type {any} */ kw, /** @type {any} */ idx) => {
       if (!(kw || "").trim()) return;
       const chip = document.createElement("span");
       chip.style.cssText =
@@ -560,7 +623,7 @@ function __fillNameFilterSection(container) {
   function apply() {
     __applyHideNameFilter();
     renderChips();
-    const kws = (__storeVal(__nameFilter) || []).filter((k) => (k || "").trim());
+    const kws = (__storeVal(__nameFilter) || []).filter((/** @type {any} */ k) => (k || "").trim());
     const total = document.querySelectorAll(".card").length;
     // v1.2.29b: 隐藏改用 CSS class(!important) 而非内联 style.display, 故按 class 统计
     const hidden = document.querySelectorAll(".card.kesa-hide,.card.kesa-hide-read").length;
@@ -587,6 +650,9 @@ function __fillNameFilterSection(container) {
 }
 
 /* ---------- 同步 (WebDAV) 配置面板 ---------- */
+/**
+ * @param {any} container
+ */
 function __fillWebDAVSection(container) {
   const h1 = document.createElement("h1");
   h1.className = "s_title";
@@ -601,6 +667,11 @@ function __fillWebDAVSection(container) {
   panel.className = "s_panel";
   panel.style.cssText = "display:flex;flex-direction:column;gap:6px;width:100%;";
   container.appendChild(panel);
+  /**
+   * @param {any} label
+   * @param {any} key
+   * @param {any} type
+   */
   function mkRow(label, key, type) {
     const w = document.createElement("div");
     w.style.cssText = "display:flex;align-items:center;gap:6px;width:100%;";
@@ -619,7 +690,7 @@ function __fillWebDAVSection(container) {
     // 订阅配置变化, 实时把最新值回填到输入框(修复"服务器地址等所有网站都不显示":
     // 占位面板每次打开都重新填充, 只要 store 里有值, 输入框就一定能显示出来)。
     // 用户正在编辑该输入框时跳过回填, 避免光标跳动覆盖输入。
-    const un = __wdvCfg.subscribe((v) => {
+    const un = __wdvCfg.subscribe((/** @type {any} */ v) => {
       if (document.activeElement !== inp) {
         const nv = (v && v[key]) || "";
         if (inp.value !== nv) inp.value = nv;
@@ -630,6 +701,7 @@ function __fillWebDAVSection(container) {
     panel.appendChild(w);
     return { inp, un };
   }
+  /** @type {any[]} */
   const unSubs = [];
   unSubs.push(mkRow("服务器地址", "url", "text").un);
   unSubs.push(mkRow("账号", "user", "text").un);
@@ -641,6 +713,10 @@ function __fillWebDAVSection(container) {
   container.appendChild(status);
   const btnRow = document.createElement("div");
   btnRow.style.cssText = "display:flex;gap:8px;padding:4px 10px;";
+  /**
+   * @param {any} text
+   * @param {any} fn
+   */
   function mkBtn(text, fn) {
     const b = document.createElement("button");
     b.textContent = text;
@@ -654,7 +730,7 @@ function __fillWebDAVSection(container) {
         status.style.color = "#3a7";
       } catch (e) {
         status.style.color = "#c00";
-        status.textContent = e.message;
+        status.textContent = /** @type {any} */ (e).message;
       }
     };
     btnRow.appendChild(b);
@@ -682,7 +758,7 @@ function __fillWebDAVSection(container) {
       status.textContent = "已清空页码并上传(本地+服务器)";
     } catch (e) {
       status.style.color = "#c00";
-      status.textContent = e.message;
+      status.textContent = /** @type {any} */ (e).message;
     }
   };
   clearRow.appendChild(clearBtn);
@@ -712,7 +788,7 @@ function __wdvUrl() {
   // 逐段编码(保留 / 与已存在的 %XX), 避免把合法百分号二次编码。
   p = p
     .split("/")
-    .map(function (seg) {
+    .map(function (/** @type {any} */ seg) {
       return encodeURIComponent(seg).replace(/%2F/gi, "/");
     })
     .join("/");
@@ -727,8 +803,13 @@ async function __wdvReadFull() {
   const r = await __wdvFetch(__wdvUrl(), "GET", null);
   if (r.status === 404) {
     // 迁移旧版数据: 本站旧已读文件 <host>.json + 旧页码文件 PT_Masonry_PageMax.json
+    /** @type {{ sites: any, pages: any }} */
     const legacy = { sites: {}, pages: {} };
     const base = (c.url || "").replace(/\/+$/, "");
+    /**
+     * @param {any} name
+     * @param {any} parse
+     */
     async function fetchLegacy(name, parse) {
       try {
         const gr = await __wdvFetch(base + "/" + name, "GET", null);
@@ -737,14 +818,14 @@ async function __wdvReadFull() {
       return null;
     }
     const host = location.hostname;
-    const gj = await fetchLegacy(host + ".json", function (j) {
+    const gj = await fetchLegacy(host + ".json", function (/** @type {any} */ j) {
       const so = {};
       if (Array.isArray(j.ids)) so.readIds = j.ids;
       if (j.config && typeof j.config.masonry === "string") so.config = j.config;
       return so.readIds || so.config ? so : null;
     });
     if (gj) legacy.sites[host] = gj;
-    const pj = await fetchLegacy("PT_Masonry_PageMax.json", function (j) {
+    const pj = await fetchLegacy("PT_Masonry_PageMax.json", function (/** @type {any} */ j) {
       return j && typeof j === "object" ? j : {};
     });
     if (pj) legacy.pages = pj;
@@ -770,6 +851,9 @@ async function __wdvReadFull() {
 }
 
 // 写入统一同步文件
+/**
+ * @param {any} full
+ */
 async function __wdvWriteFull(full) {
   const r = await __wdvFetch(__wdvUrl(), "PUT", JSON.stringify(full));
   if (r.status === 401) {
@@ -786,6 +870,11 @@ function __wdvAuth() {
 }
 
 // 请求封装: 优先 GM_xmlhttpRequest, 回退 fetch
+/**
+ * @param {any} url
+ * @param {any} method
+ * @param {any} body
+ */
 function __wdvFetch(url, method, body) {
   const auth = __wdvAuth();
   return new Promise(function (resolve, reject) {
@@ -826,6 +915,9 @@ function __wdvFetch(url, method, body) {
 }
 
 // 上传: 合并本站已读/设置 + 页码 后整体写回统一文件 (流量优化: force=false 时无变化则跳过)
+/**
+ * @param {any} force
+ */
 async function __wdvUpload(force) {
   const c = __storeVal(__wdvCfg);
   if (!c.url || !c.pass) throw new Error("请先填写 WebDAV 配置");
@@ -884,6 +976,9 @@ async function __wdvUpload(force) {
 }
 
 // 下载: 读取统一文件并合并本站已读/设置 + 页码
+/**
+ * @param {any} [updateHistSnapshot]
+ */
 async function __wdvDownload(updateHistSnapshot) {
   const c = __storeVal(__wdvCfg);
   if (!c.url || !c.pass) throw new Error("请先填写 WebDAV 配置");
@@ -925,15 +1020,19 @@ async function __wdvDownload(updateHistSnapshot) {
 /* ============================================================================
  * 3. 自动同步 + 桥接
  * ========================================================================== */
+/**
+ * @param {any} fn
+ * @param {any} tag
+ */
 function __wdvAutoRun(fn, tag) {
   try {
     const c = __storeVal(__wdvCfg);
     if (!c.url || !c.pass) return;
     fn()
-      .then(function (m) {
+      .then(function (/** @type {any} */ m) {
         console.log("[WebDAV] " + tag + ":", m);
       })
-      .catch(function (e) {
+      .catch(function (/** @type {any} */ e) {
         console.warn("[WebDAV] " + tag + "失败:", e.message);
       });
   } catch (e) {}
@@ -957,7 +1056,7 @@ function __wdvAutoPush() {
 }
 
 // 桥接: 供自包含的"全局同步/页码同步"模块调用已读标记/设置的上传下载
-window.__kesaWdSync = function (action) {
+window.__kesaWdSync = function (/** @type {any} */ action) {
   try {
     if (action === "upload") return __wdvUpload(true);
     if (action === "autopush") return __wdvUpload(false); // 自动上传: 无变化则跳过(省流量)
@@ -975,6 +1074,9 @@ function __kesaStateKey() {
   return "__kesaState_" + location.hostname;
 }
 
+/**
+ * @param {any} n
+ */
 function __kesaSavePageState(n) {
   try {
     // 恢复跳转期间(旧页面被替换前)不覆盖已保存状态
@@ -1019,7 +1121,7 @@ function __kesaRestorePage() {
       } catch (e2) {}
       return;
     }
-    const base = (u) => {
+    const base = (/** @type {any} */ u) => {
       const x = new URL(u);
       x.searchParams.delete("page");
       x.searchParams.delete("pageNumber");
@@ -1059,7 +1161,7 @@ function __kesaCurPage() {
     return 1;
   }
 }
-function __kesaPageUrl(n) {
+function __kesaPageUrl(/** @type {any} */ n) {
   try {
     const u = new URL(location.href);
     // 替换而非新增: 先清掉两个页码参数, 再设置正确的那个
@@ -1071,7 +1173,7 @@ function __kesaPageUrl(n) {
     return location.href;
   }
 }
-function __kesaPageInd(n) {
+function __kesaPageInd(/** @type {any} */ n) {
   try {
     if (!document.getElementById("__kesaPageCss")) {
       const st = document.createElement("style");
@@ -1086,6 +1188,7 @@ function __kesaPageInd(n) {
     // 真实页码显示在侧边栏底部, 点击可直接跳转到该页真实 URL(便于存档)
     const sb = document.querySelector(".sideP");
     if (!sb) return;
+    /** @type {any} */
     let el = document.querySelector(".kesaPageGo");
     if (!el) {
       el = document.createElement("div");
@@ -1117,12 +1220,18 @@ function __kesaPageInd(n) {
       return {};
     }
   }
+  /**
+   * @param {any} st
+   */
   function __pmSet(st) {
     try {
       GM_setValue("pt_pagemax", JSON.stringify(st));
     } catch (e) {}
   }
   // 归一化任一URL为页面上下文key: 去页码 + 去NexusPHP默认筛选参数
+  /**
+   * @param {any} u
+   */
   function __pmNormKey(u) {
     try {
       const x = new URL(u);
@@ -1157,12 +1266,18 @@ function __kesaPageInd(n) {
       if (changed) __pmSet(st);
     } catch (e) {}
   }
+  /**
+   * @param {any} key
+   */
   function __pmMaxFor(key) {
     const e = __pmGet()[key];
     return e && e.max ? e.max : 0;
   }
   // ---- 本地脏标记: 页码变化置脏; 实际上传/下载由主作用域统一处理(关页兜底+手动按钮) ----
   let __pmDirty = false;
+  /**
+   * @param {any} pg
+   */
   function __pmRecord(pg) {
     try {
       const host = __pmKey();
@@ -1176,7 +1291,7 @@ function __kesaPageInd(n) {
     } catch (e) {}
   }
   // 桥接给主作用域: 读取本地页码 / 合并远端页码 / 查询与重置脏标记 / 清空本地页码
-  window.__kesaPageSync = function (action, data) {
+  window.__kesaPageSync = function (/** @type {any} */ action, /** @type {any} */ data) {
     try {
       if (action === "get") return __pmGet();
       if (action === "merge" && data && typeof data === "object") {
@@ -1219,19 +1334,22 @@ function __kesaPageInd(n) {
     try {
       const go = document.querySelector(".kesaPageGo");
       if (go) {
-        const n = parseInt(go.dataset.page, 10);
+        const n = parseInt(/** @type {any} */ (go.dataset.page), 10);
         if (!isNaN(n) && n >= 1) return n;
       }
     } catch (e) {}
     try {
       const u = new URL(location.href);
       const isNX = /\.php/i.test(location.pathname);
-      const n = parseInt(u.searchParams.get(isNX ? "page" : "pageNumber"), 10);
+      const n = parseInt(/** @type {any} */ (u.searchParams.get(isNX ? "page" : "pageNumber")), 10);
       return isNaN(n) ? 1 : n;
     } catch (e) {
       return 1;
     }
   }
+  /**
+   * @param {any} pg
+   */
   function __pmUrlForPage(pg) {
     try {
       const u = new URL(location.href);
@@ -1249,6 +1367,7 @@ function __kesaPageInd(n) {
     try {
       const sb = document.querySelector(".sideP");
       if (!sb) return;
+      /** @type {any} */
       let el = document.querySelector(".kesaPageMaxGo");
       if (!el) {
         el = document.createElement("div");

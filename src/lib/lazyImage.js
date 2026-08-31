@@ -25,8 +25,10 @@
  *  - _index.svelte afterUpdate: 每次卡片渲染后调用 __kesaWatchLazy() 接管新卡片。
  */
 
+/** @type {any[]} */
 let __kesaQ = [];
 let __kesaBusy = 0;
+/** @type {Record<string, any>} */
 let __kesaDone = {}; // 1=成功 -1=失败
 const __kesaLimit = 4;
 const __kesaFailSvg = () => {
@@ -44,7 +46,7 @@ export function __kesaWatchLazy() {
     // 1) 预热原列表封面图: 站点原表格(即将被 display:none 隐藏)的 lazy img 不会触发加载,
     //    这里强制 eager 并 new Image() 灌入浏览器缓存, 卡片可命中缓存/直接复用
     /** @type {NodeListOf<HTMLImageElement>} */
-    (document.querySelectorAll('img[loading="lazy"]')).forEach((im) => {
+    (document.querySelectorAll('img[loading="lazy"]')).forEach(/** @param {any} im */ (im) => {
       const src = im.getAttribute("src") || im.getAttribute("data-src") || "";
       if (!src || /emptyImg|trans\.gif|spinner|^data:/i.test(src)) return;
       if (im.loading !== "eager") im.loading = "eager";
@@ -59,13 +61,16 @@ export function __kesaWatchLazy() {
   } catch (e) {}
   try {
     // 2) 接管所有卡片懒加载图(不依赖 IntersectionObserver root, 兼容各站不同滚动容器)
-    document.querySelectorAll(".nexus-lazy-load_Kesa:not(.preview_Kesa)").forEach((l) => {
+    /** @type {NodeListOf<HTMLImageElement>} */
+    (document.querySelectorAll(".nexus-lazy-load_Kesa:not(.preview_Kesa)")).forEach(/** @param {any} l */ (l) => {
       if (l.dataset.src && !l.__kesaQueued && !l.__kesaFail) __kesaQueue(l);
     });
   } catch (e) {}
 }
 
-/** 入队卡片 img (已入队/已失败/无 data-src 的跳过) */
+/** 入队卡片 img (已入队/已失败/无 data-src 的跳过)
+ * @param {any} l
+ */
 function __kesaQueue(l) {
   if (l.__kesaQueued || l.classList.contains("preview_Kesa") || l.__kesaFail) return;
   const o = l.dataset.src;
@@ -103,7 +108,9 @@ function __kesaPump() {
   }
 }
 
-/** 在所有 <img> 中查找已加载完成且 src 匹配的 img(实现"复用原列表图片链接") */
+/** 在所有 <img> 中查找已加载完成且 src 匹配的 img(实现"复用原列表图片链接")
+ * @param {any} o
+ */
 function __kesaFindLoaded(o) {
   try {
     const all = document.querySelectorAll("img");
@@ -116,7 +123,9 @@ function __kesaFindLoaded(o) {
   return null;
 }
 
-/** 实际加载单张卡片图 */
+/** 实际加载单张卡片图
+ * @param {any} l
+ */
 function __kesaStart(l) {
   if (l.__kesaBusy || l.classList.contains("preview_Kesa")) return;
   const o = l.dataset.src;

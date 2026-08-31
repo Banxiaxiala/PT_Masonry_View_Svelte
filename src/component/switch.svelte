@@ -13,6 +13,7 @@
   /** 悬浮提示(dom 的 title 属性) */
   export let label = "";
   /** 回调函数(仅在 Switch 模式下有用) */
+  /** @type {any} */
   export let func = null;
 
   /** checkbox 和 附属 label 的绑定 id */

@@ -93,6 +93,7 @@ export function Launch_Hijack(param = { path: '/search', method: 'POST' }) {
   }
 
   // 劫持 open 方法
+  /** @param {any} method @param {any} url */
   XMLHttpRequest.prototype.open = function(method, url) {
     const metadata = {
       method: method.toUpperCase(),
@@ -100,10 +101,11 @@ export function Launch_Hijack(param = { path: '/search', method: 'POST' }) {
       isTarget: isTargetRequest(url, method)
     };
     requestMetadataMap.set(this, metadata);
-    return nativeOpen.apply(this, arguments);
+    return nativeOpen.apply(this, /** @type {any} */ (arguments));
   };
 
   // 劫持 send 方法
+  /** @param {any} body */
   XMLHttpRequest.prototype.send = function(body) {
     const metadata = requestMetadataMap.get(this);
 
@@ -116,7 +118,7 @@ export function Launch_Hijack(param = { path: '/search', method: 'POST' }) {
         if (this.readyState === 4) {
           captureResponseData(this);
         }
-        originalOnReadyStateChange?.call(this);
+        /** @type {any} */ (originalOnReadyStateChange)?.call(this);
       });
 
       // 兼容 onload
@@ -136,7 +138,7 @@ export function Launch_Hijack(param = { path: '/search', method: 'POST' }) {
       window.dispatchEvent(event);
     }
 
-    return nativeSend.apply(this, arguments);
+    return nativeSend.apply(this, /** @type {any} */ (arguments));
   };
 
   // 劫持 fetch 方法（如果可用）
@@ -221,7 +223,8 @@ const __kesaHijack = {
 
 // 挂载到 window 上（若浏览器环境存在 window）
 if (typeof window !== 'undefined') {
-  window.__kesaHijack = __kesaHijack;
+  const w = /** @type {any} */ (window);
+  w.__kesaHijack = __kesaHijack;
 
   /**
    * 手动注入响应数据辅助函数。
@@ -229,9 +232,9 @@ if (typeof window !== 'undefined') {
    * @param {any} data 需要注入的数据
    * @returns {boolean} 是否成功注入（是否已注册 handler）
    */
-  window.__kesaHijackInject = function(data) {
-    if (window.__kesaHijack && typeof window.__kesaHijack.handler === 'function') {
-      window.__kesaHijack.handler({
+  w.__kesaHijackInject = function(data) {
+    if (w.__kesaHijack && typeof w.__kesaHijack.handler === 'function') {
+      w.__kesaHijack.handler({
         type: 'res',
         data: JSON.stringify({ data: { data, pageNumber: 1 } })
       });

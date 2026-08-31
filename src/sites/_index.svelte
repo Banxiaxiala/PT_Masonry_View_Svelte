@@ -39,10 +39,13 @@
   // 父子参数 ------------------------------------------------
 
   /** 父传值: 原有种子列表dom*/
+  /** @type {any} */
   export let originTable;
 
   /** 父传值: 瀑布流dom*/
+  /** @type {any} */
   export let waterfallNode;
+
 
   // 组件函数 ------------------------------------------------
 
@@ -51,8 +54,8 @@
    *          status:{seeders, leechers, comments, discount, toppingLevel, createdDate, discountEndTime},
    *          torrentLink}
    * 若已是新结构(有 imageList/status), 原样返回
-   * @param {object} it 种子信息对象
-   * @returns {object} 新结构种子对象
+   * @param {any} it 种子信息对象
+   * @returns {any} 新结构种子对象
    */
   function __normalizeTorrent(it) {
     if (!it) return it;
@@ -79,9 +82,10 @@
       if (__tagTxt.indexOf("中字") !== -1) lbl |= 4;
       it.labels = lbl;
       // 标签名称数组: 收敛 labels 名称数组 + 站点原始 tags 数组(去重), 供卡片 chips 展示
+      /** @type {any[]} */
       const __tagSet = [];
       __tagNames.forEach((n) => n && __tagSet.indexOf(n) === -1 && __tagSet.push(n));
-      (Array.isArray(it.tags) ? it.tags : []).forEach((n) => n && __tagSet.indexOf(String(n)) === -1 && __tagSet.push(String(n)));
+      (Array.isArray(it.tags) ? it.tags : []).forEach(/** @param {any} n */ (n) => n && __tagSet.indexOf(String(n)) === -1 && __tagSet.push(String(n)));
       it.tags = __tagSet;
       // 规整 size 为字节数(API 可能给数字或带单位字符串, 统一成数字供 getFileSize 计算)
       if (typeof it.size !== "number") it.size = __parseSize(it.size);
@@ -139,7 +143,10 @@
     };
   }
 
-  /** 从标签数组/原始标签HTML 推断 labels 位掩码(供 kamept 等未预解析 labels 的站点) */
+  /** 从标签数组/原始标签HTML 推断 labels 位掩码(供 kamept 等未预解析 labels 的站点)
+   * @param {any} tags
+   * @param {any} rawTags
+   */
   function __labelsFromTags(tags, rawTags) {
     let labels = 0;
     const texts = [];
@@ -152,7 +159,9 @@
     return labels;
   }
 
-  /** 解析大小字符串为数字(如 "1.5 GB" -> 字节数) */
+  /** 解析大小字符串为数字(如 "1.5 GB" -> 字节数)
+   * @param {any} s
+   */
   function __parseSize(s) {
     if (s == null) return 0;
     if (typeof s === "number") return s;
@@ -162,7 +171,9 @@
     return Math.round(parseFloat(m[1]) * mult);
   }
 
-  /** 旧 free_type(如 "_FREE") -> 新 discount(FREE/PERCENT_50/NORMAL) */
+  /** 旧 free_type(如 "_FREE") -> 新 discount(FREE/PERCENT_50/NORMAL)
+   * @param {any} free_type
+   */
   function __mapDiscount(free_type) {
     const t = String(free_type || "").toUpperCase();
     if (t.indexOf("FREE") !== -1) return "FREE";
@@ -248,7 +259,7 @@
   };
 
   /** 翻页
-   * @param event
+   * @param {Event} event
    */
   function turnPage(event) {
     // 防止默认行为的发生
@@ -283,13 +294,15 @@
   /** 获取主题背景色 */
   const mainOuterDOM = document.querySelector("table.mainouter");
   const themeColor = mainOuterDOM
-    ? window.getComputedStyle(mainOuterDOM)["background-color"]
+    ? /** @type {any} */ (window.getComputedStyle(mainOuterDOM))["background-color"]
     : "#1a1a1a";
   $_current_bgColor = themeColor;
   console.log("背景颜色:", themeColor);
 
   // 2. 根据当前域名拿到对应的数据 --------------------------------------------------------------------------------------
-  const config = GLOBAL_SITE[$_current_domain];
+  /** @type {any} */
+  const config = /** @type {any} */ (GLOBAL_SITE)[$_current_domain];
+  /** @type {any[]} */
   let infoList = [];
 
   /** 当前是否为 M-Team NEW_MT 站(SPA, 数据来自劫持 /search 请求) */
@@ -331,13 +344,14 @@
   // NOTE: 如果站点有特殊操作, 这里执行
   // 防御: special() 若抛错会中断组件初始化(卡片全不渲染), 故捕获并打印
   try {
-    GLOBAL_SITE[$_current_domain]?.special();
+    /** @type {any} */ (GLOBAL_SITE)[$_current_domain]?.special();
   } catch (err) {
     console.error("[Waterfall] 站点特殊操作 special() 失败(不影响卡片渲染):", err);
   }
 
   // 3. 开整瀑布流 --------------------------------------------------------------------------------------
 
+  /** @type {any} */
   let masonry;
   $: if (masonry) {
     CARD.CARD_WIDTH = computeCardWidth($_card_layout.column, $_card_layout.gap);
@@ -351,6 +365,7 @@
   // |-- 4.1 检测是否到了底部
 
   /** 延迟加载事件 */
+  /** @type {any} */
   let debounceLoad;
   function scan_and_launch() {
     const scrollHeight = document.body.scrollHeight;
@@ -420,6 +435,7 @@
       .then((html) => {
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, "text/html");
+        /** @type {any} */
         const table = doc.querySelector(GET_TORRENT_LIST_SELECTOR());
 
         // NOTE: 原表格随着下一页加载增多
@@ -456,8 +472,8 @@
 
         // NOTE: 如果站点有下一页加载后操作, 这里执行
         // GLOBAL_SITE[$_current_domain]?.pageLoaded();
-        typeof GLOBAL_SITE[$_current_domain]?.pageLoaded === "function"
-          ? GLOBAL_SITE[$_current_domain]?.pageLoaded()
+        typeof /** @type {any} */ (GLOBAL_SITE)[$_current_domain]?.pageLoaded === "function"
+          ? /** @type {any} */ (GLOBAL_SITE)[$_current_domain]?.pageLoaded()
           : null;
 
         // NOTE: 瀑布流
@@ -525,6 +541,7 @@
     // 窗口尺寸变化后重跑布局(防抖, 保持用户设定列数 + 重新居中)
     if (!window.__kesaResizeBound) {
       window.__kesaResizeBound = true;
+      /** @type {any} */
       let rTimer = null;
       window.addEventListener("resize", function () {
         clearTimeout(rTimer);
@@ -546,7 +563,7 @@
     }
 
     // 给瀑布流节点放一个手动点击整理的功能
-    waterfallNode.addEventListener("click", (event) => {
+    waterfallNode.addEventListener("click", /** @param {any} event */ (event) => {
       // 模拟 self, 只有在点击本身而非子元素的时候时触发效果
       if (event.target === event.currentTarget) {
         if (masonry) masonry.layout();
@@ -572,8 +589,11 @@
    * 监听 req/res 自定义事件, 从响应 JSON(rawObject.data 种子数组)填充 infoList 并刷新瀑布流。
    * 参考 PT_Fall-View/src/views/Entry_Mteam.svelte 的 launchFallView 逻辑。
    */
+  /** @type {any} */
   let __mteamReqListener = null;
+  /** @type {any} */
   let __mteamResListener = null;
+  /** @type {any} */
   let __mteamDocListener = null;
   /** 是否接受本次 /search 响应(仅种子列表请求, 过滤 "mode":"waterfall" 等非列表请求) */
   let __mteamIsAccept = false;
@@ -584,7 +604,7 @@
     Launch_Hijack({ path: "/search", method: "POST" });
 
     // 请求事件: 判断是否种子列表请求
-    __mteamReqListener = (e) => {
+    __mteamReqListener = /** @param {any} e */ (e) => {
       const url = (e.detail && e.detail.url) || "";
       const body = (e.detail && e.detail.body) || "";
       // 仅接受 /api/torrent/search 的种子列表请求, 过滤 "mode":"waterfall"(瀑布流辅助请求)
@@ -597,7 +617,7 @@
     window.addEventListener("req>POST->/search", __mteamReqListener);
 
     // 响应事件: 填充数据
-    __mteamResListener = (e) => {
+    __mteamResListener = /** @param {any} e */ (e) => {
       if (!__mteamIsAccept) return; // 非种子列表请求不处理
       try {
         const rawObject = JSON.parse(e.detail.data);
@@ -617,7 +637,7 @@
     // 故 `res>POST->/search` 事件在 SSR 页(/browse/movie 等)永不触发 → infoList 恒空 → 卡片 0。
     // 这里提供回退: 向页面主世界注入脚本读取 localStorage + HMAC-SHA1 签名 + fetch 请求
     // apiHost + /torrent/search, 再通过 document 自定义事件(跨世界共享)把 data.data 回传沙盒。
-    __mteamDocListener = (e) => {
+    __mteamDocListener = /** @param {any} e */ (e) => {
       const list = e.detail && e.detail.list;
       if (!Array.isArray(list) || !list.length) return;
       __mtFill(list);
@@ -742,7 +762,9 @@
 
   /** 上一次已填充数据的 URL 签名(用于忽略同路由重复响应, 区分 SPA 路由跳转) */
   let __mtLastSig = "";
-  /** 填充 infoList 并刷新瀑布流(M-Team 通用) */
+  /** 填充 infoList 并刷新瀑布流(M-Team 通用)
+   * @param {any} list
+   */
   function __mtFill(list) {
     // M-Team SPA 客户端路由跳转(切换分组/分类/页码/排序)不重载脚本, 每次 URL 变化都
     // 应视为新一页数据整体替换; 仅同 URL 的重复响应才忽略(避免同一路由重复填充)。
@@ -791,10 +813,12 @@
     if (S.queue && S.queue.length) {
       const q = S.queue;
       S.queue = [];
-      q.forEach((d) => { try { __pttHandler(d); } catch (e) {} });
+      q.forEach(/** @param {any} d */ (d) => { try { __pttHandler(/** @type {any} */ (d)); } catch (e) {} });
     }
   }
-  /** PTT 注入处理器: 解析 __pttInject 派发的 {type:"res", data} 并填充 infoList 刷新瀑布流 */
+  /** PTT 注入处理器: 解析 __pttInject 派发的 {type:"res", data} 填充 infoList 刷新瀑布流
+   * @param {any} d
+   */
   function __pttHandler(d) {
     if (!d || d.type !== "res") return;
     if (d.body && d.body.indexOf('"mode":"waterfall"') >= 0) return;

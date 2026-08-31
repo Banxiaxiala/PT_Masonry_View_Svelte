@@ -8,6 +8,7 @@
    */
   export let label;
   export let design = "inner label";
+  /** @type {any[]} */
   export let options = [];
   export let fontSize = 16;
   export let value = "on";
@@ -16,6 +17,7 @@
 
   const uniqueID = Math.floor(Math.random() * 100);
 
+  /** @param {any} event */
   function handleClick(event) {
     const target = event.target;
 

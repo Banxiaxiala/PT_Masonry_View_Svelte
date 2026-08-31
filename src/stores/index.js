@@ -3,7 +3,10 @@ import { sortMasonry } from "../utils";
 
 // ----------------------------------------------------------------
 
-/** 持久化 Stores -> 配置联动 localstorage*/
+/** 持久化 Stores -> 配置联动 localstorage
+ * @param {any} key
+ * @param {any} startValue
+ */
 function persistStore(key, startValue) {
   const savedValue = localStorage.getItem(key);
   const initialValue = savedValue ? JSON.parse(savedValue) : startValue;

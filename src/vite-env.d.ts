@@ -23,6 +23,8 @@ declare global {
     __kesaWd?: any;
     __kesaPage?: any;
     __kesaImgDiag?: any;
+    __kesaResizeBound?: any;
+    __kesaMTDiag?: any;
     // jQuery(站点自带)
     jQuery?: any;
     $?: any;
@@ -41,6 +43,7 @@ declare global {
     __kesaImgDiag?: any;
     outlayerGUID?: number;
     __kesaHijack?: any;
+    __kesaMTData?: any;
   }
 
   interface Node {

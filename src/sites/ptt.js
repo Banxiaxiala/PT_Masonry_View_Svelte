@@ -1,6 +1,7 @@
 /* ==================== PTT 数据适配(仅 www.pttime.org / nicept.net / ptfans.cc) ==================== */
 export const __isPTT = /pttime\.org|nicept\.net|ptfans\.cc/i.test(location.hostname);
 // 详情链接:PTT 用 details.php?id=..&hit=1(已在 __pttParse 解析为 torrentLink),其他站点用 /detail/{id}
+/** @param {any} it */
 export function __ksDetailUrl(it) {
   if (__isPTT) return (it && it.torrentLink) || "/details.php?id=" + it.id + "&hit=1";
   return "/detail/" + it.id;
@@ -12,14 +13,16 @@ export const __PTT_CAT_MAP = {
   "411": "406", "412": "449", "420": "443", "421": "450", "422": "422",
   "423": "450", "430": "450",
 };
+/** @param {string} s */
 export function __pttParseSize(s) {
   s = (s || "").trim().toUpperCase();
   const m = s.match(/([\d.]+)\s*(B|KB|MB|GB|TB)/);
   if (!m) return 0;
-  const mult = { B: 1, KB: 1024, MB: 1048576, GB: 1073741824, TB: 1099511627776 }[m[2]] || 1;
+  const mult = /** @type {any} */ ({ B: 1, KB: 1024, MB: 1048576, GB: 1073741824, TB: 1099511627776 })[m[2]] || 1;
   return Math.round(parseFloat(m[1]) * mult);
 }
 // 解析 NexusPHP 的发布时间(如 "2年7月"/"4月28天"/"3天"/"5周")为 ISO 日期
+/** @param {string} s */
 export function __pttParseCreated(s) {
   s = (s || "").trim();
   let d = new Date();
@@ -40,9 +43,10 @@ export const __NX_CFG = {
 export function __nxHost() {
   return location.hostname.replace(/^www\./, "");
 }
+/** @param {any} doc */
 export function __pttParse(doc) {
   const d = doc || document;
-  const cfg = __NX_CFG[__nxHost()] || { table: "#torrenttable", cSize: 10, cSeeders: 11, cLeechers: 12, cCompleted: 13, cComments: 7, cCreated: 9, discFont: true };
+  const cfg = /** @type {any} */ (__NX_CFG)[__nxHost()] || { table: "#torrenttable", cSize: 10, cSeeders: 11, cLeechers: 12, cCompleted: 13, cComments: 7, cCreated: 9, discFont: true };
   const table = d.querySelector(cfg.table) || d.getElementById("torrenttable") || d.querySelector("table.torrents");
   if (!table) return [];
   const rows = Array.from(table.querySelectorAll("tr"));
@@ -62,7 +66,8 @@ export function __pttParse(doc) {
       const name = (detailLink.textContent || "").trim();
       let category = "";
       const catA = cells[0] && cells[0].querySelector('a[href*="cat="]');
-      if (catA) { const cm = catA.href.match(/cat=(\d+)/); if (cm) category = __PTT_CAT_MAP[cm[1]] || cm[1]; }
+      if (catA) { const cm = catA.href.match(/cat=(\d+)/); if (cm) category = /** @type {any} */ (__PTT_CAT_MAP)[cm[1]] || cm[1]; }
+      /** @type {any[]} */
       let imageList = [];
       try {
         // 封面图提取: 多来源多属性, 过滤占位图; 兼容协议相对(//)图床地址
@@ -107,7 +112,7 @@ export function __pttParse(doc) {
       const subEl = detailLink.parentElement ? detailLink.parentElement.querySelector("font:not(.promotion)") : null;
       if (subEl) smallDescr = subEl.textContent.trim();
       let labels = 0;
-      row.querySelectorAll("span.tags").forEach((t) => {
+      /** @type {any[]} */ (row.querySelectorAll("span.tags")).forEach((t) => {
         const txt = t.textContent;
         if (txt.includes("DIY")) labels |= 1;
         if (txt.includes("国配")) labels |= 2;
@@ -134,6 +139,7 @@ export function __pttLoadMasonry() {
     (document.head || document.documentElement).appendChild(sc);
   });
 }
+/** @param {number} page */
 export function __pttInject(page) {
   const S = window.__kesaHijack;
   console.log("[PTT适配] handler=", S && typeof S.handler, "page=", page);

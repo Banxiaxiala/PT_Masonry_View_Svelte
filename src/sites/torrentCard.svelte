@@ -10,8 +10,10 @@
   import { config as _mtConfig } from "./mteam";
 
   /** 父传值: 种子信息 (统一结构 {name,id,size,smallDescr,labels,tags,category,categoryName,imageList,status:{...},torrentLink}) */
+  /** @type {any} */
   export let torrentInfo;
   /** 父传值: 卡片宽度 */
+  /** @type {any} */
   export let cardWidth;
   /** 父传值: 卡片在列表中的序号(供左上角黄色序号角标) */
   export let index = 0;
@@ -20,6 +22,7 @@
 
   // ------------------------------------------------
   // 安全的 torrentInfo: 防止访问 undefined 属性
+  /** @type {any} */
   let it;
   $: {
     it = torrentInfo || {};
@@ -27,6 +30,7 @@
   }
 
   /** 站点 config: 优先父传 siteConfig, 回退 M-Team 默认(避免 import 失败) */
+  /** @type {any} */
   let cfg;
   $: cfg = siteConfig || { CATEGORY: {}, CATEGORY_NAME: {} };
 
@@ -42,6 +46,7 @@
   }
 
   /** M-Team NEW_MT 站: 点击卡片标题/封面在 iframe 中打开详情 */
+  /** @param {any} e */
   function onClickCard(e) {
     // 非 M-Team 站走默认新标签页
     if (__isPTT) return;
@@ -78,15 +83,20 @@
   /** 未知分类时色条/卡片的回退背景色: 不再用黑色, 用浅灰(#eee)保证黑字可读 */
   const cateFallbackBg = "#eeeeee";
 
+  /** M-Team CATEGORY_NAME 映射(M-Team 分类号→中文), 以 any 断言避免索引标红 */
+  /** @type {any} */
+  const _mteamCateName = _mtConfig.CATEGORY_NAME || {};
+
   /** 分类文本: 优先中文名(站点原始分类名/ CATEGORY_NAME), 其次 M-Team CATEGORY_NAME(PTT 分类号), 最后回退数字 */
   $: cateName =
     it.categoryName ||
     (cfg.CATEGORY_NAME && cfg.CATEGORY_NAME[it.category]) ||
-    (_mtConfig.CATEGORY_NAME && _mtConfig.CATEGORY_NAME[it.category]) ||
+    (_mteamCateName && _mteamCateName[it.category]) ||
     it.category ||
     "";
 
   /** 文件大小整理 */
+  /** @param {any} size */
   function getFileSize(size) {
     size = Number(size) || 0;
     if (size === 0) return "0 B";
@@ -102,6 +112,7 @@
   }
 
   /** 折扣文案 */
+  /** @type {Record<string, string>} */
   const _discountText = { FREE: "免费", PERCENT_50: "50%", "2XFree": "2X免费" };
   const _discount = () => it.status.discount;
 
@@ -289,8 +300,6 @@
   /* 卡片内部容器: 背景由内联渐变控制(统一主题=顶部分类色 18px + 白色正文区),
      参照参考版 rhfb99 / M-Team(白色卡片背景), 而非跟随 $_current_bgColor,
      避免 M-Team 深色背景(1a1a1a)让标题区呈灰色 */
-  .card-holder {
-  }
 
   /* 卡片分类(顶部 18px 色条, 背景=分类色, 文字=原始黑色; 未知分类回退浅灰) */
   .card-category {
@@ -324,6 +333,7 @@
   .two-lines {
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     transition: color 0.3s;
@@ -333,6 +343,7 @@
   /* 卡片标题: hover时变为正常 */
   .two-lines:hover {
     -webkit-line-clamp: 100;
+    line-clamp: 100;
   }
 
   /* 卡片信息行: 标签行 */

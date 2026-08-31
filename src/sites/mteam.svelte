@@ -19,6 +19,7 @@
   /**执行收藏动作并对制定卡片切换图标
    * @param {string} jsCodeLink js的收藏代码
    * @param {string} card_id 种子卡片id
+   * @returns {any}
    */
   function COLLET_AND_ICON_CHANGE(jsCodeLink, card_id) {
     // console.log(jsCodeLink, card_id);
@@ -27,7 +28,9 @@
       window.location.href = jsCodeLink;
 
       // 操作相应的收藏图片
-      const btn = document.querySelector(`div#${card_id}`);
+      const btn = /** @type {HTMLElement} */ (
+        document.querySelector(`div#${card_id}`)
+      );
       const img = btn.children[0];
       img.className =
         img.className == "delbookmark" ? "bookmark" : "delbookmark";
@@ -40,7 +43,7 @@
   }
 
   /** 根据背景颜色动态调整文字黑白
-   * @param background 背景颜色(带#)
+   * @param {string} background 背景颜色(带#)
    */
   function getTextColor(background) {
     // 移除颜色字符串中的 '#'
@@ -63,13 +66,30 @@
     $_iframe_url = torrentInfo.torrentLink + "#kdescr";
   }
 
+  /** 标签 DOM 序列化为 html
+   * @param {any[]} doms
+   * @returns {string}
+   */
+  function tagsToHtml(doms) {
+    return doms
+      .map((el) => {
+        const _tag = document.createElement("div");
+        _tag.innerHTML = el.outerHTML;
+        return _tag.outerHTML;
+      })
+      .join("");
+  }
+
   // ------------------------------------------------
 
   /** 父传值: 种子信息*/
+  /** @type {any} */
   export let torrentInfo;
   /** 父传值: 卡片宽度*/
+  /** @type {any} */
   export let cardWidth;
   /** 父传值: 静态图片链接*/
+  /** @type {any} */
   export let ICON;
 
   // ------------------------------------------------
@@ -102,10 +122,10 @@
       data-href={torrentInfo.categoryLink}
       style="
         background-color: 
-          {config.CATEGORY[torrentInfo.categoryNumber] ?? 'transparent'};
+          {/** @type {any} */ (config.CATEGORY)[torrentInfo.categoryNumber] ?? 'transparent'};
         color:
-          {config.CATEGORY[torrentInfo.categoryNumber]
-        ? getTextColor(config.CATEGORY[torrentInfo.categoryNumber])
+          {/** @type {any} */ (config.CATEGORY)[torrentInfo.categoryNumber]
+        ? getTextColor(/** @type {any} */ (config.CATEGORY)[torrentInfo.categoryNumber])
         : 'black'}"
     >
       <!-- 分类图标 -->
@@ -180,14 +200,7 @@
 
       <!-- 标签 Tags -->
       <div class="cl-tags">
-        {@html torrentInfo.tagsDOM
-          .map((el) => {
-            const _tag = document.createElement("div");
-            _tag.innerHTML = el.outerHTML;
-            // console.log(_tag);
-            return _tag.outerHTML;
-          })
-          .join("")}
+        {@html tagsToHtml(torrentInfo.tagsDOM)}
       </div>
 
       <div class="card-details">
@@ -278,14 +291,7 @@
       <!-- 标签 Tags -->
       {#if $_CARD_SHOW.tags && torrentInfo.tagsDOM.length != 0}
         <div class="cl-tags">
-          {@html torrentInfo.tagsDOM
-            .map((el) => {
-              const _tag = document.createElement("div");
-              _tag.innerHTML = el.outerHTML;
-              // console.log(_tag);
-              return _tag.outerHTML;
-            })
-            .join("")}
+          {@html tagsToHtml(torrentInfo.tagsDOM)}
         </div>
       {/if}
 
@@ -440,6 +446,7 @@
   .two-lines {
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
 
@@ -449,6 +456,7 @@
   /* 卡片标题: hover时变为正常 */
   .two-lines:hover {
     -webkit-line-clamp: 100;
+    line-clamp: 100;
   }
 
   /* 卡片信息: flex 居中 */

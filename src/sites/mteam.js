@@ -133,14 +133,14 @@ function table_Iframe_Set() {
 
     // 对 iframe 进行操作
     _iframe_switch.set(1)
-    _iframe_url.set(el.href + "#kdescr")
+    _iframe_url.set(/** @type {HTMLAnchorElement} */ (el).href + "#kdescr")
   }))
 }
 
 /**
  * 将 种子列表dom 的信息变为 json对象列表
  * @param {Element} torrent_list_Dom 种子列表dom
- * @returns {Array} 种子列表信息的 json对象列表
+ * @returns {any[]} 种子列表信息的 json对象列表
  */
 function TORRENT_LIST_TO_JSON(torrent_list_Dom) {
   // 获取表格中的所有行
@@ -149,23 +149,24 @@ function TORRENT_LIST_TO_JSON(torrent_list_Dom) {
   // const rows = div.querySelectorAll('tr');
 
   // 种子信息 -> 存储所有行数据的数组
+  /** @type {any[]} */
   const data = [];
 
   // 遍历每一行并提取数据
-  rows.forEach((row) => {
+  rows.forEach(/** @param {any} row */ (row) => {
     // 获取种子分类
-    const categoryImg = row.querySelector("td:nth-child(1) > a > img");
+    const categoryImg = /** @type {HTMLImageElement | null} */ (row.querySelector("td:nth-child(1) > a > img"));
     const category = categoryImg ? categoryImg.title : "";
     // 若没有分类则退出
     if (!category) return;
 
     // 获取种子分类链接 / 分类号
-    const categoryLinkDOM = /** @type {HTMLAnchorElement | null} */ (categoryImg.parentNode);
+    const categoryLinkDOM = /** @type {HTMLAnchorElement | null} */ (categoryImg && categoryImg.parentNode);
     const categoryLink = categoryLinkDOM ? categoryLinkDOM.href : "";
     const categoryNumber = categoryLink.slice(-3);
     // const _categoryImg = categoryImg.cloneNode(true)
     // _categoryImg.className = "card-category-img"
-    const str = categoryImg.style.backgroundImage
+    const str = categoryImg ? categoryImg.style.backgroundImage : ""
     const regex = /url\("(.*)"\)/; // 匹配包含在双引号中的内容
     const result = str.match(regex); // 使用正则表达式匹配结果
     const _categoryImg = (result && result.length > 1) ? result[1] : null;
@@ -177,11 +178,11 @@ function TORRENT_LIST_TO_JSON(torrent_list_Dom) {
     const torrentIndex = CONFIG.INDEX++;
 
     // 获取种子名称
-    const torrentNameLink = row.querySelector(".torrentname a");
+    const torrentNameLink = /** @type {HTMLAnchorElement | null} */ (row.querySelector(".torrentname a"));
     const torrentName = torrentNameLink ? torrentNameLink.title.trim() : "";
 
     // 获取种子详情链接
-    const torrentLink = torrentNameLink.href;
+    const torrentLink = torrentNameLink ? torrentNameLink.href : "";
     // console.log(torrentLink);
 
     // 获取种子id
@@ -191,7 +192,7 @@ function TORRENT_LIST_TO_JSON(torrent_list_Dom) {
 
     // 获取 mouse_over 和 mouse_out
     const imgDom = row.querySelector(".torrentname img");
-    const _mouseOver = imgDom.getAttribute("onmouseover");
+    const _mouseOver = imgDom ? imgDom.getAttribute("onmouseover") : null;
     // const _mouseOut = imgDom.getAttribute("onmouseout");
     // console.log(_mouseOver);
 
@@ -201,13 +202,13 @@ function TORRENT_LIST_TO_JSON(torrent_list_Dom) {
 
     // 获取描述
     const desCell = row.querySelector(".torrentname td:nth-child(2)");
-    const length = desCell.childNodes.length - 1;
-    const desDom = desCell.childNodes[length];
-    const description = desDom.nodeName == '#text' ? desDom.textContent.trim() : "";
+    const length = desCell ? desCell.childNodes.length - 1 : -1;
+    const desDom = desCell && desCell.childNodes[length];
+    const description = desDom && desDom.nodeName == '#text' ? desDom.textContent.trim() : "";
 
     // 获取置顶信息
     const place_at_the_top = row.querySelectorAll(".torrentname img.sticky");
-    const pattMsg = place_at_the_top[0] ? place_at_the_top[0].title : "";
+    const pattMsg = place_at_the_top[0] ? /** @type {HTMLImageElement} */ (place_at_the_top[0]).title : "";
 
     // 获取临时标签: 新 / 热门 等
     const tempTagDom = row.querySelectorAll('.torrentname font');
@@ -231,7 +232,7 @@ function TORRENT_LIST_TO_JSON(torrent_list_Dom) {
     const tagSpans = row.querySelectorAll(".torrentname img[class^='label_']");
     // const raw_tags = row.querySelector(".torrentname");
     const tagsDOM = Array.from(tagSpans);
-    let tags = tagSpans ? tagsDOM.map((el) => el.title.trim()) : [];
+    let tags = tagSpans ? tagsDOM.map((el) => /** @type {HTMLImageElement} */ (el).title.trim()) : [];
     const raw_tags = tagsDOM.map((el) => el.outerHTML).join("&nbsp;");
     // console.log(raw_tags);
 
@@ -251,7 +252,7 @@ function TORRENT_LIST_TO_JSON(torrent_list_Dom) {
     const comments = commentsLink ? parseInt(commentsLink.textContent) : 0;
 
     // 获取上传日期
-    const uploadDateSpan = row.querySelector("td:nth-child(4) span");
+    const uploadDateSpan = /** @type {HTMLElement | null} */ (row.querySelector("td:nth-child(4) span"));
     const uploadDate = uploadDateSpan ? uploadDateSpan.title : "";
 
     // 获取文件大小

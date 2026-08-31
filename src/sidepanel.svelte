@@ -41,6 +41,7 @@
 
   // 配置拖拽侧边栏 ------------------------------------------------
   /** 侧边栏的 dom 对象 */
+  /** @type {any} */
   let sideDom;
   /** 是否触发移动 trigger */
   let isMouseDown = false;
@@ -49,6 +50,7 @@
   /** 侧边栏纵坐标 */
   let offsetY = 0;
 
+  /** @param {any} e */
   const onMouseDown = (e) => {
     e.preventDefault();
     isMouseDown = true;
@@ -56,6 +58,7 @@
     offsetY = e.clientY - sideDom.getBoundingClientRect().top;
   };
 
+  /** @param {any} e */
   const onMouseMove = (e) => {
     // NOTE: 这里还是别取消这个, 会指针指在别的地方的
     // e.preventDefault();
@@ -88,9 +91,9 @@
   }
 
   /** 给指定变量设置上下范围
-   * @param target 指定变量
-   * @param min 下边界值
-   * @param max 上边界值
+   * @param {number} target 指定变量
+   * @param {number} min 下边界值
+   * @param {number} max 上边界值
    */
   function posRangeIn(target, min, max) {
     if (target <= min) target = min;
@@ -114,7 +117,7 @@
 
     $_show_mode = !$_show_mode;
 
-    window.CHANGE_CARD_LAYOUT();
+    /** @type {any} */ (window).CHANGE_CARD_LAYOUT();
   }
 
   /** 按钮2函数: 手动整理瀑布流布局*/
@@ -456,7 +459,7 @@
             label="原始表格模式仅支持点击图片显示iframe和加载下一页"
             bind:checked={$_show_mode}
             func={() => {
-              window.CHANGE_CARD_LAYOUT();
+              /** @type {any} */ (window).CHANGE_CARD_LAYOUT();
             }}
           />
 
@@ -668,7 +671,7 @@
           </Switch>
 
           <Switch
-            title_fixed={`预览窗口宽度: ${$_previewWidth > 0 ? $_previewWidth : (GLOBAL_SITE[$_current_domain] ? GLOBAL_SITE[$_current_domain].Iframe_Width : 1000)}px`}
+            title_fixed={`预览窗口宽度: ${$_previewWidth > 0 ? $_previewWidth : (/** @type {any} */ (GLOBAL_SITE)[$_current_domain] ? /** @type {any} */ (GLOBAL_SITE)[$_current_domain].Iframe_Width : 1000)}px`}
             label="范围: 400~2000 px(0=站点默认)"
             type="range"
           >
@@ -678,9 +681,9 @@
               max="2000"
               step="10"
               list="values"
-              value={$_previewWidth > 0 ? $_previewWidth : (GLOBAL_SITE[$_current_domain] ? GLOBAL_SITE[$_current_domain].Iframe_Width : 1000)}
-              on:input={e => { $_previewWidth = Number(e.target.value); }}
-              on:change={e => { $_previewWidth = Number(e.target.value); }}
+              value={$_previewWidth > 0 ? $_previewWidth : (/** @type {any} */ (GLOBAL_SITE)[$_current_domain] ? /** @type {any} */ (GLOBAL_SITE)[$_current_domain].Iframe_Width : 1000)}
+              on:input={e => { $_previewWidth = Number(/** @type {any} */ (e.target).value); }}
+              on:change={e => { $_previewWidth = Number(/** @type {any} */ (e.target).value); }}
             />
           </Switch>
 
@@ -696,8 +699,8 @@
               step="1"
               list="values"
               value={$_previewHeight > 0 ? $_previewHeight : 96}
-              on:input={e => { $_previewHeight = Number(e.target.value); }}
-              on:change={e => { $_previewHeight = Number(e.target.value); }}
+              on:input={e => { $_previewHeight = Number(/** @type {any} */ (e.target).value); }}
+              on:change={e => { $_previewHeight = Number(/** @type {any} */ (e.target).value); }}
             />
           </Switch>
         </div>

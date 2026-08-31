@@ -30,6 +30,7 @@
   // 轮询等到出现后才挂载), 瀑布流作为其兄弟节点插入; 这样瀑布流模式隐藏原生表格时,
   // 瀑布流自然显示在内容区, 而非被原生表格埋在下方面不可见。
   // SPA 页(/search 等)无 div.app-content__inner 时 fallback 到 #__kesaMTPlaceholder。
+  /** @type {any} */
   let _ORIGIN_TL_Node;
   if (__isPTT) {
     // PTT(pttime/nicept/ptfans) 专属架构: __pttBoot 伪造的 div.app-content__inner 只是空宿主,
@@ -126,7 +127,7 @@
   // 宽度: 0=站点默认(Iframe_Width) 其他=自定义; 高度: 0=默认96% 其他=自定义%
   _previewWidth.subscribe((__pwV) => {
     try {
-      const __site = GLOBAL_SITE[$_current_domain];
+      const __site = /** @type {any} */ (GLOBAL_SITE)[$_current_domain];
       if (__site && __pwV > 0) __site.Iframe_Width = __pwV;
       const __def = (__site && __site.Iframe_Width) || 1000;
       document.documentElement.style.setProperty("--pw", (__pwV > 0 ? __pwV : __def) + "px");
@@ -137,6 +138,11 @@
       document.documentElement.style.setProperty("--ph", (__phV > 0 ? __phV : 96) + "%");
     } catch (e) {}
   });
+  /** iframe 预览宽度(px): 站点默认 Iframe_Width, 无则 1000 */
+  $: __siteIframeWidth = (() => {
+    const __site = /** @type {any} */ (GLOBAL_SITE)[$_current_domain];
+    return __site && __site.Iframe_Width ? __site.Iframe_Width : 1000;
+  })();
   // 全局注入预览窗口尺寸样式(跨站点生效, 否则宽度/高度滑块失效)
   if (!document.getElementById("__pwSizeCss")) {
     const __pwStyle = document.createElement("style");
@@ -194,9 +200,7 @@
         frameborder="0"
         title="wow"
         style="width:
-          {GLOBAL_SITE[$_current_domain]
-          ? GLOBAL_SITE[$_current_domain].Iframe_Width
-          : 1000}px"
+          {__siteIframeWidth}px"
       />
     </div>
   </div>

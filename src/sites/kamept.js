@@ -55,8 +55,9 @@ const CONFIG = {
     // 直接 `.style.display = 'none'` 会抛 `Cannot set properties of undefined`, 中断组件初始化 → 卡片全不渲染。
     // 故统一取原生元素: jQuery 取 [0] / 原生 getElementById, 再判空后赋值。
     let _box = null;
-    if (typeof $ === "function" && $(ksearchboxmain).length) {
-      _box = $(ksearchboxmain)[0];
+    const w = /** @type {any} */ (window);
+    if (typeof w.$ === "function" && w.$(w.ksearchboxmain).length) {
+      _box = w.$(w.ksearchboxmain)[0];
     } else {
       _box = document.getElementById('ksearchboxmain');
     }
@@ -65,14 +66,14 @@ const CONFIG = {
     // "点此查看即将断种资源" 文字设置为黑色(from tg by LNN)
     const link = document.querySelector('a[href="?sort=7&type=asc&seeders_begin=1"]');
     // 防御: childNodes 可能为空 → childNodes[0] 为 undefined, 访问 .style.color 会抛错
-    const _fc = link && link.childNodes && link.childNodes[0];
+    const _fc = /** @type {HTMLElement} */ (link && link.childNodes && link.childNodes[0]);
     if (_fc) _fc.style.color = 'black';
 
 
     // 让勋章不被卡片遮盖
     let np = document.querySelector('img#nexus-preview');
     if (np)
-      np.style.zIndex = "12000";
+      /** @type {HTMLImageElement} */ (np).style.zIndex = "12000";
     // -------------------------------
 
     // 原表格点击图片显示 iframe
@@ -104,7 +105,8 @@ function table_Iframe_Set() {
     _iframe_switch.set(1)
 
     // console.log(el.children[0].children[0].children[1].querySelector('a').href);
-    _iframe_url.set(el.children[0].children[0].children[1].querySelector('a').href + "#kdescr")
+    const __a = el.children[0]?.children[0]?.children[1]?.querySelector('a');
+    _iframe_url.set(__a ? __a.href + "#kdescr" : "")
   }))
 }
 
@@ -119,10 +121,11 @@ function TORRENT_LIST_TO_JSON(torrent_list_Dom) {
   // const rows = div.querySelectorAll('tr');
 
   // 种子信息 -> 存储所有行数据的数组
+  /** @type {any[]} */
   const data = [];
 
   // 遍历每一行并提取数据
-  rows.forEach((row) => {
+  rows.forEach(/** @param {any} row */ (row) => {
     // 获取种子分类
     const categoryImg = row.querySelector("td:nth-child(1) > a > img");
     const category = categoryImg ? categoryImg.alt : "";

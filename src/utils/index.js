@@ -14,19 +14,20 @@ const _SORT_COUNT = {
   Run: 0,
 }
 // NOTE: 1. 抽象工具-------------------------------
+/** @type {any} */
+let timer = null;
 /** 防抖函数
- * @param {function} func 操作函数
- * @param {number} delay 延迟
+ * @param {any} func 操作函数
+ * @param {any} delay 延迟
  * @returns
  */
-let timer = null;
 function debounce(func, delay) {
   return function () {
     if (timer) {
       console.warn('debounce dupe!!!!!!');
       clearTimeout(timer);
     }
-    timer = setTimeout(function () {
+    timer = setTimeout(/** @this {any} */ function () {
       func.apply(this, arguments);
       // console.log('防抖: ', func.name);
       timer = null;
@@ -35,15 +36,16 @@ function debounce(func, delay) {
 }
 
 /** 节流函数
- * @param {*} func 操作函数
- * @param {*} delay 延迟
- * @returns 
+ * @param {any} func 操作函数
+ * @param {any} delay 延迟
+ * @returns
  */
 function throttle(func, delay) {
+  /** @type {any} */
   let timerId;
   let lastExecTime = 0;
 
-  return function (...args) {
+  return /** @this {any} @param {any[]} args */ function (...args) {
     const currentTime = Date.now();
     const elapsedTime = currentTime - lastExecTime;
 
@@ -90,8 +92,10 @@ function sortMasonry(speed = 'normal') {
 
 // NOTE: 3b. 图片懒加载并发队列(替换简单的 IntersectionObserver)-------------------------------
 // 并发数 4, 4 秒超时, 复用已加载同 src 图片, 失败降级处理
+/** @type {any[]} */
 let __kesaQ = [];
 let __kesaBusy = 0;
+/** @type {Record<string, any>} */
 let __kesaDone = {};
 const __kesaLimit = 4;
 
@@ -99,7 +103,7 @@ const __kesaLimit = 4;
 function __kesaWatchLazy() {
   // 原列表封面 loading=lazy 且被 display:none 隐藏, 从不加载; 强制 eager 并用 new Image() 灌入缓存复用
   /** @type {NodeListOf<HTMLImageElement>} */
-  (document.querySelectorAll('img[loading="lazy"]')).forEach((im) => {
+  (document.querySelectorAll('img[loading="lazy"]')).forEach(/** @param {any} im */ (im) => {
     const src = im.getAttribute("src") || im.getAttribute("data-src") || "";
     if (!src || /emptyImg|trans\.gif|spinner|^data:/i.test(src)) return;
     if (im.loading !== "eager") im.loading = "eager";
@@ -110,11 +114,14 @@ function __kesaWatchLazy() {
     }
   });
   // 直接排队加载所有未加载的懒加载图片
-  document.querySelectorAll(".nexus-lazy-load_Kesa:not(.preview_Kesa)").forEach((l) => {
+  (document.querySelectorAll(".nexus-lazy-load_Kesa:not(.preview_Kesa)")).forEach(/** @param {any} l */ (l) => {
     if (l.dataset.src && !l.__kesaQueued && !l.__kesaFail) __kesaQueue(l);
   });
 }
 
+/** 入队卡片 img (已入队/已失败/无 data-src 的跳过)
+ * @param {any} l
+ */
 function __kesaQueue(l) {
   if (l.__kesaQueued || l.classList.contains("preview_Kesa") || l.__kesaFail) return;
   const o = l.dataset.src;
@@ -137,6 +144,9 @@ function __kesaPump() {
   }
 }
 
+/** 在所有 <img> 中查找已加载完成且 src 匹配的 img(实现"复用原列表图片链接")
+ * @param {any} o
+ */
 function __kesaFindLoaded(o) {
   try {
     const all = document.querySelectorAll("img");
@@ -158,6 +168,9 @@ function __kesaFailSvg() {
   );
 }
 
+/** 实际加载单张卡片图
+ * @param {any} l
+ */
 function __kesaStart(l) {
   if (l.__kesaBusy || l.classList.contains("preview_Kesa")) return;
   const o = l.dataset.src;
@@ -178,6 +191,7 @@ function __kesaStart(l) {
   ((l.__kesaBusy = 1), __kesaBusy++);
   const p = new Image();
   const a = l.__kesaTry | 0;
+  /** @type {any} */
   let __to = null;
   a >= 1 && (p.referrerPolicy = "no-referrer");
   p.onload = () => {
@@ -338,6 +352,10 @@ function NEXUS_TOOLS() {
       return { imgWidth, imgHeight, offsetX, offsetY };
     }
 
+    /** 计算最小容纳比例
+     * @param {any} pic
+     * @param {any} container
+     */
     function getMinRatio(pic, container) {
       return Math.min(container.width / pic.width, container.height / pic.height)
     }
@@ -383,6 +401,7 @@ function NEXUS_TOOLS() {
         width: imgWidth,
         height: imgHeight
       }
+      /** @type {Record<string, any>} */
       const containerSize = {
         bot: {
           width: viewportWidth,
@@ -426,6 +445,7 @@ function NEXUS_TOOLS() {
 
 
 
+      /** @type {Record<string, any>} */
       const result = {
         top: {
           left: 0,
@@ -495,6 +515,7 @@ function NEXUS_TOOLS() {
 
     // -------------preview
     const selector = "img.preview_Kesa";
+    /** @type {any} */
     let imgEle;
     let imgPosition;
 
@@ -506,6 +527,9 @@ function NEXUS_TOOLS() {
     const previewEle = jQuery("#nexus-preview");
 
     // 2. Kesa方法: 判断是否有 #kp_container, 没有就新建一个
+    /** 创建 Kesa 预览容器
+     * @param {any} color
+     */
     function createKesaPreview(color) {
       const parent =
         jQuery('<div>', {
@@ -552,23 +576,27 @@ function NEXUS_TOOLS() {
 
     // 预览大图默认状态切换: 开启=铺满(contain) 关闭=尽量原图大小(scale-down)
     _state_hover_pic.subscribe(v => {
+      /** @type {any} */
       const __im = document.querySelectorAll("#kp_container .kp_img")[0];
       if (__im) __im.style.objectFit = v ? "contain" : "scale-down";
     });
 
     /** timer 用来搞延迟加载图片的 */
+    /** @type {any} */
     let buffer = null;
     // 预览大图方式: 局部悬浮(悬停 .hover-trigger 触发) 或 全图悬浮(悬停整张图触发)
     // 两种目标都要绑定; 局部模式下 .hover-trigger 覆盖在图上(pointer-events:auto), 悬停它即触发, 不会遮挡整图信息
     const triggerSel = "div.hover-trigger";
-    /** 从触发元素解析出对应卡片封面图 */
+    /** 从触发元素解析出对应卡片封面图
+     * @param {any} el
+     */
     function resolvePreviewImg(el) {
       const card = el && el.closest ? el.closest(".card") : null;
       const img = card ? card.querySelector("img.preview_Kesa, img.card-image--img.nexus-lazy-load_Kesa") : null;
       return jQuery(img || el);
     }
     jQuery("body")
-      .on("mouseover", selector + "," + triggerSel, function (e) {
+      .on("mouseover", selector + "," + triggerSel, /** @this {any} @param {any} e */ function (e) {
         // 局部悬浮模式下仅接受 hover-trigger 触发; 全图模式下仅接受整图触发
         const isTrigger = jQuery(this).is(triggerSel);
         if (get(_preview_style) && !isTrigger) return;
@@ -594,14 +622,14 @@ function NEXUS_TOOLS() {
           }
         }, get(_delay_nexus_pic));
       })
-      .on("mouseout", selector + "," + triggerSel, function (e) {
+      .on("mouseout", selector + "," + triggerSel, /** @param {any} e */ function (e) {
         // FIXME: 2选1: 渐变 or 直接出现消失
         // previewEle.hide();// previewEle.fadeOut();
         kesa_preview.hide();// kesa_preview.fadeOut()
 
         if (buffer) clearTimeout(buffer)
       })
-      .on("mousemove", selector + "," + triggerSel, function (e) {
+      .on("mousemove", selector + "," + triggerSel, /** @param {any} e */ function (e) {
         if (!imgEle || !imgEle.length) return;
         imgPosition = getImgPosition(e, imgEle);
         let position = getPosition(e, imgPosition);

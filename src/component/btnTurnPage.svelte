@@ -13,6 +13,7 @@
     disable: "不可用",
   };
 
+  /** @param {any} event */
   function func(event) {
     // 防止默认行为的发生
     event.preventDefault();
