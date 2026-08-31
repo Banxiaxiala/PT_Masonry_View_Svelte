@@ -1,4 +1,4 @@
-export let version = '1.2.43b';
+export let version = '1.2.44b';
 
 export function config(mode) {
   return {
@@ -27,6 +27,9 @@ export function config(mode) {
       "https://mua.xloli.cc/*",
     ],
     exclude: [
+      // ptfans.cc 根首页(https://ptfans.cc/)无种子列表, 不需要加载脚本; 其余页面照常
+      "https://ptfans.cc",
+      "https://ptfans.cc/",
       "*/offers.php*",
       "*/index.php*",
       "*/forums.php*",
