@@ -109,6 +109,7 @@
   }
 
   /** esc 控制关闭所有面板 */
+  /** @param {KeyboardEvent} event */
   function key_closePanels(event) {
     // console.log(event);
     if (event.key === "Escape") {

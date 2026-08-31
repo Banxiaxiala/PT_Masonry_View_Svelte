@@ -1,3 +1,4 @@
+// @ts-nocheck
 /*!
  * Masonry PACKAGED v4.2.2
  * Cascading grid layout library

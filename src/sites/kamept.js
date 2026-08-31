@@ -72,7 +72,7 @@ const CONFIG = {
     // 让勋章不被卡片遮盖
     let np = document.querySelector('img#nexus-preview');
     if (np)
-      np.style.zIndex = 12000;
+      np.style.zIndex = "12000";
     // -------------------------------
 
     // 原表格点击图片显示 iframe

@@ -98,7 +98,8 @@ const __kesaLimit = 4;
 /** 预热原列表封面图 + 排队所有未加载懒加载图片 */
 function __kesaWatchLazy() {
   // 原列表封面 loading=lazy 且被 display:none 隐藏, 从不加载; 强制 eager 并用 new Image() 灌入缓存复用
-  document.querySelectorAll('img[loading="lazy"]').forEach((im) => {
+  /** @type {NodeListOf<HTMLImageElement>} */
+  (document.querySelectorAll('img[loading="lazy"]')).forEach((im) => {
     const src = im.getAttribute("src") || im.getAttribute("data-src") || "";
     if (!src || /emptyImg|trans\.gif|spinner|^data:/i.test(src)) return;
     if (im.loading !== "eager") im.loading = "eager";

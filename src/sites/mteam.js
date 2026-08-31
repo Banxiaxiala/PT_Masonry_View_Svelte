@@ -139,9 +139,8 @@ function table_Iframe_Set() {
 
 /**
  * 将 种子列表dom 的信息变为 json对象列表
- * @param {DOM} torrent_list_Dom 种子列表dom
- * @param {*} CARD 卡片对象
- * @returns {list} 种子列表信息的 json对象列表
+ * @param {Element} torrent_list_Dom 种子列表dom
+ * @returns {Array} 种子列表信息的 json对象列表
  */
 function TORRENT_LIST_TO_JSON(torrent_list_Dom) {
   // 获取表格中的所有行
@@ -161,8 +160,8 @@ function TORRENT_LIST_TO_JSON(torrent_list_Dom) {
     if (!category) return;
 
     // 获取种子分类链接 / 分类号
-    const categoryLinkDOM = categoryImg.parentNode;
-    const categoryLink = categoryLinkDOM.href;
+    const categoryLinkDOM = /** @type {HTMLAnchorElement | null} */ (categoryImg.parentNode);
+    const categoryLink = categoryLinkDOM ? categoryLinkDOM.href : "";
     const categoryNumber = categoryLink.slice(-3);
     // const _categoryImg = categoryImg.cloneNode(true)
     // _categoryImg.className = "card-category-img"
@@ -215,7 +214,7 @@ function TORRENT_LIST_TO_JSON(torrent_list_Dom) {
     // console.log(tempTagDom);
 
     // 获取免费折扣类型
-    const freeTypeImg = row.querySelector('img[class^="pro_"]');
+    const freeTypeImg = /** @type {HTMLImageElement | null} */ (row.querySelector('img[class^="pro_"]'));
     // console.log(freeTypeImg);
     // if (freeTypeImg) { console.log(freeTypeImg.alt); }
     const freeType = freeTypeImg
@@ -223,7 +222,7 @@ function TORRENT_LIST_TO_JSON(torrent_list_Dom) {
       : "";
 
     // 获取免费剩余时间
-    const freeRemainingTimeSpan = row.querySelector(".torrentname td:nth-child(2) span");
+    const freeRemainingTimeSpan = /** @type {HTMLElement | null} */ (row.querySelector(".torrentname td:nth-child(2) span"));
     const freeRemainingTime = freeRemainingTimeSpan
       ? freeRemainingTimeSpan.innerText
       : "";
@@ -242,8 +241,8 @@ function TORRENT_LIST_TO_JSON(torrent_list_Dom) {
     // 获取收藏链接
     const collectLink = `javascript: bookmark(${torrentId},${torrentIndex});`;
     // 获取收藏状态
-    const collectDOM = row.querySelector(".torrentname a[id^='bookmark']");
-    const collectState = collectDOM.children[0].alt;
+    const collectDOM = /** @type {HTMLAnchorElement | null} */ (row.querySelector(".torrentname a[id^='bookmark']"));
+    const collectState = collectDOM ? /** @type {HTMLImageElement} */ (collectDOM.children[0]).alt : "";
     // console.log(collectState);
 
     // 获取评论数量

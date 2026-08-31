@@ -43,7 +43,8 @@ export function __kesaWatchLazy() {
   try {
     // 1) 预热原列表封面图: 站点原表格(即将被 display:none 隐藏)的 lazy img 不会触发加载,
     //    这里强制 eager 并 new Image() 灌入浏览器缓存, 卡片可命中缓存/直接复用
-    document.querySelectorAll('img[loading="lazy"]').forEach((im) => {
+    /** @type {NodeListOf<HTMLImageElement>} */
+    (document.querySelectorAll('img[loading="lazy"]')).forEach((im) => {
       const src = im.getAttribute("src") || im.getAttribute("data-src") || "";
       if (!src || /emptyImg|trans\.gif|spinner|^data:/i.test(src)) return;
       if (im.loading !== "eager") im.loading = "eager";

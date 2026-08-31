@@ -720,6 +720,7 @@ function __wdvUrl() {
 }
 
 // 读取统一同步文件(整文件), 404视为空; 兼容旧版: 若统一文件不存在, 尝试合并旧文件迁移
+/** @returns {Promise<{ version?: number, sites: any, pages: any, updated?: number }>} */
 async function __wdvReadFull() {
   const c = __storeVal(__wdvCfg);
   if (!c.url) return { version: 2, sites: {}, pages: {} };
@@ -750,11 +751,11 @@ async function __wdvReadFull() {
     return Object.assign({ version: 2, sites: {}, pages: {} }, legacy);
   }
   if (r.status >= 200 && r.status < 300) {
-    let j = {};
+    let j = /** @type {{ sites: any, pages: any }} */ ({ sites: {}, pages: {} });
     try {
-      j = JSON.parse(r.responseText || "{}") || {};
+      j = JSON.parse(r.responseText || "{}") || j;
     } catch (e) {
-      j = {};
+      j = { sites: {}, pages: {} };
     }
     if (!j.sites || typeof j.sites !== "object") j.sites = {};
     if (!j.pages || typeof j.pages !== "object") j.pages = {};
@@ -999,7 +1000,7 @@ function __kesaRestorePage() {
     // 手动改URL回车/点击链接/前进后退(type=navigate/back_forward)属导航, 一律不恢复
     let navType = "";
     try {
-      const nav = performance.getEntriesByType("navigation")[0];
+      const nav = /** @type {PerformanceNavigationTiming | undefined} */ (performance.getEntriesByType("navigation")[0]);
       navType = nav ? nav.type : "";
     } catch (e) {}
     if (navType && navType !== "reload") {
@@ -1281,7 +1282,7 @@ function __kesaPageInd(n) {
         const c = __pmCurrentPage();
         const curEl = document.getElementById("kesaMtPageSelCur");
         if (curEl) curEl.textContent = "第 " + c + " 页";
-        const prevBtn = document.getElementById("kesaMtPageSelPrev");
+        const prevBtn = /** @type {HTMLButtonElement | null} */ (document.getElementById("kesaMtPageSelPrev"));
         if (prevBtn) prevBtn.disabled = c <= 1;
         return;
       }
@@ -1374,7 +1375,7 @@ function __kesaPageInd(n) {
         location.href = __pmUrlForPage(n);
       };
       inp.addEventListener("keydown", function (e) {
-        if (e.key === "Enter") go.onclick();
+        if (e.key === "Enter") go.click();
       });
       box.appendChild(prev);
       box.appendChild(cur);
@@ -1383,7 +1384,7 @@ function __kesaPageInd(n) {
       box.appendChild(go);
       // 注入位置: 统一用 insertAdjacentElement("afterend") 插到"点击加载下一页"按钮容器
       // (.nextPage)之后, 即卡片框架外、按钮下方; 兜底时插到瀑布流容器之后。
-      wrap.insertAdjacentElement("afterend", box);
+      /** @type {Element} */ (wrap).insertAdjacentElement("afterend", box);
       prev.disabled = __pmCurrentPage() <= 1;
       console.log("[kesa] 页码选择器已注入");
     } catch (e) {}
