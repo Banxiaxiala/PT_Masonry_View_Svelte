@@ -725,27 +725,37 @@
           <div class="s_panel">
             <Switch
               title_fixed="显示种子名称"
+              label="在卡片上显示种子完整名称"
               bind:checked={$_CARD_SHOW.title}
             />
             <Switch
               title_fixed="显示置顶和免费"
+              label="显示置顶(星星)与免费/折扣(2x免费/50%下载等)标识"
               bind:checked={$_CARD_SHOW.free}
             />
             <Switch
               title_fixed="显示副标题"
+              label="显示种子副标题/描述文字"
               bind:checked={$_CARD_SHOW.sub_title}
             />
-            <Switch title_fixed="显示标签" bind:checked={$_CARD_SHOW.tags} />
+            <Switch
+              title_fixed="显示标签"
+              label="显示 DIY/国配/中字 及站点标签"
+              bind:checked={$_CARD_SHOW.tags}
+            />
             <Switch
               title_fixed="显示 [大小/下载/收藏]"
+              label="显示文件大小、下载量与收藏数"
               bind:checked={$_CARD_SHOW.size_download_collect}
             />
             <Switch
               title_fixed="显示上传时间"
+              label="显示种子上传时间(多少时间前)"
               bind:checked={$_CARD_SHOW.upload_time}
             />
             <Switch
               title_fixed="显示 [评论/上传/下载/完成]"
+              label="显示评论数、上传/下载量与完成数"
               bind:checked={$_CARD_SHOW.statistics}
             />
 

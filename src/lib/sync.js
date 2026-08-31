@@ -707,6 +707,15 @@ function __wdvUrl() {
   if (!p) p = "PT_Masonry_Sync.json";
   if (!/\.[^/]+$/.test(p)) p += "/PT_Masonry_Sync.json";
   else p = p.replace(/[^/]+$/, "PT_Masonry_Sync.json");
+  // 中文/特殊字符路径(如"瀑布脚本同步")必须 URL 编码成 %XX, 否则请求行含裸 UTF-8 字节,
+  // WebDAV 服务器(坚果云 dav.jianguoyun.com 等)可能拒收/误判, 表现为 HTTP 401/400。
+  // 逐段编码(保留 / 与已存在的 %XX), 避免把合法百分号二次编码。
+  p = p
+    .split("/")
+    .map(function (seg) {
+      return encodeURIComponent(seg).replace(/%2F/gi, "/");
+    })
+    .join("/");
   return (c.url || "").replace(/\/+$/, "") + "/" + p;
 }
 
@@ -751,12 +760,22 @@ async function __wdvReadFull() {
     if (!j.pages || typeof j.pages !== "object") j.pages = {};
     return j;
   }
+  if (r.status === 401) {
+    throw new Error(
+      "读取同步文件失败 HTTP 401(认证失败)：请核对 WebDAV 账号/密码。坚果云等需使用「应用密码」而非登录密码(在 账户信息→安全选项 中生成)",
+    );
+  }
   throw new Error("读取同步文件失败 HTTP " + r.status);
 }
 
 // 写入统一同步文件
 async function __wdvWriteFull(full) {
   const r = await __wdvFetch(__wdvUrl(), "PUT", JSON.stringify(full));
+  if (r.status === 401) {
+    throw new Error(
+      "上传失败 HTTP 401(认证失败)：请核对 WebDAV 账号/密码。坚果云等需使用「应用密码」而非登录密码(在 账户信息→安全选项 中生成)",
+    );
+  }
   if (r.status < 200 || r.status >= 300) throw new Error("上传失败 HTTP " + r.status);
 }
 
