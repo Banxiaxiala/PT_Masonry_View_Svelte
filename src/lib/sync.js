@@ -18,11 +18,21 @@ const __STORE_NS = "Kesa:Masonry";
  * @param {any} defaultValue
  */
 function __mkLocalStore(key, defaultValue) {
+  // 设置按站点独立存储: 子键 = key + "." + 当前站点域名 (如 _all_tags.example.com),
+  // 每个站点各自保存/读取自己的过滤/已读设置, 互不覆盖。
+  const host = (typeof location !== "undefined" && location.hostname) || "";
+  const nsKey = key + "." + host;
   let value = defaultValue;
-  // 初始化：从 localStorage 读取
+  // 初始化：从 localStorage 读取(本站子键); 首次访问本站时把旧版全局子键迁移到本站后缀
   try {
     const obj = JSON.parse(localStorage.getItem(__STORE_NS) || "{}") || {};
-    if (obj[key] !== undefined) value = obj[key];
+    if (obj[nsKey] !== undefined) {
+      value = obj[nsKey];
+    } else if (host && obj[key] !== undefined) {
+      value = obj[key];
+      obj[nsKey] = value;
+      localStorage.setItem(__STORE_NS, JSON.stringify(obj));
+    }
   } catch (e) {}
   const subs = new Set();
   const store = {
@@ -35,10 +45,10 @@ function __mkLocalStore(key, defaultValue) {
     set(v) {
       const changed = v !== value;
       value = v;
-      // 持久化到 localStorage
+      // 持久化到 localStorage (本站子键)
       try {
         const obj = JSON.parse(localStorage.getItem(__STORE_NS) || "{}") || {};
-        obj[key] = v;
+        obj[nsKey] = v;
         localStorage.setItem(__STORE_NS, JSON.stringify(obj));
       } catch (e) {}
       // 通知订阅者
@@ -661,7 +671,7 @@ function __fillWebDAVSection(container) {
   const hint = document.createElement("div");
   hint.style.cssText = "color:#999;font-size:11px;margin:0 0 6px 0;padding:0 10px;";
   hint.textContent =
-    "配置全局共用(换站不丢); 已读标记/设置按站点、页码全部站点, 均存入同一个统一文件并整体同步(自动合并)。打开站点自动下载、关闭页面自动上传, 已做流量优化; 也可手动点击下方按钮。侧边栏黄色'最大N页'按钮一键跳转到历史最大页码";
+    "配置全局共用(换站不丢); 已读标记/设置/页码按站点各存 3 个独立文件(<host>.read/page/cfg.json), 各站互不干扰、上传下载只同步当前站(省流量)。打开站点自动下载、关闭页面自动上传, 已做流量优化; 也可手动点击下方按钮。侧边栏黄色'最大N页'按钮一键跳转到历史最大页码";
   container.appendChild(hint);
   const panel = document.createElement("div");
   panel.className = "s_panel";
@@ -741,7 +751,7 @@ function __fillWebDAVSection(container) {
   });
   mkBtn("下载并合并", __wdvDownload);
   container.appendChild(btnRow);
-  // 清除页码记录(本地+远程统一文件中的 pages 一并清空)
+  // 清除页码记录(本地当前站页码; 服务器本站 page.json 在下次下载时可能拉回)
   const clearRow = document.createElement("div");
   clearRow.style.cssText = "display:flex;gap:8px;padding:4px 10px;";
   const clearBtn = document.createElement("button");
@@ -775,17 +785,17 @@ function __fillWebDAVSection(container) {
 
 /* ============================================================================
  * 2. WebDAV 核心
+ *    同步文件按站点分离成 3 个独立文件(后续调整互不牵连、各站上传下载只读写当前站文件):
+ *      PT_Masonry_Sync/<host>.read.json   —— 已读标记
+ *      PT_Masonry_Sync/<host>.page.json   —— 页码(每页记录最大翻到几页)
+ *      PT_Masonry_Sync/<host>.cfg.json    —— 配置(Kesa:Masonry 过滤/已读相关 + Kesa:Fall)
+ *    流量优化: 上传时已读/配置/页码各自按"是否有变化"决定是否写盘, 无变化的不重复上传。
  * ========================================================================== */
-function __wdvUrl() {
+// 计算 WebDAV 根目录(服务器地址 + 路径); 路径做 URL 编码, 避免中文/特殊字符被服务器拒收
+function __wdvBase() {
   const c = __storeVal(__wdvCfg);
-  // 统一同步文件: 已读标记(sites.<host>) + 页码(pages) 共用一个文件
   let p = (c.path || "").trim().replace(/^\/+|\/+$/g, "");
-  if (!p) p = "PT_Masonry_Sync.json";
-  if (!/\.[^/]+$/.test(p)) p += "/PT_Masonry_Sync.json";
-  else p = p.replace(/[^/]+$/, "PT_Masonry_Sync.json");
-  // 中文/特殊字符路径(如"瀑布脚本同步")必须 URL 编码成 %XX, 否则请求行含裸 UTF-8 字节,
-  // WebDAV 服务器(坚果云 dav.jianguoyun.com 等)可能拒收/误判, 表现为 HTTP 401/400。
-  // 逐段编码(保留 / 与已存在的 %XX), 避免把合法百分号二次编码。
+  if (!p) p = "PT_Masonry_Sync";
   p = p
     .split("/")
     .map(function (/** @type {any} */ seg) {
@@ -795,53 +805,25 @@ function __wdvUrl() {
   return (c.url || "").replace(/\/+$/, "") + "/" + p;
 }
 
-// 读取统一同步文件(整文件), 404视为空; 兼容旧版: 若统一文件不存在, 尝试合并旧文件迁移
-/** @returns {Promise<{ version?: number, sites: any, pages: any, updated?: number }>} */
-async function __wdvReadFull() {
-  const c = __storeVal(__wdvCfg);
-  if (!c.url) return { version: 2, sites: {}, pages: {} };
-  const r = await __wdvFetch(__wdvUrl(), "GET", null);
-  if (r.status === 404) {
-    // 迁移旧版数据: 本站旧已读文件 <host>.json + 旧页码文件 PT_Masonry_PageMax.json
-    /** @type {{ sites: any, pages: any }} */
-    const legacy = { sites: {}, pages: {} };
-    const base = (c.url || "").replace(/\/+$/, "");
-    /**
-     * @param {any} name
-     * @param {any} parse
-     */
-    async function fetchLegacy(name, parse) {
-      try {
-        const gr = await __wdvFetch(base + "/" + name, "GET", null);
-        if (gr.status >= 200 && gr.status < 300) return parse(JSON.parse(gr.responseText || "{}"));
-      } catch (e) {}
-      return null;
-    }
-    const host = location.hostname;
-    const gj = await fetchLegacy(host + ".json", function (/** @type {any} */ j) {
-      const so = {};
-      if (Array.isArray(j.ids)) so.readIds = j.ids;
-      if (j.config && typeof j.config.masonry === "string") so.config = j.config;
-      return so.readIds || so.config ? so : null;
-    });
-    if (gj) legacy.sites[host] = gj;
-    const pj = await fetchLegacy("PT_Masonry_PageMax.json", function (/** @type {any} */ j) {
-      return j && typeof j === "object" ? j : {};
-    });
-    if (pj) legacy.pages = pj;
-    return Object.assign({ version: 2, sites: {}, pages: {} }, legacy);
-  }
+// 返回某类本站同步文件的 URL (kind: read / page / cfg)
+/**
+ * @param {string} kind
+ */
+function __wdvFileUrl(kind) {
+  const ext = kind === "read" ? "read.json" : kind === "page" ? "page.json" : "cfg.json";
+  return __wdvBase() + "/" + location.hostname + "." + ext;
+}
+
+// 读取某类本站同步文件: 成功返回解析对象; 404 返回 null(供迁移); 其他错误抛异常
+/**
+ * @param {string} kind
+ */
+async function __wdvReadKind(kind) {
+  const r = await __wdvFetch(__wdvFileUrl(kind), "GET", null);
   if (r.status >= 200 && r.status < 300) {
-    let j = /** @type {{ sites: any, pages: any }} */ ({ sites: {}, pages: {} });
-    try {
-      j = JSON.parse(r.responseText || "{}") || j;
-    } catch (e) {
-      j = { sites: {}, pages: {} };
-    }
-    if (!j.sites || typeof j.sites !== "object") j.sites = {};
-    if (!j.pages || typeof j.pages !== "object") j.pages = {};
-    return j;
+    return JSON.parse(r.responseText || "{}") || {};
   }
+  if (r.status === 404) return null;
   if (r.status === 401) {
     throw new Error(
       "读取同步文件失败 HTTP 401(认证失败)：请核对 WebDAV 账号/密码。坚果云等需使用「应用密码」而非登录密码(在 账户信息→安全选项 中生成)",
@@ -850,18 +832,81 @@ async function __wdvReadFull() {
   throw new Error("读取同步文件失败 HTTP " + r.status);
 }
 
-// 写入统一同步文件
+// 写入某类本站同步文件
 /**
- * @param {any} full
+ * @param {string} kind
+ * @param {any} data
  */
-async function __wdvWriteFull(full) {
-  const r = await __wdvFetch(__wdvUrl(), "PUT", JSON.stringify(full));
+async function __wdvWriteKind(kind, data) {
+  const r = await __wdvFetch(__wdvFileUrl(kind), "PUT", JSON.stringify(data));
   if (r.status === 401) {
     throw new Error(
       "上传失败 HTTP 401(认证失败)：请核对 WebDAV 账号/密码。坚果云等需使用「应用密码」而非登录密码(在 账户信息→安全选项 中生成)",
     );
   }
   if (r.status < 200 || r.status >= 300) throw new Error("上传失败 HTTP " + r.status);
+}
+
+// ---- 旧版数据一次性迁移: 本站单文件 <host>.json 与 统一文件 PT_Masonry_Sync.json ----
+// 缓存到页面级, 避免每类文件 404 时重复请求旧文件
+/** @type {any} */
+let __legacyCache = null;
+/**
+ * @returns {Promise<any>}
+ */
+async function __wdvLegacy() {
+  if (__legacyCache) return __legacyCache;
+  /** @type {{ readIds: any, config: any, pages: any }} */
+  const out = { readIds: [], config: null, pages: {} };
+  // 1) 旧版统一文件 PT_Masonry_Sync.json: 提取本站已读/配置 + 本站页码(按 URL 域名拆分)
+  try {
+    const oldUrl = __wdvBase() + "/PT_Masonry_Sync.json";
+    const or = await __wdvFetch(oldUrl, "GET", null);
+    if (or.status >= 200 && or.status < 300) {
+      const j = JSON.parse(or.responseText || "{}") || {};
+      const sites = (j.sites && typeof j.sites === "object") ? j.sites : {};
+      const pages = (j.pages && typeof j.pages === "object") ? j.pages : {};
+      const st = sites[location.hostname] || {};
+      out.readIds = Array.isArray(st.readIds) ? st.readIds : [];
+      if (st.config && typeof st.config.masonry === "string") out.config = st.config;
+      for (const k in pages) {
+        try {
+          if (new URL(k).hostname === location.hostname) out.pages[k] = pages[k];
+        } catch (e) {}
+      }
+    }
+  } catch (e) {}
+  // 2) 旧版本站单文件 <host>.json(含 readIds/config/pages): 覆盖/补齐上述数据
+  try {
+    const r = await __wdvFetch(__wdvBase() + "/" + location.hostname + ".json", "GET", null);
+    if (r.status >= 200 && r.status < 300) {
+      const j = JSON.parse(r.responseText || "{}") || {};
+      if (Array.isArray(j.readIds) && j.readIds.length) out.readIds = j.readIds;
+      if (j.config && typeof j.config === "object") out.config = j.config;
+      if (j.pages && typeof j.pages === "object") {
+        for (const k in j.pages) out.pages[k] = j.pages[k];
+      }
+    }
+  } catch (e) {}
+  __legacyCache = out;
+  return out;
+}
+
+// 读取某类数据: 优先本站独立文件, 404 时尝试从旧文件迁移(一次性)返回历史数据
+/**
+ * @param {string} kind
+ */
+async function __wdvReadData(kind) {
+  const d = await __wdvReadKind(kind);
+  if (d !== null) return d;
+  const legacy = await __wdvLegacy();
+  if (kind === "read") {
+    return { version: 4, host: location.hostname, readIds: legacy.readIds, updated: 0 };
+  }
+  if (kind === "cfg") {
+    return { version: 4, host: location.hostname, config: legacy.config, updated: 0 };
+  }
+  return { version: 4, host: location.hostname, pages: legacy.pages, updated: 0 };
 }
 
 function __wdvAuth() {
@@ -914,87 +959,105 @@ function __wdvFetch(url, method, body) {
   });
 }
 
-// 上传: 合并本站已读/设置 + 页码 后整体写回统一文件 (流量优化: force=false 时无变化则跳过)
+// 上传: 把本站已读/配置/页码 分别合并到 3 个本站独立文件(各站独立)。
+// 流量优化(坚果云): 手动上传(force=true)三部分全传; 自动上传(force=false)按"是否有变化"逐文件决定, 无变化的不重复写盘。
 /**
  * @param {any} force
  */
 async function __wdvUpload(force) {
   const c = __storeVal(__wdvCfg);
   if (!c.url || !c.pass) throw new Error("请先填写 WebDAV 配置");
-  const host = location.hostname;
   const ids = [...__storeVal(__readIds)];
   const cfgStr = localStorage.getItem("Kesa:Masonry") || "{}";
   const fallStr = localStorage.getItem("Kesa:Fall") || "{}";
-  // 流量优化(坚果云): 自动上传时无变化则跳过; 手动上传(force=true)总是执行
-  const idsLocalKey = ids.join(",");
   const snapIds = GM_getValue("pt_sync_idsSnap", "");
   const snapCfg = GM_getValue("pt_sync_cfgSnap", "");
   const snapFall = GM_getValue("pt_sync_cfgFallSnap", "");
-  if (!force && idsLocalKey === snapIds && cfgStr === snapCfg && fallStr === snapFall) {
-    // 本站已读无变化; 若页码也无脏数据则跳过
-    const pagesDirty = typeof window.__kesaPageSync === "function" && window.__kesaPageSync("isDirty");
-    if (!pagesDirty) return "无变化, 跳过上传(节省流量)";
+  const idsChanged = ids.join(",") !== snapIds;
+  const cfgChanged = cfgStr !== snapCfg || fallStr !== snapFall;
+  const pagesDirty =
+    typeof window.__kesaPageSync === "function" && window.__kesaPageSync("isDirty");
+  if (!force && !idsChanged && !cfgChanged && !pagesDirty) {
+    return "无变化, 跳过上传(节省流量)";
   }
-  // 读整文件(含其它站已读 + 页码), 合并本站已读/设置后整体写回
-  const full = await __wdvReadFull();
-  const sites = full.sites || {};
-  const st = sites[host] || {};
-  const stIds = Array.isArray(st.readIds) ? st.readIds : [];
-  const merged = [...new Set([...stIds, ...ids])];
-  sites[host] = {
-    readIds: merged,
-    config: { masonry: cfgStr, fall: fallStr },
-  };
-  full.sites = sites;
-  // 页码部分: 从页码模块取其本地数据**合并**进远端页码(逐 key 取 max), 而非整体覆盖。
-  // 修复: 旧版(1.2.3b)上传过页码到统一文件后, 若新设备本地 pt_pagemax 为空, 原 `full.pages = pg`
-  // 会把远端已有页码整体清空(覆盖为空), 导致之后"下载并合并"拉不到页码("最大页码: -")。
-  // 改为合并后, 本地为空时保留远端页码, 本地有更大值时更新, 远端本地没有的 key 也保留。
-  if (typeof window.__kesaPageSync === "function") {
-    const pg = window.__kesaPageSync("get");
-    if (pg && typeof pg === "object") {
-      const remote = (full.pages && typeof full.pages === "object") ? full.pages : {};
-      for (const h in pg) {
+
+  // ---- 已读(仅读 read.json) ----
+  let readMsg = "已读无变化";
+  if (force || idsChanged) {
+    const rd = await __wdvReadData("read");
+    const stIds = Array.isArray(rd.readIds) ? rd.readIds : [];
+    const merged = [...new Set([...stIds, ...ids])];
+    rd.readIds = merged;
+    rd.updated = Date.now();
+    await __wdvWriteKind("read", rd);
+    readMsg = "已上传 " + merged.length + " 条已读标记";
+    if (merged.length !== __storeVal(__readIds).length) {
+      __readIds.set(merged);
+      __applyReadClasses();
+    }
+    GM_setValue("pt_sync_idsSnap", merged.join(","));
+  }
+
+  // ---- 配置(仅读写 cfg.json, 含过滤/已读相关设置) ----
+  let cfgMsg = "配置无变化";
+  if (force || cfgChanged) {
+    const cf = await __wdvReadData("cfg");
+    cf.config = { masonry: cfgStr, fall: fallStr };
+    cf.updated = Date.now();
+    await __wdvWriteKind("cfg", cf);
+    cfgMsg = "配置已同步";
+    GM_setValue("pt_sync_cfgSnap", cfgStr);
+    GM_setValue("pt_sync_cfgFallSnap", fallStr);
+  }
+
+  // ---- 页码(仅读写 page.json, 逐 key 取 max 合并, 本地为空保留远端) ----
+  let pageMsg = "页码无变化";
+  if (force || pagesDirty) {
+    const pg = await __wdvReadData("page");
+    const remote = (pg.pages && typeof pg.pages === "object") ? pg.pages : {};
+    const local =
+      typeof window.__kesaPageSync === "function" ? window.__kesaPageSync("get") : null;
+    if (local && typeof local === "object") {
+      for (const h in local) {
+        const lv = (local[h] && local[h].max) || 0;
         const rv = (remote[h] && remote[h].max) || 0;
-        const lv = (pg[h] && pg[h].max) || 0;
         if (lv > rv) remote[h] = { max: lv };
       }
-      full.pages = remote;
     }
+    pg.pages = remote;
+    pg.updated = Date.now();
+    await __wdvWriteKind("page", pg);
+    const pageInfo =
+      typeof window.__kesaPageSync === "function" ? window.__kesaPageSync("maxPage") || 0 : 0;
+    pageMsg = "页码已合并(当前站最大 " + pageInfo + " 页)";
+    if (typeof window.__kesaPageSync === "function") window.__kesaPageSync("setDirty", false);
   }
-  full.updated = Date.now();
-  await __wdvWriteFull(full);
-  if (merged.length !== __storeVal(__readIds).length) {
-    __readIds.set(merged);
-    __applyReadClasses();
-  }
-  GM_setValue("pt_sync_idsSnap", merged.join(","));
-  GM_setValue("pt_sync_cfgSnap", cfgStr);
-  GM_setValue("pt_sync_cfgFallSnap", fallStr);
-  if (typeof window.__kesaPageSync === "function") window.__kesaPageSync("setDirty", false);
-  return "已上传 " + merged.length + " 条已读标记 + 页码";
+  return readMsg + "，" + cfgMsg + "，" + pageMsg;
 }
 
-// 下载: 读取统一文件并合并本站已读/设置 + 页码
+// 下载: 读取本站 3 个独立文件并合并本站已读/配置/页码(各站独立, 只读本站文件)
 /**
  * @param {any} [updateHistSnapshot]
  */
 async function __wdvDownload(updateHistSnapshot) {
   const c = __storeVal(__wdvCfg);
   if (!c.url || !c.pass) throw new Error("请先填写 WebDAV 配置");
-  const host = location.hostname;
-  const full = await __wdvReadFull();
-  const st = (full.sites || {})[host] || {};
-  const remote = Array.isArray(st.readIds) ? st.readIds : [];
+
+  // ---- 已读(read.json) ----
+  const rd = await __wdvReadData("read");
+  const remote = Array.isArray(rd.readIds) ? rd.readIds : [];
   const merged = [...new Set([...__storeVal(__readIds), ...remote])];
   // 打开页面拉取的远端已读也属于"历史观看"(本会话点击之前), 刷新快照使"隐藏历史观看"一并生效
   if (updateHistSnapshot) __historyReadSnapshot = [...merged];
   __readIds.set(merged);
   __applyReadClasses();
-  let cfgMsg = "";
-  if (st.config && typeof st.config.masonry === "string") {
+
+  // ---- 配置(cfg.json): 合并远端缺失子键到本地 Kesa:Masonry ----
+  let cfgMsg = "配置无变化";
+  const cf = await __wdvReadData("cfg");
+  if (cf.config && typeof cf.config.masonry === "string") {
     try {
-      const far = JSON.parse(st.config.masonry);
+      const far = JSON.parse(cf.config.masonry);
       const local = JSON.parse(localStorage.getItem("Kesa:Masonry") || "{}");
       let changed = false;
       for (const k in far) {
@@ -1005,16 +1068,18 @@ async function __wdvDownload(updateHistSnapshot) {
       }
       if (changed) {
         localStorage.setItem("Kesa:Masonry", JSON.stringify(local));
-        cfgMsg = "，配置已同步(刷新后生效)";
+        cfgMsg = "配置已同步(刷新后生效)";
       }
     } catch (e) {}
   }
-  // 页码部分: 合并进页码模块本地存储
+
+  // ---- 页码(page.json): 合并进页码模块本地存储 ----
+  const pg = await __wdvReadData("page");
   let pageMsg = "";
-  if (typeof window.__kesaPageSync === "function" && full.pages && typeof full.pages === "object") {
-    pageMsg = window.__kesaPageSync("merge", full.pages) || "";
+  if (typeof window.__kesaPageSync === "function" && pg.pages && typeof pg.pages === "object") {
+    pageMsg = window.__kesaPageSync("merge", pg.pages) || "";
   }
-  return "已下载并合并, 共 " + merged.length + " 条已读标记" + cfgMsg + (pageMsg ? "，" + pageMsg : "");
+  return "已下载并合并，共 " + merged.length + " 条已读标记，" + cfgMsg + "，" + pageMsg;
 }
 
 /* ============================================================================
@@ -1211,7 +1276,7 @@ function __kesaPageInd(/** @type {any} */ n) {
  * ========================================================================== */
 (function () {
   // 本地页码数据(GM key pt_pagemax): 只负责本地记录/合并最大页码 + 悬浮跳转按钮;
-  // 网络同步(上传/下载)统一由主作用域"已读标记同步"处理(共用统一文件 PT_Masonry_Sync.json),
+  // 网络同步(上传/下载)统一由主作用域"已读标记同步"处理(本站独立文件 PT_Masonry_Sync/<host>.page.json),
   // 本模块通过 window.__kesaPageSync 桥接把本地页码交给主作用域上传/合并, 避免双写。
   function __pmGet() {
     try {
@@ -1314,9 +1379,17 @@ function __kesaPageInd(/** @type {any} */ n) {
             __pmBtn();
           } catch (e) {}
         }
-        return changed ? "已合并页码(当前站最大 " + maxCur + " 页)" : "";
+        const curMax = (st[__pmKey()] && st[__pmKey()].max) || maxCur || 0;
+        return changed
+          ? "页码已合并(当前站最大 " + curMax + " 页)"
+          : "页码已是最新(当前站最大 " + curMax + " 页)";
       }
       if (action === "isDirty") return !!__pmDirty;
+      if (action === "maxPage") {
+        const st = __pmGet();
+        const cur = st[__pmKey()];
+        return (cur && cur.max) || 0;
+      }
       if (action === "setDirty") {
         __pmDirty = !!data;
         return;

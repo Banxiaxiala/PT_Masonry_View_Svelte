@@ -4,16 +4,26 @@ import { sortMasonry } from "../utils";
 // ----------------------------------------------------------------
 
 /** 持久化 Stores -> 配置联动 localstorage
+ * 设置按站点独立存储: 实际 key = 传入 key + "." + 当前站点域名 (如 _card_width.example.com),
+ * 每个站点各自保存/读取自己的设置, 互不覆盖; 旧版全局 key(不带后缀)首次访问时迁移到本站后缀。
  * @param {any} key
  * @param {any} startValue
  */
 function persistStore(key, startValue) {
-  const savedValue = localStorage.getItem(key);
+  const host = location.hostname || "";
+  const nsKey = key + "." + host;
+  // 首次访问本站: 若本站后缀不存在且存在旧版全局 key, 把旧值迁移到本站后缀(避免历史设置丢失)
+  if (localStorage.getItem(nsKey) === null && localStorage.getItem(key) !== null) {
+    try {
+      localStorage.setItem(nsKey, /** @type {string} */ (localStorage.getItem(key)));
+    } catch (e) {}
+  }
+  const savedValue = localStorage.getItem(nsKey);
   const initialValue = savedValue ? JSON.parse(savedValue) : startValue;
   const store = writable(initialValue);
 
   store.subscribe(value => {
-    localStorage.setItem(key, JSON.stringify(value));
+    localStorage.setItem(nsKey, JSON.stringify(value));
   });
 
   return store;
