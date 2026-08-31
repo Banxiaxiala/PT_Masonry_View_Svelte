@@ -5,6 +5,7 @@
     _iframe_url,
     _pic_failed_showInfo,
   } from "../stores";
+  import { onMount, onDestroy } from "svelte";
   import { sortMasonry } from "../utils";
   import { __isPTT, __ksDetailUrl } from "./ptt";
   import { config as _mtConfig } from "./mteam";
@@ -142,6 +143,43 @@
   function sort_masonry() {
     sortMasonry();
   }
+
+  // ------------------------------------------------
+  // 左侧"已读"图标: 点击切换该种子已读/未读, 做已读记号。
+  // 数据源复用 lib/sync.js 的 __kesaRead.readIds store(localStorage 持久化, 多设备 WebDAV 同步),
+  // 与"点击整卡标记已读"共用同一集合, 因此图标状态与卡片变灰(.pt-read)自动联动。
+  let isRead = false;
+  /** @type {any} */
+  let _unsubRead = null;
+  /** 当前种子已读标识: 优先 it.id, 其次从详情链接提取 */
+  $: readKey = (it.id != null && it.id !== "" ? String(it.id) : detailLink());
+
+  onMount(() => {
+    /** @type {any} */
+    const r = window.__kesaRead;
+    if (!r || !r.readIds) return;
+    /** @type {any} */
+    const upd = () => {
+      isRead = !!readKey && r.readIds.get().includes(readKey);
+    };
+    upd();
+    _unsubRead = r.readIds.subscribe(upd);
+  });
+  onDestroy(() => {
+    if (_unsubRead) _unsubRead();
+  });
+
+  /** 点击左侧已读图标: 已读⇄未读 切换(阻止冒泡, 不触发卡片点击/悬浮) */
+  /** @param {any} e */
+  function toggleRead(e) {
+    if (e && e.stopPropagation) e.stopPropagation();
+    if (e && e.preventDefault) e.preventDefault();
+    /** @type {any} */
+    const r = window.__kesaRead;
+    if (!r || !r.readIds || !readKey) return;
+    const cur = r.readIds.get();
+    r.readIds.set(cur.includes(readKey) ? cur.filter((x) => x !== readKey) : [...cur, readKey]);
+  }
 </script>
 
 <div
@@ -156,6 +194,19 @@
     class="card-holder"
     style="background: linear-gradient(to bottom, {cateColor && cateColor !== 'transparent' ? cateColor : cateFallbackBg} 18px, #ffffff 18px);"
   >
+    <!-- 左侧"已读"图标: 点击切换已读/未读(做已读记号, 与卡片变灰 .pt-read 联动) -->
+    <button
+      class="card-read-toggle"
+      class:isRead={isRead}
+      title={isRead ? "取消已读" : "标记已读"}
+      aria-label={isRead ? "取消已读" : "标记已读"}
+      on:click={toggleRead}
+    >
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 6L9 17l-5-5"/>
+      </svg>
+    </button>
+
     <!-- 分类标签(顶部 18px 色条, 内含分类小图标 + 分类文本) -->
     <div
       class="card-category"
@@ -471,6 +522,44 @@
     align-items: center;
     pointer-events: none;
   }
+
+  /* 左侧"已读"图标: 固定在卡片左侧竖向中部, 圆形按钮。
+     未读=半透明灰描边勾; 已读=绿色实心+白勾(醒目已读记号)。 */
+  .card-read-toggle {
+    position: absolute;
+    left: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 4;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    border: 2px solid rgba(0, 0, 0, 0.35);
+    background-color: rgba(255, 255, 255, 0.85);
+    color: rgba(0, 0, 0, 0.45);
+    cursor: pointer;
+    pointer-events: auto;
+    padding: 0;
+    box-sizing: border-box;
+    box-shadow: rgba(0, 0, 0, 0.25) 0 2px 5px;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, transform 0.15s;
+  }
+  .card-read-toggle:hover {
+    transform: translateY(-50%) scale(1.15);
+  }
+  /* 已读状态: 绿色实心 + 白勾, 醒目已读记号 */
+  .card-read-toggle.isRead {
+    background-color: #27ae60;
+    border-color: #1f8b4d;
+    color: #fff;
+  }
+  .card-read-toggle.isRead:hover {
+    background-color: #2cc06a;
+  }
+
   .card-discount.isFree { background-color: rgb(16, 142, 233); }
   .card-discount.is50 { background-color: rgb(255, 85, 0); }
 
