@@ -35,7 +35,8 @@
     __fillReadSection,
     __fillTagSection,
     __fillNameFilterSection,
-    __fillCardInfoSectionObserver,
+    __hideReadCards,
+    __hideHistoryRead,
   } from "./lib/sync";
 
   // 配置拖拽侧边栏 ------------------------------------------------
@@ -169,7 +170,8 @@
     // 已读样式/点击标记/隐藏历史观看快照: 由 main.js 入口统一调用 __initReadTracking,
     // 不再依赖侧边栏挂载时序(用户不打开侧边栏也能正确记录 __historyReadSnapshot,
     // 修复"首次开启'隐藏历史观看'开关需手动重启才生效" BUG)
-    __fillCardInfoSectionObserver();
+    // 说明: "隐藏已读卡片 / 隐藏历史观看" 两个开关已原生并入下方"配置常驻卡片信息"模块,
+    // 不再经 MutationObserver 注入(__fillCardInfoSectionObserver 已废弃)。
 
     // 注入"同步(WebDAV) / 已读标记 / TAG 过滤 / 名称过滤" 四个配置面板(各自挂在对应容器内)
     // NOTE: 配置面板默认关闭(#if $_show_configPanel), onMount 时占位 div 尚不在 DOM,
@@ -745,6 +747,24 @@
             <Switch
               title_fixed="显示 [评论/上传/下载/完成]"
               bind:checked={$_CARD_SHOW.statistics}
+            />
+
+            <!-- 隐藏已读卡片 / 隐藏历史观看 (原生并入本模块, 统一样式) -->
+            <Switch
+              title_fixed="隐藏已读卡片"
+              label="隐藏所有已读卡片(与隐藏历史观看互斥)"
+              bind:checked={$__hideReadCards}
+              func={() => {
+                if ($__hideReadCards) $__hideHistoryRead = false;
+              }}
+            />
+            <Switch
+              title_fixed="隐藏历史观看"
+              label="隐藏刷新前已观看的卡片, 刷新后新看的只变灰(与隐藏已读卡片互斥)"
+              bind:checked={$__hideHistoryRead}
+              func={() => {
+                if ($__hideHistoryRead) $__hideReadCards = false;
+              }}
             />
 
             <!-- NOTE: 废弃的旧型样式 -->

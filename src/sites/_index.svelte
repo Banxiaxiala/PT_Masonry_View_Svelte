@@ -63,18 +63,26 @@
       if (it.categoryName == null && config && config.CATEGORY_NAME) {
         it.categoryName = config.CATEGORY_NAME[it.category] || "";
       }
-      // 标签位掩码(DIY=1 国配=2 中字=4): M-Team/PTT 原始对象直接带 labels 字段。
-      // 若缺失或为 0, 从其它可能字段(label/tag/tags 文本)推断, 保证"显示标签"可用。
-      let lbl = Number(it.labels) || 0;
-      if (!lbl) {
-        const tagTxt = [it.label, it.tag, it.label_text].filter((v) => v != null).join(" ") + (Array.isArray(it.tags) ? " " + it.tags.join(" ") : "");
-        if (tagTxt.indexOf("DIY") !== -1) lbl |= 1;
-        if (tagTxt.indexOf("国配") !== -1) lbl |= 2;
-        if (tagTxt.indexOf("中字") !== -1) lbl |= 4;
-        it.labels = lbl;
-      }
-      // 标签数组: PTT/MT 未带原始 tags 数组, 置空即可(卡片按 labels 位掩码渲染)
-      if (it.tags == null) it.tags = [];
+      // 标签(DIY=1 国配=2 中字=4 位掩码): M-Team/PTT 原始对象的 labels 字段
+      // 可能是数字位掩码、名称数组(如 ["DIY","国配"])或名称字符串, 统一收敛为位掩码
+      // 并补全 it.tags(卡片"显示标签"按 labels 位掩码 + tags 数组渲染), 保证功能可用。
+      const __tagNames = [];
+      const __lblRaw = it.labels;
+      if (Array.isArray(__lblRaw)) __tagNames.push(...__lblRaw.map(String));
+      else if (typeof __lblRaw === "string" && __lblRaw.trim()) __tagNames.push(...__lblRaw.split(/[,，、;\s]+/).map((s) => s.trim()).filter(Boolean));
+      let lbl = 0;
+      if (typeof __lblRaw === "number") lbl = __lblRaw;
+      // 位掩码缺失或为 0 时, 从所有标签文本(labels 名称数组/其它字段/tags 数组)推断
+      const __tagTxt = [it.label, it.tag, it.label_text].filter((v) => v != null).join(" ") + (Array.isArray(it.tags) ? " " + it.tags.join(" ") : "") + " " + __tagNames.join(" ");
+      if (__tagTxt.indexOf("DIY") !== -1) lbl |= 1;
+      if (__tagTxt.indexOf("国配") !== -1) lbl |= 2;
+      if (__tagTxt.indexOf("中字") !== -1) lbl |= 4;
+      it.labels = lbl;
+      // 标签名称数组: 收敛 labels 名称数组 + 站点原始 tags 数组(去重), 供卡片 chips 展示
+      const __tagSet = [];
+      __tagNames.forEach((n) => n && __tagSet.indexOf(n) === -1 && __tagSet.push(n));
+      (Array.isArray(it.tags) ? it.tags : []).forEach((n) => n && __tagSet.indexOf(String(n)) === -1 && __tagSet.push(String(n)));
+      it.tags = __tagSet;
       // 规整 size 为字节数(API 可能给数字或带单位字符串, 统一成数字供 getFileSize 计算)
       if (typeof it.size !== "number") it.size = __parseSize(it.size);
       // 规整 status: 各字段取原始值并给默认值, 避免字段缺失导致卡片信息不显示

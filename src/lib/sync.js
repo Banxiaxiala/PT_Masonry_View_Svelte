@@ -483,83 +483,6 @@ function __fillTagSection(container) {
   };
 }
 
-/* ---------- "隐藏已读/隐藏历史观看"开关: 注入"卡片信息 > 配置常驻卡片信息"面板 ---------- */
-function __fillCardInfoSectionObserver() {
-  let swReadInp = null,
-    swHistInp = null;
-  function build() {
-    const panel = (function () {
-      const holder = document.querySelector(".configP_holder");
-      if (!holder) return null;
-      const sections = holder.querySelectorAll(".section");
-      for (let i = 0; i < sections.length; i++) {
-        const h1 = sections[i].querySelector("h1.s_title");
-        if (h1 && h1.textContent === "卡片信息") {
-          const sub = sections[i].querySelector("h3.s_title");
-          const subSec = sub && sub.parentElement;
-          if (subSec && subSec.textContent.indexOf("配置常驻卡片信息") !== -1) {
-            const p = subSec.querySelector(":scope > .s_panel");
-            if (p) return p;
-          }
-        }
-      }
-      return null;
-    })();
-    if (!panel || panel.querySelector(".kesaHideReadRows")) return null;
-    const wrap = document.createElement("div");
-    wrap.className = "kesaHideReadRows";
-    wrap.style.cssText = "border-top:1px solid #eee;margin-top:4px;padding-top:2px;";
-    const swRead = __mkSwitchRow(
-      "隐藏已读卡片",
-      __storeVal(__hideReadCards),
-      function (v) {
-        if (v) __hideHistoryRead.set(false);
-        __hideReadCards.set(v);
-      },
-      "隐藏所有已读卡片(与隐藏历史观看互斥)",
-    );
-    const swHist = __mkSwitchRow(
-      "隐藏历史观看",
-      __storeVal(__hideHistoryRead),
-      function (v) {
-        if (v) __hideReadCards.set(false);
-        __hideHistoryRead.set(v);
-      },
-      "隐藏刷新前已观看的卡片, 刷新后新看的只变灰(与隐藏已读卡片互斥)",
-    );
-    swReadInp = swRead.querySelector("input");
-    swHistInp = swHist.querySelector("input");
-    wrap.appendChild(swRead);
-    wrap.appendChild(swHist);
-    panel.appendChild(wrap);
-    return wrap;
-  }
-  function tryFill() {
-    if (!build()) return;
-    const u1 = __hideReadCards.subscribe((v) => {
-      if (swReadInp) swReadInp.checked = v;
-      __applyHideReadCards();
-    });
-    const u2 = __hideHistoryRead.subscribe((v) => {
-      if (swHistInp) swHistInp.checked = v;
-      __applyHideReadCards();
-    });
-    window.__kesaHideReadCleanup = function () {
-      u1();
-      u2();
-    };
-  }
-  try {
-    tryFill();
-  } catch (e) {}
-  const mo = new MutationObserver(function () {
-    try {
-      tryFill();
-    } catch (e) {}
-  });
-  mo.observe(document.body, { childList: true, subtree: true });
-}
-
 /* ---------- 名称过滤 配置面板 ---------- */
 function __fillNameFilterSection(container) {
   const h1 = document.createElement("h1");
@@ -1463,7 +1386,6 @@ export {
   __fillReadSection,
   __fillNameFilterSection,
   __fillTagSection,
-  __fillCardInfoSectionObserver,
   __mkSwitchRow,
   __markRead,
   __extractId,
@@ -1516,5 +1438,4 @@ window.__kesaPage = {
   fillReadSection: __fillReadSection,
   fillNameFilterSection: __fillNameFilterSection,
   fillTagSection: __fillTagSection,
-  fillCardInfoSectionObserver: __fillCardInfoSectionObserver,
 };
