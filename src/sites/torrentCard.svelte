@@ -3,7 +3,6 @@
     _CARD_SHOW,
     _iframe_switch,
     _iframe_url,
-    _SITE_SETTING,
     _pic_failed_showInfo,
   } from "../stores";
   import { sortMasonry } from "../utils";
@@ -55,9 +54,7 @@
     $_iframe_url = /^https?:/.test(link) ? link : location.origin + link;
   }
 
-  /** M-Team GAY 分区隐藏: category 440(及成人分类)按配置隐藏 */
-  $: gayHidden =
-    !__isPTT && it.category === 440 && $_SITE_SETTING.mt.hide_gay;
+  /** M-Team GAY 分区隐藏: 已按用户要求移除(改用其他方式实现) */
 
   /** 封面图 */
   let picSrc = "";
@@ -142,8 +139,7 @@
     width: {cardWidth}px;
     border-color: {cateColor && cateColor !== 'transparent' ? cateColor : cateFallbackBg};
     background-color:#ffffff;
-    background: linear-gradient(to bottom, {cateColor && cateColor !== 'transparent' ? cateColor : cateFallbackBg} 18px, #ffffff 18px);
-    display: {gayHidden ? 'none' : ''}"
+    background: linear-gradient(to bottom, {cateColor && cateColor !== 'transparent' ? cateColor : cateFallbackBg} 18px, #ffffff 18px);"
 >
   <div
     class="card-holder"

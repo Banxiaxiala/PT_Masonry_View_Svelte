@@ -102,28 +102,6 @@ _card_layout.subscribe(value => {
   }
 });
 
-/** 卡片设置: 全站点配置 & 各个站点配置 */
-const site_setting = {
-  mt: {
-    // 隐藏gay卡片: 默认为true
-    hide_gay: true
-  }
-}
-export const _SITE_SETTING = persistStore('_SITE_SETTING', site_setting);
-let mark1 = false
-_SITE_SETTING.subscribe(value => {
-  // 初始化时不寻找 masonry
-  if (!mark1) {
-    mark1 = true;
-  }
-  else {
-    sortMasonry('fast');
-    sortMasonry('fast');
-    sortMasonry();
-    sortMasonry();
-  }
-})
-
 /** 卡片显示_总开关 */
 const show_switch = {
   // 全局总开关

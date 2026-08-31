@@ -8,7 +8,6 @@
     _show_mode,
     _card_width,
     _CARD_SHOW,
-    _SITE_SETTING,
     _turnPage,
     _iframe_switch,
     _panelPos,
@@ -310,7 +309,7 @@
     </button>
 
     <!-- 按钮2: 手动整理布局 -->
-    <!-- <button class="sideP__btn" on:click={__sort_masonry}>整理布局</button> -->
+    <button class="sideP__btn" on:click={__sort_masonry}>整理布局</button>
 
     <!-- 按钮3: 呼出详细配置栏 -->
     <button
@@ -418,23 +417,6 @@
       </div>
 
       <!-- --------------------------------NOTE:配置区-------------------------------- -->
-
-      <!-- ---------------- 站点专业配置 ---------------- -->
-
-      <!-- MT 专用配置 -->
-      {#if /m-team\.cc/i.test($_current_domain)}
-        <div class="section">
-          <h1 class="s_title">MT专用配置</h1>
-          <div class="s_panel">
-            <Switch
-              title_fixed="隐藏Gay分区卡片"
-              title_green="隐藏(默认)"
-              title_red="显示(狠人)"
-              bind:checked={$_SITE_SETTING.mt.hide_gay}
-            />
-          </div>
-        </div>
-      {/if}
 
       <!-- ---------------- 常用配置 ---------------- -->
       <div class="section">
