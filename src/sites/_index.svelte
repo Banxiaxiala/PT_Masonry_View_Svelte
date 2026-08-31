@@ -612,6 +612,45 @@
   // @ts-ignore
   window.__kesaNexTurnPage = __nexTurnPage;
 
+  /** M-Team(.m-team.cc SPA)AJAX 换页: 点击页码导航"上一页/下一页/跳转"时, 用 history.pushState
+   *  更新 URL(pageNumber=n), 再直接发起签名请求抓取第 n 页数据并**整体替换**瀑布流卡片,
+   *  不整体刷新、就地切换卡片(与 NEX 站 __kesaNexTurnPage 一致)。仅对 M-Team 生效,
+   *  其余站返回 false 由调用方回退。挂载 window.__kesaMTTurnPage 供 sync.js 页码导航复用。
+   * @param {number} n 目标页码
+   * @returns {boolean} 是否已接管换页(M-Team 接管返回 true; 其余站返回 false)
+   */
+  function __mtTurnPage(n) {
+    if (!isMT) return false;
+    // 同步 URL(SPA 路由签名随之变化), 供刷新恢复页码读取
+    try {
+      const u = new URL(location.href);
+      u.searchParams.set("pageNumber", n);
+      history.pushState(null, "", u.toString());
+    } catch (e) {}
+    // 换页 = 整体替换(非追加); 复位标志允许重新填充, 直接请求第 n 页
+    __mtAppending = false;
+    __mteamGot = false;
+    __mtFetchFallback(n);
+    // 轮询兜底: 即便 CustomEvent 跨世界不可达, 也能从共享 DOM 属性读到第 n 页数据并整体替换
+    let __polls = 0;
+    const iv = setInterval(() => {
+      const arr = document.documentElement && document.documentElement.__kesaMTData;
+      if (Array.isArray(arr) && arr.length) {
+        clearInterval(iv);
+        __mtFill(arr);
+        try { __kesaSavePageState(n); } catch (e) {}
+        try { __kesaPageInd(n); } catch (e) {}
+      } else if (++__polls >= 8) {
+        clearInterval(iv);
+      }
+    }, 500);
+    // 换页后自动滚回顶部
+    try { window.scrollTo({ top: 0, behavior: "auto" }); } catch (e) {}
+    return true;
+  }
+  // @ts-ignore
+  window.__kesaMTTurnPage = __mtTurnPage;
+
   /** 启动项目配置*/
   onMount(() => {
     // 生成瀑布流
