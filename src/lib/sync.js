@@ -302,12 +302,30 @@ function __mkSwitch(checked, onChange) {
   inp.type = "checkbox";
   inp.className = "svelte-2vaqag svelte-2vaqag";
   inp.checked = !!checked;
+  inp.style.cssText =
+    "width:0;height:0;display:none;visibility:hidden;margin:0;padding:0;";
   const id = "_kesa_sw_" + Math.random().toString(36).slice(2, 10);
   inp.id = id;
   const lb = document.createElement("label");
   lb.className = "svelte-2vaqag svelte-2vaqag";
   lb.setAttribute("for", id);
+  // 复刻 component/switch.svelte 的 label 样式(48x12 轨道)与 ::after(24px 滑块),
+  // 全部用 inline 样式, 避免依赖 Svelte scoped CSS 或站点自身 CSS 造成开关外观不一致。
+  lb.style.cssText =
+    "width:48px;height:12px;display:inline-block;position:relative;background-color:#777;border:2px solid #555;border-radius:30px;transition:all .2s;cursor:pointer;box-sizing:content-box;";
+  const knob = document.createElement("span");
+  knob.style.cssText =
+    "position:absolute;left:-2px;top:-6px;width:24px;height:24px;border-radius:50%;background-color:#555;transition:transform .2s;pointer-events:none;box-sizing:border-box;";
+  lb.appendChild(knob);
+  function paint(on) {
+    lb.style.backgroundColor = on ? "#00a0fc" : "#777";
+    lb.style.borderColor = on ? "#006dc9" : "#555";
+    knob.style.backgroundColor = on ? "#0054b0" : "#555";
+    knob.style.transform = on ? "translateX(28px)" : "translateX(0)";
+  }
+  paint(!!checked);
   inp.addEventListener("change", function () {
+    paint(inp.checked);
     onChange(inp.checked);
   });
   w.appendChild(inp);
@@ -323,15 +341,17 @@ function __mkSwitchRow(labelText, checked, onChange, desc) {
   // 之前用 .switch svelte-2vaqag class 是依赖组件 scoped 样式, 但纯 DOM 创建的
   // 元素不会继承 Svelte scoped 样式, 导致"隐藏已读/隐藏历史观看"两个开关的
   // 文字位置(垂直居中、高度、宽度)与侧边栏其他开关不一致, 改为 inline 样式。
-  row.className = "switch svelte-2vaqag";
+  row.className = "switch svelte-2vaqag svelte-2vaqag";
   row.style.cssText =
-    "width:100%;height:30px;display:flex;align-items:center;justify-content:space-between;";
+    "width:100%;height:30px;display:flex;align-items:center;justify-content:space-between;box-sizing:border-box;";
   const lb = document.createElement("div");
-  // 复刻 Switch 组件 .s_title 样式: font-size:14px, display:flex, align-items:center,
-  // position:relative(为了 title 提示浮层定位)
-  lb.className = "s_title svelte-2vaqag";
+  // 复刻 Switch 组件 .s_title 样式: display:flex, align-items:center,
+  // font-size:14px, position:relative(为了 title 提示浮层定位)。
+  // 注意: 不要加 flex:1 / min-width:0, 与组件 .s_title 保持一致,
+  // 否则文字宽度被撑满、开关位置与其他开关行(如"显示种子名称")不对齐。
+  lb.className = "s_title svelte-2vaqag svelte-2vaqag";
   lb.style.cssText =
-    "display:flex;align-items:center;font-size:14px;position:relative;flex:1;min-width:0;";
+    "display:flex;align-items:center;font-size:14px;line-height:1;font-weight:400;color:#000;position:relative;";
   lb.textContent = labelText;
   if (desc) lb.title = desc;
   const sw = __mkSwitch(checked, function (v) {
