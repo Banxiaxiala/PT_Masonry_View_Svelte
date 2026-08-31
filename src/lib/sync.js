@@ -1547,7 +1547,10 @@ function __kesaPageInd(/** @type {any} */ n) {
       prev.textContent = "◀ 上一页";
       prev.style.cssText = btnStyle;
       prev.onclick = function () {
-        location.href = __pmUrlForPage(__pmCurrentPage() - 1);
+        const t = __pmCurrentPage() - 1;
+        // NEX(.php 站)优先用 AJAX 换页(不整体刷新); 不可用(如 M-Team)退回整体跳转
+        if (typeof window.__kesaNexTurnPage === "function" && window.__kesaNexTurnPage(t)) return;
+        location.href = __pmUrlForPage(t);
       };
       const cur = document.createElement("span");
       cur.id = "kesaMtPageSelCur";
@@ -1557,7 +1560,10 @@ function __kesaPageInd(/** @type {any} */ n) {
       next.textContent = "下一页 ▶";
       next.style.cssText = btnStyle;
       next.onclick = function () {
-        location.href = __pmUrlForPage(__pmCurrentPage() + 1);
+        const t = __pmCurrentPage() + 1;
+        // NEX(.php 站)优先用 AJAX 换页(不整体刷新); 不可用(如 M-Team)退回整体跳转
+        if (typeof window.__kesaNexTurnPage === "function" && window.__kesaNexTurnPage(t)) return;
+        location.href = __pmUrlForPage(t);
       };
       const inp = document.createElement("input");
       inp.type = "number";
@@ -1571,6 +1577,8 @@ function __kesaPageInd(/** @type {any} */ n) {
       go.onclick = function () {
         const n = parseInt(inp.value, 10);
         if (!n || n < 1) return;
+        // NEX(.php 站)优先用 AJAX 换页(不整体刷新); 不可用(如 M-Team)退回整体跳转
+        if (typeof window.__kesaNexTurnPage === "function" && window.__kesaNexTurnPage(n)) return;
         location.href = __pmUrlForPage(n);
       };
       inp.addEventListener("keydown", function (e) {

@@ -31,6 +31,7 @@
     __kesaRestorePage,
     __kesaSavePageState,
     __kesaPageInd,
+    __kesaPageUrl,
     __applyReadClasses,
   } from "../lib/sync";
 
@@ -539,6 +540,67 @@
         console.warn(error);
       });
   }
+
+  /** NEX(.php)站 AJAX 换页: 点击"上一页/下一页/跳转"时用 fetch 抓取目标页 HTML,
+   *  解析目标页种子列表并**替换**当前瀑布流卡片(而非追加), 同时用 history.pushState
+   *  同步 URL(不触发整页刷新), 达到"不用整体刷新、卡片切换为目标页"的效果。
+   *  仅对非 M-Team 的 NexusPHP 站(.php, 如 pttime/nicept/ptfans/kamept)生效;
+   *  M-Team(/browse SPA)由自身路由处理, 本函数返回 false, 调用方回退 location.href。
+   *  挂载 window.__kesaNexTurnPage 供 sync.js 页码导航按钮复用。
+   * @param {number} n 目标页码
+   * @returns {boolean} 是否已接管换页(接管返回 true; M-Team 返回 false 由调用方整体跳转)
+   */
+  function __nexTurnPage(n) {
+    if (isMT) return false;
+    const url = __kesaPageUrl(n);
+    fetch(url)
+      .then((resp) => resp.text())
+      .then((html) => {
+        const doc = new DOMParser().parseFromString(html, "text/html");
+        /** @type {any[]} */
+        let objs = [];
+        try {
+          if (__isPTT) {
+            objs = __pttParse(doc);
+          } else {
+            const table = doc.querySelector(GET_TORRENT_LIST_SELECTOR());
+            if (table) objs = config.TORRENT_LIST_TO_JSON(table).map(__normalizeTorrent);
+          }
+        } catch (e) {
+          console.warn("NEX 换页解析失败:", e);
+        }
+        if (!objs || !objs.length) {
+          console.warn("NEX 换页: 目标页无数据, 退回整体跳转");
+          location.href = url;
+          return;
+        }
+        // 替换瀑布流卡片为目标页数据
+        infoList = objs;
+        // 同步 URL(不整页刷新), 供刷新恢复页码/WebDAV 页码同步读取当前页
+        try { history.pushState(null, "", url); } catch (e) {}
+        PAGE.PAGE_CURRENT = n;
+        PAGE.IS_ORIGIN = false;
+        // 记录页码 + 更新侧边栏"第 N 页"指示器
+        __kesaSavePageState(n);
+        __kesaPageInd(n);
+        // 等 Svelte 把卡片渲染进 DOM 后再重排布局
+        onMountSignal = true;
+        setTimeout(() => { onMountSignal = false; }, 1000);
+        setTimeout(() => {
+          if (window.CHANGE_CARD_LAYOUT) window.CHANGE_CARD_LAYOUT();
+          if (masonry) { masonry.reloadItems(); masonry.layout("fast"); masonry.layout("fast"); }
+          setTimeout(NEXUS_TOOLS, 300);
+        }, 80);
+      })
+      .catch((err) => {
+        console.warn("NEX 换页请求失败, 退回整体跳转:", err);
+        location.href = url;
+      });
+    return true;
+  }
+  // 挂到 window, 供 sync.js 页码导航按钮复用
+  // @ts-ignore
+  window.__kesaNexTurnPage = __nexTurnPage;
 
   /** 启动项目配置*/
   onMount(() => {
