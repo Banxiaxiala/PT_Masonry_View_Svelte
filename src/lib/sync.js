@@ -293,6 +293,13 @@ function __initReadTracking() {
   (document.head || document.documentElement).appendChild(s);
   // 首次加载即标记已读并应用隐藏(含"隐藏历史观看"), 否则需开关一次才生效
   __applyReadClasses();
+  // BUG修复(v1.2.50b): 全局订阅 __readIds, 任何变更(点击卡片标记已读等)都立即重应用已读样式。
+  // 此前"点击变灰"依赖 __fillReadSection 里 _read_ids 的 subscribe 或 MutationObserver(翻页加卡片时
+  // 才触发), 首屏未打开配置面板时点卡片只更新 store 无订阅者调 __applyReadClasses, 导致第一页点
+  // 卡片不变灰, 直到点"加载下一页"触发 MutationObserver 才生效。此订阅让 store 变更即生效、自包含。
+  __readIds.subscribe(() => {
+    __applyReadClasses();
+  });
   // 点击/中键标记已读(中键视为同款标记); 标记后由 __applyReadClasses 统一更新卡片状态与隐藏
   /**
    * @param {any} e
