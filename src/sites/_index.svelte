@@ -590,6 +590,16 @@
           if (window.CHANGE_CARD_LAYOUT) window.CHANGE_CARD_LAYOUT();
           if (masonry) { masonry.reloadItems(); masonry.layout("fast"); masonry.layout("fast"); }
           setTimeout(NEXUS_TOOLS, 300);
+          // 换页后自动滚回顶部, 方便从上往下浏览新页卡片
+          try {
+            window.scrollTo({ top: 0, behavior: "auto" });
+            // 瀑布流容器(可能是内部滚动)也复位到顶
+            const wf = document.querySelector(".waterfall, .app-content__inner, .kesaWaterfall");
+            if (wf && wf.scrollTop) wf.scrollTop = 0;
+            // 页面有滚动锚点时一并复位
+            const anchor = document.querySelector("#_kesa_root, #app");
+            if (anchor && anchor.scrollTop) anchor.scrollTop = 0;
+          } catch (e) {}
         }, 80);
       })
       .catch((err) => {
