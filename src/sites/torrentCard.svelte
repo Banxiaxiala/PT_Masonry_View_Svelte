@@ -45,18 +45,18 @@
     return "#";
   }
 
-  /** M-Team NEW_MT 站: 点击卡片标题/封面在 iframe 中打开详情 */
+  /** 点击卡片标题/封面: 在网页内 iframe 中打开详情预览(不再新标签页) */
   /** @param {any} e */
   function onClickCard(e) {
-    // 非 M-Team 站走默认新标签页
-    if (__isPTT) return;
     const link = detailLink();
     if (!link || link === "#") return;
     // 阻止默认跳转
     if (e && e.preventDefault) e.preventDefault();
     $_iframe_switch = 1;
     // iframe 需要绝对地址(相对路径拼接站点根)
-    $_iframe_url = /^https?:/.test(link) ? link : location.origin + link;
+    // 参考 1.2.3b: PTT/nexusphp(ptfans/nicept/pttime) 点击在网页内打开详情页预览
+    const __isNexus = __isPTT; // ptfans/nicept/pttime 均为 NexusPHP, 详情页锚点 #kdescr 定位简介
+    $_iframe_url = (/^https?:/.test(link) ? link : location.origin + link) + (__isNexus ? "#kdescr" : "");
   }
 
   /** M-Team GAY 分区隐藏: 已按用户要求移除(改用其他方式实现) */
