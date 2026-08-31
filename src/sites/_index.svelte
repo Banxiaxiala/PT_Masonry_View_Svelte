@@ -63,6 +63,16 @@
       if (it.categoryName == null && config && config.CATEGORY_NAME) {
         it.categoryName = config.CATEGORY_NAME[it.category] || "";
       }
+      // 标签位掩码(DIY=1 国配=2 中字=4): M-Team/PTT 原始对象直接带 labels 字段。
+      // 若缺失或为 0, 从其它可能字段(label/tag/tags 文本)推断, 保证"显示标签"可用。
+      let lbl = Number(it.labels) || 0;
+      if (!lbl) {
+        const tagTxt = [it.label, it.tag, it.label_text].filter((v) => v != null).join(" ") + (Array.isArray(it.tags) ? " " + it.tags.join(" ") : "");
+        if (tagTxt.indexOf("DIY") !== -1) lbl |= 1;
+        if (tagTxt.indexOf("国配") !== -1) lbl |= 2;
+        if (tagTxt.indexOf("中字") !== -1) lbl |= 4;
+        it.labels = lbl;
+      }
       // 标签数组: PTT/MT 未带原始 tags 数组, 置空即可(卡片按 labels 位掩码渲染)
       if (it.tags == null) it.tags = [];
       // 规整 size 为字节数(API 可能给数字或带单位字符串, 统一成数字供 getFileSize 计算)
@@ -694,6 +704,13 @@
     if (__mteamGot) return;
     __mteamGot = true;
     try {
+      // 一次性诊断: 打印首个原始 M-Team 对象的键与标签相关字段, 便于确认 label/tag 字段名
+      if (!window.__kesaMTDiag && list[0]) {
+        window.__kesaMTDiag = true;
+        console.log("[Masonry] M-Team 原始对象键:", Object.keys(list[0]),
+          "| labels:", list[0].labels, "| label:", list[0].label,
+          "| tag:", list[0].tag, "| tags:", list[0].tags);
+      }
       infoList = list.map(__normalizeTorrent);
     } catch (err) {
       console.warn("M-Team 数据归一化失败:", err);
