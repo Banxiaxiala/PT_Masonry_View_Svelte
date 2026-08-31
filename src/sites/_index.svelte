@@ -56,31 +56,68 @@
    */
   function __normalizeTorrent(it) {
     if (!it) return it;
-    // 已是新结构: 直接消费
-    if (it.imageList || it.status) return it;
+    // 已是新结构(mteam/PTT 数据源): 仍补齐中文分类名/标签数组等展示字段后消费
+    if (it.imageList || it.status) {
+      // 分类中文名: 新结构通常只有数字 category, 从站点 CATEGORY_NAME 补
+      if (it.categoryName == null && config && config.CATEGORY_NAME) {
+        it.categoryName = config.CATEGORY_NAME[it.category] || "";
+      }
+      // 标签数组: PTT/MT 未带原始 tags 数组, 置空即可(卡片按 labels 位掩码渲染)
+      if (it.tags == null) it.tags = [];
+      return it;
+    }
     // 旧结构(kamept/mteam 的 config.TORRENT_LIST_TO_JSON 输出) -> 转新结构
     const status = it.status || {};
+    // 置顶等级: 从 "置顶/加精" 图标的数量推断(NexusPHP 的 img.sticky)
+    let toppingLevel = status.toppingLevel || 0;
+    if (!toppingLevel && it.place_at_the_top) {
+      toppingLevel = it.place_at_the_top.length || (it.pattMsg ? 1 : 0) || 0;
+    }
+    // 免费剩余时间(kamept 的 free_remaining_time, 如 "剩余 123 时") -> ISO 结束时间
+    let discountEndTime = status.discountEndTime || null;
+    if (!discountEndTime && it.free_remaining_time) {
+      const rm = String(it.free_remaining_time).match(/(\d+)\s*时/);
+      if (rm) discountEndTime = new Date(Date.now() + parseInt(rm[1], 10) * 3600000).toISOString();
+    }
     return {
       name: it.torrent_name || it.name || "",
       // keyed each 需要稳定唯一 key: 优先 torrentId, 其次原始链接兜底(防止 torrentId 全为 null 时 key 重复致渲染异常)
       id: it.torrentId != null ? it.torrentId : (it.id != null ? it.id : (it.torrentLink || it.categoryLink || "")) ,
       size: typeof it.size === "number" ? it.size : __parseSize(it.size),
       smallDescr: it.description || "",
-      labels: it.labels || 0,
+      // 标签位掩码: DIY=1 国配=2 中字=4; 站点已解析则沿用, 否则从 tags 数组/raw_tags 文本推断
+      labels: it.labels || __labelsFromTags(it.tags, it.raw_tags) || 0,
+      // 原始分类标签数组(kamept 的 span 标签, 如 ["新","免费"]), 供卡片"显示标签"渲染
+      tags: it.tags || [],
+      // 分类号(用于配色/跳转)+ 分类中文名(用于卡片顶部分类文本)
       category: it.categoryNumber != null ? it.categoryNumber : it.category,
+      categoryName: it.category || (config.CATEGORY_NAME && config.CATEGORY_NAME[it.categoryNumber] != null ? config.CATEGORY_NAME[it.categoryNumber] : ""),
       imageList: it.picLink ? [it.picLink] : [],
       status: {
         seeders: it.seeders || 0,
         leechers: it.leechers || 0,
         comments: it.comments || 0,
         discount: (status.discount) || __mapDiscount(it.free_type),
-        toppingLevel: 0,
+        toppingLevel,
         createdDate: it.upload_date || "",
-        discountEndTime: null,
+        discountEndTime,
       },
       torrentLink: it.torrentLink || "",
       collection: it.collectState === "Bookmarked",
     };
+  }
+
+  /** 从标签数组/原始标签HTML 推断 labels 位掩码(供 kamept 等未预解析 labels 的站点) */
+  function __labelsFromTags(tags, rawTags) {
+    let labels = 0;
+    const texts = [];
+    if (Array.isArray(tags)) texts.push(...tags.map(String));
+    if (rawTags) texts.push(String(rawTags));
+    const all = texts.join(" ");
+    if (all.indexOf("DIY") !== -1) labels |= 1;
+    if (all.indexOf("国配") !== -1) labels |= 2;
+    if (all.indexOf("中字") !== -1) labels |= 4;
+    return labels;
   }
 
   /** 解析大小字符串为数字(如 "1.5 GB" -> 字节数) */
@@ -750,7 +787,7 @@
 
 <!-- 卡片渲染模版 -->
 {#each infoList as info, i (info.id)}
-  <TorrentCard torrentInfo={info} cardWidth={CARD.CARD_WIDTH} index={i} />
+  <TorrentCard torrentInfo={info} cardWidth={CARD.CARD_WIDTH} index={i} siteConfig={config} />
 {/each}
 
 <!-- 点击加载下一页的按钮 -->

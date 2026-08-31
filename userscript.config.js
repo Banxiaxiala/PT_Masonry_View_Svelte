@@ -1,4 +1,4 @@
-export let version = '1.2.29b';
+export let version = '1.2.30b';
 
 export function config(mode) {
   return {
@@ -37,6 +37,8 @@ export function config(mode) {
       "*details.php*",
       "*preview.php*",
       "*torrent-details*",
+      // M-Team 消息页(message/-2 等)不是种子列表, 不需要瀑布流
+      "*m-team*/message/*",
     ],
     grant: [
       "GM_xmlhttpRequest",

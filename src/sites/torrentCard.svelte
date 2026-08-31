@@ -8,15 +8,17 @@
     _pic_failed_showInfo,
   } from "../stores";
   import { sortMasonry } from "../utils";
-  import { config } from "./mteam";
   import { __isPTT, __ksDetailUrl } from "./ptt";
+  import { config as _mtConfig } from "./mteam";
 
-  /** 父传值: 种子信息 (统一结构 {name,id,size,smallDescr,labels,category,imageList,status:{...},torrentLink}) */
+  /** 父传值: 种子信息 (统一结构 {name,id,size,smallDescr,labels,tags,category,categoryName,imageList,status:{...},torrentLink}) */
   export let torrentInfo;
   /** 父传值: 卡片宽度 */
   export let cardWidth;
   /** 父传值: 卡片在列表中的序号(供左上角黄色序号角标) */
   export let index = 0;
+  /** 父传值: 当前站点 config(含 CATEGORY 配色 / CATEGORY_NAME 中文分类名) */
+  export let siteConfig = null;
 
   // ------------------------------------------------
   // 安全的 torrentInfo: 防止访问 undefined 属性
@@ -25,6 +27,10 @@
     it = torrentInfo || {};
     it.status = torrentInfo.status || {};
   }
+
+  /** 站点 config: 优先父传 siteConfig, 回退 M-Team 默认(避免 import 失败) */
+  let cfg;
+  $: cfg = siteConfig || { CATEGORY: {}, CATEGORY_NAME: {} };
 
   /** 详情链接: 优先用原表格解析的真实详情链接(NexusPHP 站 details.php?id=..),
    * 其次 PTT(__ksDetailUrl), 最后 M-Team /detail/{id}。
@@ -80,9 +86,17 @@
   let cateColor = "transparent";
   let cateFontColor = "black";
   $: {
-    cateColor = config.CATEGORY[it.category] ?? "transparent";
+    cateColor = (cfg.CATEGORY && cfg.CATEGORY[it.category]) ?? "transparent";
     cateFontColor = cateColor && cateColor !== "transparent" ? getTextColor(cateColor) : "black";
   }
+
+  /** 分类文本: 优先中文名(站点原始分类名/ CATEGORY_NAME), 其次 M-Team CATEGORY_NAME(PTT 分类号), 最后回退数字 */
+  $: cateName =
+    it.categoryName ||
+    (cfg.CATEGORY_NAME && cfg.CATEGORY_NAME[it.category]) ||
+    (_mtConfig.CATEGORY_NAME && _mtConfig.CATEGORY_NAME[it.category]) ||
+    it.category ||
+    "";
 
   /** 文件大小整理 */
   function getFileSize(size) {
@@ -100,8 +114,30 @@
   }
 
   /** 折扣文案 */
-  const _discountText = { FREE: "免费", PERCENT_50: "50%" };
+  const _discountText = { FREE: "免费", PERCENT_50: "50%", "2XFree": "2X免费" };
   const _discount = () => it.status.discount;
+
+  /** 折扣剩余小时数(有 discountEndTime 时计算) */
+  function discountRemainHour() {
+    if (!it.status.discountEndTime) return "";
+    const end = new Date(it.status.discountEndTime).getTime();
+    const hours = Math.floor((end - Date.now()) / 3600000);
+    return hours > 0 ? " : " + hours + " 小时" : "";
+  }
+
+  /** 置顶星星: toppingLevel 数量生成 */
+  $: topStars = Array(Math.max(0, Number(it.status.toppingLevel) || 0)).fill(0);
+
+  /** 上传时间: 距现在多少天/时 */
+  $: upTime = (() => {
+    if (!it.status.createdDate) return "";
+    const past = new Date(it.status.createdDate).getTime();
+    if (isNaN(past)) return "";
+    const diff = Date.now() - past;
+    const day = Math.floor(diff / 86400000);
+    const hour = Math.floor((diff % 86400000) / 3600000);
+    return (day > 0 ? day + " 日" : "") + (hour > 0 ? hour + " 时" : "");
+  })();
 
   /** 调用瀑布流整理 */
   function sort_masonry() {
@@ -118,14 +154,17 @@
     background: linear-gradient(to bottom, {cateColor && cateColor !== 'transparent' ? cateColor : '#000'} 18px, {$_current_bgColor} 18px);
     display: {gayHidden ? 'none' : ''}"
 >
-  <div class="card-holder">
+  <div
+    class="card-holder"
+    style="background: linear-gradient(to bottom, {cateColor && cateColor !== 'transparent' ? cateColor : '#000'} 18px, rgba(255,255,255,0.4) 18px, rgba(255,255,255,0));"
+  >
     <!-- 分类标签(顶部 18px 色条, 内含分类小图标 + 分类文本) -->
     <div
       class="card-category"
       data-href="/browse?cat={it.category}"
       style="background-color: {cateColor}; color: {cateFontColor}"
     >
-      {it.category}
+      {cateName}
     </div>
 
     <!-- 标题 & 详情链接 -->
@@ -169,6 +208,27 @@
       {/if}
     </div>
 
+    <!-- 置顶和免费(受"显示置顶和免费"开关控制) -->
+    {#if $_CARD_SHOW.free && (it.status.toppingLevel || (it.status.discount && it.status.discount != "NORMAL"))}
+      <div class="cl-tags top_and_free">
+        {#if it.status.toppingLevel}
+          {#each topStars as _, ts}
+            <span class="_tag _tag_pin" title="置顶">置顶</span>
+          {/each}
+        {/if}
+        {#if it.status.discount && it.status.discount != "NORMAL"}
+          <span class="_tag _tag_discount_free" class:isFree={it.status.discount == "FREE"} class:is50={it.status.discount == "PERCENT_50"}>
+            {_discountText[it.status.discount] || it.status.discount}{discountRemainHour()}
+          </span>
+        {/if}
+      </div>
+    {/if}
+
+    <!-- 上传时间(受"显示上传时间"开关控制) -->
+    {#if $_CARD_SHOW.upload_time && upTime}
+      <div class="card-line upload-time">上传:{upTime}前</div>
+    {/if}
+
     <!-- 卡片信息 -->
     <div class="card-details">
       <!-- 大小 -->
@@ -193,8 +253,8 @@
       </a>
     {/if}
 
-    <!-- 标签 (labels 位运算: 1=DIY 2=国配 4=中字) -->
-    {#if $_CARD_SHOW.tags && (Number(it.labels) || 0)}
+    <!-- 标签 (labels 位运算: 1=DIY 2=国配 4=中字; 以及站点原始 tags 数组) -->
+    {#if $_CARD_SHOW.tags && (Number(it.labels) || (it.tags && it.tags.length))}
       <div class="cl-tags">
         {#if (Number(it.labels) & 1) === 1}
           <span class="_tag _tag_diy">DIY</span>
@@ -204,6 +264,13 @@
         {/if}
         {#if (Number(it.labels) & 4) === 4}
           <span class="_tag _tag_sub">中字</span>
+        {/if}
+        {#if it.tags && it.tags.length}
+          {#each it.tags as tg}
+            {#if tg && ["DIY", "国配", "中字"].indexOf(String(tg).trim()) === -1}
+              <span class="_tag _tag_other">{tg}</span>
+            {/if}
+          {/each}
         {/if}
       </div>
     {/if}
@@ -232,9 +299,10 @@
     padding: 2px 0;
   }
 
-  /* 卡片内部容器(半透明白覆盖在顶部色条下方的卡片底色上) */
+  /* 卡片内部容器: 背景由内联渐变控制(统一主题=顶部分类色 18px + 白色渐变淡出),
+     参照参考版 rhfb99 / M-Team, 而非实心白, 避免标题背景在浅色主题站被洗白 */
   .card-holder {
-    background-color: rgba(255, 255, 255, 0.5);
+    /* background-color: rgba(255, 255, 255, 0.5); */
   }
 
   /* 卡片分类(顶部 18px 色条, 黑色底承载分类小图标, 文字居中加粗) */
@@ -303,6 +371,18 @@
   ._tag_diy { background-color: rgb(90, 189, 72); }
   ._tag_dub { background-color: rgb(90, 59, 20); }
   ._tag_sub { background-color: rgb(59, 74, 127); }
+  /* 置顶/折扣/其他标签 */
+  ._tag_pin { background-color: rgb(245, 166, 35); }
+  ._tag_discount_free { background-color: rgb(16, 142, 233); }
+  ._tag_discount_free.isFree { background-color: rgb(16, 142, 233); }
+  ._tag_discount_free.is50 { background-color: rgb(255, 85, 0); }
+  ._tag_other { background-color: rgb(108, 108, 108); }
+
+  /* 上传时间行 */
+  .upload-time {
+    color: #666;
+    font-size: 12px;
+  }
 
   /* 卡片简介总容器 */
   .card-details {
