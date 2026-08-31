@@ -43,11 +43,15 @@ const __kesaFailSvg = () => {
 /** 主入口: 预热原列表 + 接管所有 .nexus-lazy-load_Kesa 卡片 img */
 export function __kesaWatchLazy() {
   try {
-    // 1) 预热原列表封面图: 站点原表格(即将被 display:none 隐藏)的 lazy img 不会触发加载,
-    //    这里强制 eager 并 new Image() 灌入浏览器缓存, 卡片可命中缓存/直接复用
+    // 1) 预热原列表封面图: 站点原表格(即将被 display:none 隐藏)的懒加载 img 不会触发加载,
+    //    这里强制 eager 并 new Image() 灌入浏览器缓存, 卡片可命中缓存/直接复用, 避免重新请求。
+    //    选择器覆盖两种懒加载写法: loading="lazy"(属性) 与 img.nexus-lazy-load / img.lazy-image
+    //    (class + data-src, 如 ptfans.cc special.php 的原列表图, 其 loading 属性为 null)。
     /** @type {NodeListOf<HTMLImageElement>} */
-    (document.querySelectorAll('img[loading="lazy"]')).forEach(/** @param {any} im */ (im) => {
-      const src = im.getAttribute("src") || im.getAttribute("data-src") || "";
+    (document.querySelectorAll('img[loading="lazy"], img.nexus-lazy-load, img.lazy-image')).forEach(/** @param {any} im */ (im) => {
+      // 只预热带真实 data-src 的原列表懒加载图; 已接管卡片(.nexus-lazy-load_Kesa)无需重复
+      if (im.classList.contains("nexus-lazy-load_Kesa")) return;
+      const src = im.getAttribute("data-src") || im.getAttribute("src") || im.getAttribute("data-original") || "";
       if (!src || /emptyImg|trans\.gif|spinner|^data:/i.test(src)) return;
       if (im.loading !== "eager") im.loading = "eager";
       if (!im.__warmed) {
