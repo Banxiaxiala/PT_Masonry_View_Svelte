@@ -523,13 +523,12 @@
     pointer-events: none;
   }
 
-  /* 左侧"已读"图标: 固定在卡片左侧竖向中部, 圆形按钮。
+  /* 左下角"已读"图标: 固定在卡片左下角, 圆形按钮。
      未读=半透明灰描边勾; 已读=绿色实心+白勾(醒目已读记号)。 */
   .card-read-toggle {
     position: absolute;
     left: 6px;
-    top: 50%;
-    transform: translateY(-50%);
+    bottom: 6px;
     z-index: 4;
     width: 26px;
     height: 26px;
@@ -548,7 +547,7 @@
     transition: background-color 0.2s, color 0.2s, border-color 0.2s, transform 0.15s;
   }
   .card-read-toggle:hover {
-    transform: translateY(-50%) scale(1.15);
+    transform: scale(1.15);
   }
   /* 已读状态: 绿色实心 + 白勾, 醒目已读记号 */
   .card-read-toggle.isRead {
