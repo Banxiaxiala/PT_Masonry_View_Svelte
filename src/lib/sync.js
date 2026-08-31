@@ -853,10 +853,21 @@ async function __wdvUpload(force) {
     config: { masonry: cfgStr, fall: fallStr },
   };
   full.sites = sites;
-  // 页码部分: 从页码模块取其本地数据一并写回
+  // 页码部分: 从页码模块取其本地数据**合并**进远端页码(逐 key 取 max), 而非整体覆盖。
+  // 修复: 旧版(1.2.3b)上传过页码到统一文件后, 若新设备本地 pt_pagemax 为空, 原 `full.pages = pg`
+  // 会把远端已有页码整体清空(覆盖为空), 导致之后"下载并合并"拉不到页码("最大页码: -")。
+  // 改为合并后, 本地为空时保留远端页码, 本地有更大值时更新, 远端本地没有的 key 也保留。
   if (typeof window.__kesaPageSync === "function") {
     const pg = window.__kesaPageSync("get");
-    if (pg && typeof pg === "object") full.pages = pg;
+    if (pg && typeof pg === "object") {
+      const remote = (full.pages && typeof full.pages === "object") ? full.pages : {};
+      for (const h in pg) {
+        const rv = (remote[h] && remote[h].max) || 0;
+        const lv = (pg[h] && pg[h].max) || 0;
+        if (lv > rv) remote[h] = { max: lv };
+      }
+      full.pages = remote;
+    }
   }
   full.updated = Date.now();
   await __wdvWriteFull(full);
@@ -1277,28 +1288,53 @@ function __kesaPageInd(n) {
       // 页码选择器(上一页/下一页/跳转)注入位置: 放到"点击加载下一页"按钮(#_turnPage)之后,
       // 即瀑布流卡片框架外面、加载下一页按钮下方, 符合"卡片 → 点击加载下一页 → 页码导航"的阅读顺序。
       // 说明: 真实的"点击加载下一页"按钮是 BtnTurnPage 组件的 #_turnPage(普通文档流, 位于 .nextPage 容器内);
-      // 而 _index.svelte 里的 #turnPage 是 position:absolute 的占位, 不能作为定位依据。
-      // 定位 #_turnPage 后取其容器(.nextPage), 用 insertAdjacentElement("afterend") 把页码导航
-      // 插到该容器之后(卡片框架外、按钮下方); 若不存在(兜底)则插到瀑布流容器 div.waterfall 之后。
-      const btn0 = document.getElementById("_turnPage") || document.getElementById("turnPage");
+      // 而 _index.svelte 里的 #turnPage 是 position:absolute 的占位(display:none, 位于瀑布流内部),
+      // **不能**作为定位依据(否则页码导航会被插到瀑布流内部, 位置异常)。
+      // 定位一律以 .nextPage(瀑布流卡片框架外、卡片下方)为锚, 用 insertAdjacentElement("afterend")
+      // 把页码导航插到该容器之后; 无 .nextPage 时兜底插到瀑布流容器 div.waterfall 之后。
       let wrap = null;
-      let afterWrap = false;
+      const np = document.querySelector("div.nextPage");
+      const btn0 = document.getElementById("_turnPage");
       if (btn0) {
         // 定位"点击加载下一页"按钮的容器(.nextPage / 按钮父元素), 页码导航插到容器之后
-        wrap = btn0.parentElement || btn0.parentNode;
-        afterWrap = true;
+        wrap = btn0.parentElement || btn0.parentNode || np;
+      } else if (np) {
+        // #_turnPage 缺失(M-Team SPA 可能重建 .nextPage 使 BtnTurnPage 挂载丢失): 直接用 .nextPage 作为锚
+        wrap = np;
       } else {
         const wf = document.querySelector("div.waterfall");
         if (wf && wf.parentNode) {
-          // 无按钮时兜底: 插到瀑布流容器之后
+          // 无按钮容器时兜底: 插到瀑布流容器之后
           wrap = wf;
-          afterWrap = true;
         }
       }
       if (!wrap) {
         if (__pmSelLog++ < 3) console.log("[kesa] 页码选择器: 未找到可注入位置");
         return;
       }
+      // 兜底创建"点击加载下一页"按钮: BtnTurnPage 组件在 M-Team SPA 重建 .nextPage 后挂载丢失,
+      // 导致瀑布流下"没有加载下一页按钮"。这里在 .nextPage 内重建(仅当缺失时), 自愈补上。
+      try {
+        const npEl = document.querySelector("div.nextPage");
+        if (npEl && !document.getElementById("_turnPage")) {
+          const tb = document.createElement("button");
+          tb.id = "_turnPage";
+          tb.textContent = "点击加载下一页";
+          tb.style.cssText =
+            "width:100%;height:32px;border-radius:16px;line-height:20px;font-size:14px;margin:10px 0;padding:0 10px;border:1px solid #3fa7d6;background:#fff;color:#3fa7d6;cursor:pointer;";
+          tb.onclick = function (ev) {
+            if (ev && ev.preventDefault) ev.preventDefault();
+            // M-Team 等 SPA 站(路径无 .php)原地 fetch 加载下一页无效, 走 URL 翻页(与页码导航一致, 跳 pageNumber);
+            // NexusPHP(.php)站用 window.turnPage 原地加载下一页。
+            if (!/\.php/i.test(location.pathname)) {
+              location.href = __pmUrlForPage(__pmCurrentPage() + 1);
+            } else if (typeof window.turnPage === "function") {
+              window.turnPage(ev);
+            }
+          };
+          npEl.appendChild(tb);
+        }
+      } catch (e) {}
       const box = document.createElement("div");
       box.id = "kesaMtPageSel";
       // position:relative + z-index 参照参考版 1.2.3b: 页码选择器(上一页/下一页/跳转)需置于卡片之上,
