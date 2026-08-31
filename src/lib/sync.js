@@ -1524,12 +1524,12 @@ function __kesaPageInd(/** @type {any} */ n) {
             "width:100%;height:32px;border-radius:16px;line-height:20px;font-size:14px;margin:10px 0;padding:0 10px;border:1px solid #3fa7d6;background:#fff;color:#3fa7d6;cursor:pointer;";
           tb.onclick = function (ev) {
             if (ev && ev.preventDefault) ev.preventDefault();
-            // M-Team 等 SPA 站(路径无 .php)原地 fetch 加载下一页无效, 走 URL 翻页(与页码导航一致, 跳 pageNumber);
-            // NexusPHP(.php)站用 window.turnPage 原地加载下一页。
-            if (!/\.php/i.test(location.pathname)) {
-              location.href = __pmUrlForPage(__pmCurrentPage() + 1);
-            } else if (typeof window.turnPage === "function") {
+            // 优先用 window.turnPage 原地接续加载(瀑布流模式): NexusPHP(.php)与 M-Team(SPA, 走 /search API 追加)都支持;
+            // 仅当 turnPage 不可用(如未处于瀑布流模式)时, 才退回 URL 翻页(跳 pageNumber)。
+            if (typeof window.turnPage === "function") {
               window.turnPage(ev);
+            } else {
+              location.href = __pmUrlForPage(__pmCurrentPage() + 1);
             }
           };
           npEl.appendChild(tb);

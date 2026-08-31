@@ -256,6 +256,13 @@ function __kesaStart(l) {
 /**NEXUS 预览工具箱, 提供图片预览和图片懒加载, 神器*/
 function NEXUS_TOOLS() {
   console.log('------------------------NEXUS TOOLS------------------------');
+  // M-Team 等 React SPA 站无站点自带 jQuery, 直接走原生 JS 实现, 避免 jQuery 未定义抛错
+  // 导致悬浮预览永不绑定(历史遗留问题)。NexusPHP(jQuery 站)仍走下方 jQuery 事件委托路径。
+  if (typeof jQuery === "undefined") {
+    __kesaNativePreview();
+    if ("IntersectionObserver" in window) __kesaWatchLazy();
+    return;
+  }
   jQuery(document).ready(function () {
     // console.log("----jQuery 加载完毕 | Kesa 改版 nexus 工具启动!---");
 
@@ -643,5 +650,154 @@ function NEXUS_TOOLS() {
     if ("IntersectionObserver" in window) {
       __kesaWatchLazy();
     }
+  });
+}
+
+/**
+ * 原生 JS 悬浮预览(M-Team 等无站点 jQuery 的 React SPA 站专用)。
+ * 逻辑完全对齐上方 jQuery 事件委托版: 事件委托 mouseover/mouseout/mousemove,
+ * 支持局部悬浮(悬停 .hover-trigger)与全图悬浮(悬停整图)两种模式, 复用相同的定位算法。
+ */
+function __kesaNativePreview() {
+  // 1. 创建/复用预览容器(对齐 createKesaPreview: 模糊底 + 清晰主图)
+  let kp = document.getElementById("kp_container");
+  if (!kp) {
+    kp = document.createElement("div");
+    kp.id = "kp_container";
+    kp.style.cssText =
+      "background-color:rgba(0,0,0,0.85);opacity:1;position:fixed;z-index:20000;pointer-events:none;transition:all .3s;";
+    const mkImg = (cls, z, obj) => {
+      const im = document.createElement("img");
+      im.className = cls;
+      im.style.cssText =
+        "position:absolute;z-index:" + z + ";pointer-events:none;width:100%;height:100%;object-fit:" + obj + ";";
+      return im;
+    };
+    const mainImg = mkImg("kp_img", 20002, get(_state_hover_pic) ? "contain" : "scale-down");
+    const blurImg = mkImg("kp_img", 20001, "cover");
+    blurImg.style.filter = "blur(8px)";
+    kp.appendChild(mainImg);
+    kp.appendChild(blurImg);
+    document.body.appendChild(kp);
+  }
+  // 预览大图默认状态切换: 开启=铺满(contain) 关闭=尽量原图大小(scale-down)
+  _state_hover_pic.subscribe((v) => {
+    const im = kp.querySelectorAll(".kp_img")[0];
+    if (im) im.style.objectFit = v ? "contain" : "scale-down";
+  });
+
+  // 2. 定位算法(原生元素版, 逻辑与 jQuery 版一致)
+  const getNW = (el) => (el && el.naturalWidth) || 0;
+   const getNH = (el) => (el && el.naturalHeight) || 0;
+
+   /** 计算最小容纳比例(对齐 getMinRatio)
+    * @param {any} pic
+    * @param {any} container
+    */
+   function nativeMinRatio(pic, container) {
+     return Math.min(container.width / pic.width, container.height / pic.height);
+   }
+
+   /** 获取 Kesa 预览位置(原生版, 对齐 previewPosition_Kesa)
+    * @param {any} event
+    * @param {any} imgEle
+    */
+   function nativePreviewPos(event, imgEle) {
+     const imgWidth = getNW(imgEle);
+     const imgHeight = getNH(imgEle);
+     const mouseX = event.clientX;
+     const mouseY = event.clientY;
+     const viewportWidth = window.innerWidth;
+     const viewportHeight = window.innerHeight;
+     const distanceToTop = mouseY;
+    const distanceToBottom = viewportHeight - mouseY;
+    const distanceToLeft = mouseX;
+    const distanceToRight = viewportWidth - mouseX;
+    const picSize = { width: imgWidth, height: imgHeight };
+    const containerSize = {
+      bot: { width: viewportWidth, height: distanceToBottom },
+      top: { width: viewportWidth, height: distanceToTop },
+      right: { width: distanceToRight, height: viewportHeight },
+      left: { width: distanceToLeft, height: viewportHeight },
+    };
+    let maxRatio = 0;
+    let maxPosition = "";
+    for (const key in containerSize) {
+      if (!Object.prototype.hasOwnProperty.call(containerSize, key)) continue;
+      const element = containerSize[key];
+      const r = nativeMinRatio(picSize, element);
+      if (r > maxRatio) {
+        maxRatio = r;
+        maxPosition = key;
+      }
+    }
+    const result = {
+      top: { left: 0, top: 0, width: viewportWidth, height: distanceToTop },
+      bot: { left: 0, top: distanceToTop, width: viewportWidth, height: distanceToBottom },
+      left: { left: 0, top: 0, width: distanceToLeft, height: viewportHeight },
+      right: { left: distanceToLeft, top: 0, width: distanceToRight, height: viewportHeight },
+      default: { left: 0, top: 0, width: 0, height: 0 },
+    };
+    return maxPosition !== "" ? result[maxPosition] : result["default"];
+  }
+
+  /** 从触发元素解析对应卡片封面图(原生版, 对齐 resolvePreviewImg)
+   * @param {any} el
+   */
+  function nativeResolveImg(el) {
+    const card = el && el.closest ? el.closest(".card") : null;
+    const img = card ? card.querySelector("img.preview_Kesa, img.card-image--img.nexus-lazy-load_Kesa") : null;
+    return img || el;
+  }
+
+  // 3. 事件委托绑定(原生版, 对齐 jQuery .on 版本)
+  const selector = "img.preview_Kesa, div.hover-trigger";
+  const triggerSel = "div.hover-trigger";
+  /** @type {any} */
+  let buffer = null;
+  /** @type {any} */
+  let curImg = null;
+
+  document.addEventListener("mouseover", /** @param {any} e */ (e) => {
+    const t = e.target;
+    if (!t || !t.closest || !t.closest(selector)) return;
+    const el = t.closest(selector);
+    const isTrigger = el && el.matches && el.matches(triggerSel);
+    // 局部悬浮模式仅接受 .hover-trigger 触发; 全图模式仅接受整图触发
+    if (get(_preview_style) && !isTrigger) return;
+    if (!get(_preview_style) && isTrigger) return;
+    curImg = nativeResolveImg(el);
+    buffer = setTimeout(() => {
+      if (!get(_show_nexus_pic)) return;
+      const src = curImg && curImg.getAttribute ? curImg.getAttribute("src") || curImg.currentSrc : "";
+      if (src) {
+        kp.querySelectorAll(".kp_img").forEach((im) => im.setAttribute("src", src));
+      }
+      const pos = nativePreviewPos(e, curImg);
+      kp.style.left = pos.left + "px";
+      kp.style.top = pos.top + "px";
+      kp.style.width = pos.width + "px";
+      kp.style.height = pos.height + "px";
+      kp.style.display = "block";
+    }, get(_delay_nexus_pic));
+  });
+
+  document.addEventListener("mouseout", /** @param {any} e */ (e) => {
+    const t = e.target;
+    if (!t || !t.closest || !t.closest(selector)) return;
+    kp.style.display = "none";
+    if (buffer) {
+      clearTimeout(buffer);
+      buffer = null;
+    }
+  });
+
+  document.addEventListener("mousemove", /** @param {any} e */ (e) => {
+    if (!curImg) return;
+    const pos = nativePreviewPos(e, curImg);
+    kp.style.left = pos.left + "px";
+    kp.style.top = pos.top + "px";
+    kp.style.width = pos.width + "px";
+    kp.style.height = pos.height + "px";
   });
 }

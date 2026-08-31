@@ -69,10 +69,11 @@
       // 标签(DIY=1 国配=2 中字=4 位掩码): M-Team/PTT 原始对象的 labels 字段
       // 可能是数字位掩码、名称数组(如 ["DIY","国配"])或名称字符串, 统一收敛为位掩码
       // 并补全 it.tags(卡片"显示标签"按 labels 位掩码 + tags 数组渲染), 保证功能可用。
+      // 注: M-Team 原始 tags 可能混入 "N/A"/"0"/纯数字 等无意义值, 一律过滤, 避免卡片显示垃圾 chip。
       const __tagNames = [];
       const __lblRaw = it.labels;
-      if (Array.isArray(__lblRaw)) __tagNames.push(...__lblRaw.map(String));
-      else if (typeof __lblRaw === "string" && __lblRaw.trim()) __tagNames.push(...__lblRaw.split(/[,，、;\s]+/).map((s) => s.trim()).filter(Boolean));
+      if (Array.isArray(__lblRaw)) __tagNames.push(...__lblRaw.map(String).map(__cleanTagName).filter(Boolean));
+      else if (typeof __lblRaw === "string" && __lblRaw.trim()) __tagNames.push(...__lblRaw.split(/[,，、;\s]+/).map((s) => s.trim()).map(__cleanTagName).filter(Boolean));
       let lbl = 0;
       if (typeof __lblRaw === "number") lbl = __lblRaw;
       // 位掩码缺失或为 0 时, 从所有标签文本(labels 名称数组/其它字段/tags 数组)推断
@@ -81,11 +82,14 @@
       if (__tagTxt.indexOf("国配") !== -1) lbl |= 2;
       if (__tagTxt.indexOf("中字") !== -1) lbl |= 4;
       it.labels = lbl;
-      // 标签名称数组: 收敛 labels 名称数组 + 站点原始 tags 数组(去重), 供卡片 chips 展示
+      // 标签名称数组: 收敛 labels 名称数组 + 站点原始 tags 数组(去重, 过滤无意义值), 供卡片 chips 展示
       /** @type {any[]} */
       const __tagSet = [];
       __tagNames.forEach((n) => n && __tagSet.indexOf(n) === -1 && __tagSet.push(n));
-      (Array.isArray(it.tags) ? it.tags : []).forEach(/** @param {any} n */ (n) => n && __tagSet.indexOf(String(n)) === -1 && __tagSet.push(String(n)));
+      (Array.isArray(it.tags) ? it.tags : []).forEach(/** @param {any} n */ (n) => {
+        const c = __cleanTagName(String(n));
+        if (c && __tagSet.indexOf(c) === -1) __tagSet.push(c);
+      });
       it.tags = __tagSet;
       // 规整 size 为字节数(API 可能给数字或带单位字符串, 统一成数字供 getFileSize 计算)
       if (typeof it.size !== "number") it.size = __parseSize(it.size);
@@ -141,6 +145,20 @@
       torrentLink: it.torrentLink || "",
       collection: it.collectState === "Bookmarked",
     };
+  }
+
+  /** 清洗单个标签名: 去掉空串/N-A/0/null/undefined/纯数字等无意义值, 返回干净标签名(无效则 "")
+   * @param {any} v
+   * @returns {string}
+   */
+  function __cleanTagName(v) {
+    const s = String(v == null ? "" : v).trim();
+    if (!s) return "";
+    // 无意义占位: N/A、NA、null、undefined、'-' 等
+    if (/^(n\/?a|na|null|undefined|-|none|未知|无)$/i.test(s)) return "";
+    // 纯数字(可能带小数/正负号)视为无意义(如 "0"、"12"、"0.5")
+    if (/^[-+]?\d+(\.\d+)?$/.test(s)) return "";
+    return s;
   }
 
   /** 从标签数组/原始标签HTML 推断 labels 位掩码(供 kamept 等未预解析 labels 的站点)
@@ -429,6 +447,16 @@
 
     // TODO: 搞个 list 放入所有生成的新链接, 如果新链接存在就不 fetch 新数据
 
+    // NOTE: M-Team 是 React SPA, 无 HTML 种子表格(loadNextPage 的 DOM-fetch 方案会抛错失效)。
+    // 接续加载走 /search API 按 pageNumber+1 抓取并追加到瀑布流(不改变 URL, 避免 SPA 路由重置整列),
+    // 与其它站点"点击加载下一页接续瀑布流"的行为保持一致。
+    if (isMT) {
+      // 从 URL 的 pageNumber 解析当前已加载页, 叠加后续接续页(接续不改 URL, 用 __mtLoadedPage 追踪)
+      if (!__mtLoadedPage) __mtLoadedPage = currentPageFromUrl();
+      __mtAppendPage(__mtLoadedPage + 1);
+      return;
+    }
+
     // |--|-- 4.2.2 加载下一页 html 获取 json 信息对象
     fetch(PAGE.NEXT_URL)
       .then((response) => response.text())
@@ -616,7 +644,7 @@
     };
     window.addEventListener("req>POST->/search", __mteamReqListener);
 
-    // 响应事件: 填充数据
+    // 响应事件: 填充数据(接续加载期间按追加处理, 否则整体替换)
     __mteamResListener = /** @param {any} e */ (e) => {
       if (!__mteamIsAccept) return; // 非种子列表请求不处理
       try {
@@ -624,8 +652,13 @@
         const list = rawObject && rawObject.data ? rawObject.data : [];
         if (!Array.isArray(list)) return;
 
-        // 每个 /search 响应即一页完整数据, 整体替换(分页导航由站点发起新请求, 触发新响应)
-        __mtFill(list);
+        if (__mtAppending) {
+          // 接续加载: 追加而非替换
+          __mtAppendFill(list);
+        } else {
+          // 每个 /search 响应即一页完整数据, 整体替换(分页导航由站点发起新请求, 触发新响应)
+          __mtFill(list);
+        }
       } catch (err) {
         console.warn("M-Team 响应解析失败:", err);
       }
@@ -640,7 +673,9 @@
     __mteamDocListener = /** @param {any} e */ (e) => {
       const list = e.detail && e.detail.list;
       if (!Array.isArray(list) || !list.length) return;
-      __mtFill(list);
+      // 接续加载期间按追加处理, 否则整体替换
+      if (__mtAppending) __mtAppendFill(list);
+      else __mtFill(list);
     };
     document.addEventListener("__kesaMTData", __mteamDocListener);
 
@@ -688,6 +723,7 @@
       // 路由变化: 清空旧分组卡片 + 重置"已就绪"标志(允许重新填充) + 同步页码指示器
       __mteamGot = false;
       __mtLastSig = "";
+      __mtLoadedPage = 0; // 新分组/翻页后从新 URL 重新解析页码
       infoList = [];
       try { __kesaSavePageState(currentPageFromUrl()); } catch (e) {}
       try { __kesaPageInd(currentPageFromUrl()); } catch (e) {}
@@ -696,8 +732,11 @@
     }, 500);
   }
 
-  /** M-Team 沙盒回退: 注入主世界脚本执行签名请求, 结果经 document 自定义事件回传 */
-  function __mtFetchFallback() {
+  /** M-Team 沙盒回退: 注入主世界脚本执行签名请求, 结果经 document 自定义事件回传
+   * @param {number} [pageNum] 目标页码(接续加载传入; 缺省从当前 URL 解析)
+   * @param {boolean} [append] 是否接续加载(追加到瀑布流; 由 __mtAppending 标志路由)
+   */
+  function __mtFetchFallback(pageNum, append) {
     try {
       // 主世界脚本: 读取 localStorage → 签名 → fetch apiHost + /torrent/search → 派发 __kesaMTData
       const mainScript = `(function(){
@@ -705,7 +744,7 @@
           var __secret="HLkPcWmycL57mfJt";
           var __apiHost=localStorage.getItem("apiHost")||"";
           var __u=(__apiHost||("https://api.m-team"+location.origin.match(/\\.([^.]+)$/)[0]+"/api"))+"/torrent/search";
-          var __o={${__mtBuildReqBody()}};
+          var __o={${__mtBuildReqBody(pageNum)}};
           __o._timestamp=Date.now();
           if(!window.crypto||!window.crypto.subtle)return;
           window.crypto.subtle.importKey("raw",new TextEncoder().encode(__secret),{name:"HMAC",hash:"SHA-1"},false,["sign"]).then(function(k){
@@ -726,19 +765,101 @@
       s.textContent = mainScript;
       (document.head || document.documentElement).appendChild(s);
       s.remove();
-      console.log("[Masonry] M-Team 劫持无数据, 已回退主动签名请求(注入主世界)");
+      console.log(append
+        ? "[Masonry] M-Team 接续加载下一页, 已注入签名请求(pageNumber=" + pageNum + ")"
+        : "[Masonry] M-Team 劫持无数据, 已回退主动签名请求(注入主世界)");
     } catch (err) {
       console.warn("[Masonry] M-Team 回退启动失败:", err);
     }
   }
 
-  /** M-Team 回退请求体: 从当前 URL 解析 mode/分类/页码/排序 */
-  function __mtBuildReqBody() {
+  /** M-Team 是否正处于"接续加载下一页"过程(期间 /search 响应按追加处理, 不整体替换) */
+  let __mtAppending = false;
+  /** 接续加载轮询句柄 */
+  let __mtAppendPoll = null;
+  /** 最近一次已加载/已接续的页码(接续不改 URL, 用此追踪下一页起点) */
+  let __mtLoadedPage = 0;
+  /** 当前接续加载的目标页码(供 hijack/CustomEvent 无 page 路由时回填追踪) */
+  let __mtPendingAppendPage = 0;
+
+  /** M-Team 接续加载: 走 /search API 按目标页码抓取下一页数据并追加到瀑布流(不改变 URL,
+   * 避免 SPA 路由变化触发 __mtRouteWatch 重置整列; 逻辑对齐其它站点的 loadNextPage 追加)。
+   * @param {number} nextPage
+   */
+  function __mtAppendPage(nextPage) {
+    if (__mtAppending) return; // 防重入
+    __mtAppending = true;
+    __mtPendingAppendPage = nextPage;
+    // 发起签名请求(目标页码); 期间任何 /search 响应都按追加路由(见 __mteamResListener/__mteamDocListener)
+    __mtFetchFallback(nextPage, true);
+    // 轮询兜底: 即便 CustomEvent 跨世界不可达, 也能从共享 DOM 属性读到数据
+    let __polls = 0;
+    if (__mtAppendPoll) clearInterval(__mtAppendPoll);
+    __mtAppendPoll = setInterval(() => {
+      if (!__mtAppending) { clearInterval(__mtAppendPoll); __mtAppendPoll = null; return; }
+      const arr = document.documentElement && document.documentElement.__kesaMTData;
+      if (Array.isArray(arr) && arr.length) {
+        clearInterval(__mtAppendPoll);
+        __mtAppendPoll = null;
+        __mtAppendFill(arr, nextPage);
+        return;
+      }
+      if (++__polls >= 8) { clearInterval(__mtAppendPoll); __mtAppendPoll = null; __mtAppending = false; }
+    }, 500);
+  }
+
+  /** 接续加载填充: 将新一页数据去重后追加到 infoList 并刷新瀑布流 + 页码指示器
+   * @param {any} list
+   * @param {number} [page]
+   */
+  function __mtAppendFill(list, page) {
+    if (__mtAppendPoll) { clearInterval(__mtAppendPoll); __mtAppendPoll = null; }
+    __mtAppending = false;
+    const targetPage = page || __mtPendingAppendPage || 0;
+    __mtPendingAppendPage = 0;
+    let mapped;
+    try {
+      mapped = list.map(__normalizeTorrent);
+    } catch (err) {
+      console.warn("M-Team 接续数据归一化失败:", err);
+      mapped = list;
+    }
+    // 按 id 去重, 避免与已渲染卡片重复
+    const seen = new Set(infoList.map((t) => t && t.id));
+    const added = mapped.filter((t) => t && !seen.has(t.id));
+    if (!added.length) {
+      console.log("[Masonry] M-Team 接续加载无新数据, 可能已到末页");
+      return;
+    }
+    infoList = [...infoList, ...added];
+    __mteamGot = true;
+    // 推进已加载页码, 供下次"加载下一页"接续
+    if (targetPage) __mtLoadedPage = targetPage;
+    if (targetPage) {
+      try { __kesaSavePageState(targetPage); } catch (e) {}
+      try { __kesaPageInd(targetPage); } catch (e) {}
+    }
+    // 等 Svelte 把追加卡片渲染进 DOM 后再重算布局(与 __mtFill 一致)
+    setTimeout(() => {
+      if (window.CHANGE_CARD_LAYOUT) window.CHANGE_CARD_LAYOUT();
+      if (masonry) {
+        masonry.reloadItems();
+        masonry.layout("fast");
+        masonry.layout("fast");
+      }
+      setTimeout(NEXUS_TOOLS, 300);
+    }, 80);
+  }
+
+  /** M-Team 回退请求体: 从当前 URL 解析 mode/分类/页码/排序; 可指定目标页码(接续加载用)
+   * @param {number} [pageNumOverride]
+   */
+  function __mtBuildReqBody(pageNumOverride) {
     try {
       const u = new URL(window.location.href);
       const mode = u.pathname.split("/")[2] || "normal";
       const cats = u.searchParams.getAll("cat");
-      const pageNum = Number(u.searchParams.get("pageNumber")) || 1;
+      const pageNum = pageNumOverride || Number(u.searchParams.get("pageNumber")) || 1;
       const sort = u.searchParams.get("sort") || "";
       const b = ["pageNumber:" + pageNum, "pageSize:20", "visible:1"];
       if (mode) b.push("mode:" + JSON.stringify(mode));
