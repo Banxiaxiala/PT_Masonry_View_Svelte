@@ -14,8 +14,14 @@ const SITE = {
   "kamept.com": config_Kame,
   "pttime.org": { ...config_Kame, torrentListTable: "#torrenttable" },
   "www.pttime.org": { ...config_Kame, torrentListTable: "#torrenttable" },
+  // nicept.net / ptfans.cc 需同时挂 www 与非 www 两个 key: 用户实际访问的是 www.nicept.net,
+  // 若缺 www key, GET_TORRENT_LIST_SELECTOR() 对 www 域名返回 null, main.svelte 里
+  // _ORIGIN_TL_Node 会回退到 __pttBoot 伪造的 div.app-content__inner 空宿主(而非真实
+  // table.torrents), 导致原表格不被隐藏、瀑布流被埋在原表格下方数屏, 表现为"瀑布流不可用"。
   "nicept.net": { ...config_Kame, torrentListTable: "table.torrents" },
+  "www.nicept.net": { ...config_Kame, torrentListTable: "table.torrents" },
   "ptfans.cc": { ...config_Kame, torrentListTable: "table.torrents" },
+  "www.ptfans.cc": { ...config_Kame, torrentListTable: "table.torrents" },
   // mua.xloli.cc 为 NexusPHP(torrents.php), 列结构与 kamept 一致
   "mua.xloli.cc": config_Kame,
 };
