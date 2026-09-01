@@ -69,6 +69,15 @@ function mountApp() {
   });
 }
 
+// ptfans.cc 根首页(https://ptfans.cc/ 及 https://www.ptfans.cc/)是空首页, 无种子列表,
+// 不需要挂载瀑布流。虽然 userscript.config.js 的 exclude 已加 "@exclude https://ptfans.cc(/)" 
+// 拦截, 但不同油猴管理器对仅域名的 exclude 匹配行为不完全一致, 为保险起见在运行时也
+// 直接判断路径, 命中根首页立即终止, 避免瀑布流误挂载(与 M-Team /message/* 消息页守卫同理)。
+// 注: 模块顶层不能用 return, 故用布尔开关包裹下方整段挂载逻辑。
+const __isRootHome = /ptfans\.cc/i.test(window.location.hostname) &&
+  /^\/(index\.php)?$/i.test(window.location.pathname);
+if (!__isRootHome) {
+
 // PTT(www.pttime.org/nicept.net/ptfans.cc) 专属架构: 结构与普通 NexusPHP 站不同
 // (adults.php 等), 参照参考版 1.2.3b 采用 NEW_MT 注入路由——
 // __pttBoot 提供 .app-content__inner/.ant-layout 宿主 + 加载 Masonry + 经
@@ -93,7 +102,8 @@ if (__isPTT) {
       mountApp();
     }
   }, 100);
-} else if (isMT) {
+}
+else if (isMT) {
   // M-Team NEW_MT 站优先判断: SPA 无原始种子表格, 不依赖 list_selector。
   // (list_selector 需精确命中 SITE[domain], 若访问的 m-team 子域不在白名单
   //  list_selector 为 null, 但劫持 /search 数据源仍可用, 必须能正常挂载)
@@ -148,4 +158,7 @@ if (__isPTT) {
       }
     }
   }, 100);
+}
+} else {
+  console.log("ptfans.cc 根首页: 跳过瀑布流挂载");
 }
