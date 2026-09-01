@@ -126,6 +126,15 @@
     $_Global_Masonry.layout();
   }
 
+  /** 一键本页已读: 把当前瀑布流页面所有卡片都标记为已读 */
+  function __markPageRead() {
+    if (typeof window.__kesaMarkPageRead === "function") {
+      window.__kesaMarkPageRead();
+    } else {
+      alert("未找到当前页数据，请先切换到瀑布流视图");
+    }
+  }
+
   /** 切换宽度 */
   function config_changeWidth() {
     $_card_width = $_card_width == 300 ? 200 : 300;
@@ -335,6 +344,25 @@
         </svg>
       </div>
       <div>整理布局</div>
+    </button>
+
+    <!-- 一键本页已读: 把当前瀑布流页面所有卡片都标记为已读 -->
+    <button class="sideP__btn" on:click={__markPageRead}>
+      <div>
+        <!-- svg 已读勾选图标 -->
+        <svg
+          viewBox="0 0 24 24"
+          width="24"
+          height="24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"
+            fill="#fff"
+          />
+        </svg>
+      </div>
+      <div>一键本页已读</div>
     </button>
 
     <!-- 按钮3: 呼出详细配置栏 -->
