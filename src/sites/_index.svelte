@@ -576,67 +576,154 @@
    * @param {number} n 目标页码
    * @returns {boolean} 是否已接管换页(接管返回 true; M-Team 返回 false 由调用方整体跳转)
    */
+  // ---- NEX(.php)站 AJAX 换页: 下一页预取缓存 ----
+  // kamept 等 NexusPHP 站每次翻页都要等服务端渲染完整 HTML(实测约 1.5s / 126KB),
+  // 远慢于 M-Team 的轻量 JSON API。为接近"秒切换", 在换页完成后空闲时后台预取下一页,
+  // 用户点"下一页"时直接命中缓存, 无需再等服务端。缓存以"去页码的基础URL+页号"为键,
+  // 换分类/筛选(基础URL变化)时自然失效, 不会串页。
+  /** @type {Map<string, any[]>} */
+  const __nexPageCache = new Map();
+  /** @type {Map<string, Promise<void>>} */
+  const __nexPrefetchInFlight = new Map();
+  const __nexCacheMax = 4; // 最多缓存几页, 防止占用过多内存
+  /**
+   * 缓存键: 去页码的基础URL + "|" + 页号
+   * @param {string} url
+   * @param {number} n
+   */
+  function __nexCacheKey(url, n) {
+    try {
+      const u = new URL(url);
+      u.searchParams.delete("page");
+      u.searchParams.delete("pageNumber");
+      return u.toString() + "|" + n;
+    } catch (e) {
+      return url + "|" + n;
+    }
+  }
+  /**
+   * 抓取并解析第 n 页种子数据(不落 DOM), 返回数组; 失败返回 null
+   * @param {string} url
+   * @returns {Promise<any[] | null>}
+   */
+  async function __nexParse(url) {
+    try {
+      const resp = await fetch(url);
+      const html = await resp.text();
+      const doc = new DOMParser().parseFromString(html, "text/html");
+      let objs = [];
+      if (__isPTT) {
+        objs = __pttParse(doc);
+      } else {
+        const table = doc.querySelector(GET_TORRENT_LIST_SELECTOR());
+        if (table) objs = config.TORRENT_LIST_TO_JSON(table).map(__normalizeTorrent);
+      }
+      return Array.isArray(objs) && objs.length ? objs : null;
+    } catch (e) {
+      console.warn("NEX 预取/换页解析失败:", e);
+      return null;
+    }
+  }
+  /**
+   * 后台预取第 n 页数据并写入缓存(幂等: 已在途/已缓存则跳过)
+   * @param {number} n
+   */
+  function __nexPrefetch(n) {
+    if (isMT || !n || n < 1) return;
+    const url = __kesaPageUrl(n);
+    const key = __nexCacheKey(url, n);
+    if (__nexPageCache.has(key) || __nexPrefetchInFlight.has(key)) return;
+    const p = __nexParse(url).then((objs) => {
+      __nexPrefetchInFlight.delete(key);
+      if (objs) {
+        __nexPageCache.set(key, objs);
+        // 控制缓存体积: 超限时删最早的键
+        while (__nexPageCache.size > __nexCacheMax) {
+          const first = __nexPageCache.keys().next().value;
+          if (first === undefined) break;
+          __nexPageCache.delete(first);
+        }
+      }
+    }).catch(() => {
+      __nexPrefetchInFlight.delete(key);
+    });
+    __nexPrefetchInFlight.set(key, p);
+  }
+  /**
+   * 换页成功后预取紧邻的下一页(及上一页), 供下一步操作即时切换
+   * @param {number} n 当前所在页
+   */
+  function __nexPrefetchAround(n) {
+    __nexPrefetch(n + 1);
+    if (n > 1) __nexPrefetch(n - 1);
+  }
   function __nexTurnPage(n) {
     if (isMT) return false;
     const url = __kesaPageUrl(n);
-    fetch(url)
-      .then((resp) => resp.text())
-      .then((html) => {
-        const doc = new DOMParser().parseFromString(html, "text/html");
-        /** @type {any[]} */
-        let objs = [];
-        try {
-          if (__isPTT) {
-            objs = __pttParse(doc);
-          } else {
-            const table = doc.querySelector(GET_TORRENT_LIST_SELECTOR());
-            if (table) objs = config.TORRENT_LIST_TO_JSON(table).map(__normalizeTorrent);
-          }
-        } catch (e) {
-          console.warn("NEX 换页解析失败:", e);
-        }
-        if (!objs || !objs.length) {
-          console.warn("NEX 换页: 目标页无数据, 退回整体跳转");
-          location.href = url;
-          return;
-        }
-        // 替换瀑布流卡片为目标页数据
-        infoList = objs;
-        // 同步 URL(不整页刷新), 供刷新恢复页码/WebDAV 页码同步读取当前页
-        try { history.pushState(null, "", url); } catch (e) {}
-        PAGE.PAGE_CURRENT = n;
-        PAGE.IS_ORIGIN = false;
-        // 记录页码 + 更新侧边栏"第 N 页"指示器
-        __kesaSavePageState(n);
-        __kesaPageInd(n);
-        // 等 Svelte 把卡片渲染进 DOM 后再重排布局
-        onMountSignal = true;
-        setTimeout(() => { onMountSignal = false; }, 1000);
-        setTimeout(() => {
-          if (window.CHANGE_CARD_LAYOUT) window.CHANGE_CARD_LAYOUT();
-          if (masonry) { masonry.reloadItems(); masonry.layout("fast"); masonry.layout("fast"); }
-          setTimeout(NEXUS_TOOLS, 300);
-          // 换页后自动滚回顶部, 方便从上往下浏览新页卡片
-          try {
-            window.scrollTo({ top: 0, behavior: "auto" });
-            // 瀑布流容器(可能是内部滚动)也复位到顶
-            const wf = document.querySelector(".waterfall, .app-content__inner, .kesaWaterfall");
-            if (wf && wf.scrollTop) wf.scrollTop = 0;
-            // 页面有滚动锚点时一并复位
-            const anchor = document.querySelector("#_kesa_root, #app");
-            if (anchor && anchor.scrollTop) anchor.scrollTop = 0;
-          } catch (e) {}
-        }, 80);
-      })
-      .catch((err) => {
-        console.warn("NEX 换页请求失败, 退回整体跳转:", err);
+    const key = __nexCacheKey(url, n);
+    // 命中预取缓存: 直接就地切换, 秒切
+    if (__nexPageCache.has(key)) {
+      const objs = /** @type {any[]} */ (__nexPageCache.get(key));
+      __nexPageCache.delete(key);
+      __fillNexPage(objs, n, url);
+      __nexPrefetchAround(n);
+      return true;
+    }
+    // 未命中: 抓取目标页(实时请求, 因服务端响应约 1.5s, 属正常等待)
+    __nexParse(url).then((objs) => {
+      if (!objs) {
+        console.warn("NEX 换页: 目标页无数据, 退回整体跳转");
         location.href = url;
-      });
+        return;
+      }
+      __fillNexPage(objs, n, url);
+      __nexPrefetchAround(n);
+    }).catch((err) => {
+      console.warn("NEX 换页请求失败, 退回整体跳转:", err);
+      location.href = url;
+    });
     return true;
+  }
+  /**
+   * 把已解析的目标页数据替换到瀑布流卡片, 同步 URL/页码指示器并重排布局
+   * @param {any[]} objs
+   * @param {number} n
+   * @param {string} url
+   */
+  function __fillNexPage(objs, n, url) {
+    // 替换瀑布流卡片为目标页数据
+    infoList = objs;
+    // 同步 URL(不整页刷新), 供刷新恢复页码/WebDAV 页码同步读取当前页
+    try { history.pushState(null, "", url); } catch (e) {}
+    PAGE.PAGE_CURRENT = n;
+    PAGE.IS_ORIGIN = false;
+    // 记录页码 + 更新侧边栏"第 N 页"指示器
+    __kesaSavePageState(n);
+    __kesaPageInd(n);
+    // 等 Svelte 把卡片渲染进 DOM 后再重排布局
+    onMountSignal = true;
+    setTimeout(() => { onMountSignal = false; }, 1000);
+    setTimeout(() => {
+      if (window.CHANGE_CARD_LAYOUT) window.CHANGE_CARD_LAYOUT();
+      if (masonry) { masonry.reloadItems(); masonry.layout("fast"); masonry.layout("fast"); }
+      setTimeout(NEXUS_TOOLS, 300);
+      // 换页后自动滚回顶部, 方便从上往下浏览新页卡片
+      try {
+        window.scrollTo({ top: 0, behavior: "auto" });
+        // 瀑布流容器(可能是内部滚动)也复位到顶
+        const wf = document.querySelector(".waterfall, .app-content__inner, .kesaWaterfall");
+        if (wf && wf.scrollTop) wf.scrollTop = 0;
+        // 页面有滚动锚点时一并复位
+        const anchor = document.querySelector("#_kesa_root, #app");
+        if (anchor && anchor.scrollTop) anchor.scrollTop = 0;
+      } catch (e) {}
+    }, 80);
   }
   // 挂到 window, 供 sync.js 页码导航按钮复用
   // @ts-ignore
   window.__kesaNexTurnPage = __nexTurnPage;
+  // @ts-ignore
+  window.__kesaNexPrefetchAround = __nexPrefetchAround;
 
   /** M-Team(.m-team.cc SPA)AJAX 换页: 点击页码导航"上一页/下一页/跳转"时, 用 history.pushState
    *  更新 URL(pageNumber=n), 再直接发起签名请求抓取第 n 页数据并**整体替换**瀑布流卡片,
@@ -724,6 +811,12 @@
     // 实时记录当前页码 + 侧边栏"第 N 页"指示器(点击跳转真实 URL)
     __kesaSavePageState(currentPageFromUrl());
     __kesaPageInd(currentPageFromUrl());
+
+    // NEX(.php)站: 初始加载完成后, 空闲时后台预取紧邻页, 使"下一页"接近秒切换
+    // (kamept 等服务端整页渲染约 1.5s, 预取可把等待时间藏到后台)
+    if (!isMT) {
+      setTimeout(() => { __nexPrefetchAround(currentPageFromUrl()); }, 1200);
+    }
 
     // 窗口尺寸变化后重跑布局(防抖, 保持用户设定列数 + 重新居中)
     if (!window.__kesaResizeBound) {
