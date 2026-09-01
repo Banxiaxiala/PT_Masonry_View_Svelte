@@ -1,4 +1,4 @@
-export let version = '1.2.62b';
+export let version = '1.2.63b';
 
 export function config(mode) {
   return {
@@ -50,6 +50,10 @@ export function config(mode) {
     ],
     license: "MIT",
     "run-at": "document-start",
+
+    // 自动更新源：jsDelivr CDN 指向 fork 仓库 main 分支的固定文件(每次发版覆盖 releases/PT_Masonry_View_Svelte.latest.user.js)
+    updateURL: "https://cdn.jsdelivr.net/gh/Banxiaxiala/PT_Masonry_View_Svelte@main/releases/PT_Masonry_View_Svelte.latest.user.js",
+    downloadURL: "https://cdn.jsdelivr.net/gh/Banxiaxiala/PT_Masonry_View_Svelte@main/releases/PT_Masonry_View_Svelte.latest.user.js",
 
     // NOTE: 经常修改这里就行了
   };
