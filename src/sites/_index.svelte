@@ -298,6 +298,32 @@
   }
   window.turnPage = turnPage;
 
+  /** 一键本页已读: 把当前瀑布流页面上所有卡片都标记为已读。
+   *  数据源为当前页 infoList(与卡片 readKey 的 it.id 一致), 避免重复追加。
+   *  供 sync.js "已读标记"面板的"一键本页已读"按钮调用。 */
+  window.__kesaMarkPageRead = function () {
+    const readStore = window.__kesaRead && window.__kesaRead.readIds;
+    if (!readStore) return;
+    const keys = infoList
+      .map(function (t) {
+        return t && t.id != null && t.id !== "" ? String(t.id) : null;
+      })
+      .filter(function (k) {
+        return !!k;
+      });
+    if (!keys.length) return;
+    const cur = readStore.get();
+    const merged = cur.slice();
+    let changed = false;
+    keys.forEach(function (k) {
+      if (!merged.includes(k)) {
+        merged.push(k);
+        changed = true;
+      }
+    });
+    if (changed) readStore.set(merged);
+  };
+
   /** 延迟调用 Nexus Tool */
   function nexus_tool_delay() {
     setTimeout(NEXUS_TOOLS, 500);

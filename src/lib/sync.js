@@ -451,6 +451,27 @@ function __fillReadSection(container) {
   container.appendChild(panel);
   const row = document.createElement("div");
   row.style.cssText = "display:flex;gap:4px;padding:8px 10px 0;";
+  // 一键本页已读(带图标): 把当前瀑布流页面上所有卡片都标记为已读
+  const pageReadBtn = document.createElement("button");
+  pageReadBtn.style.cssText =
+    "display:inline-flex;align-items:center;gap:4px;border:none;background:#2f9e57;color:#fff;border-radius:4px;cursor:pointer;padding:4px 10px;font-size:12px;";
+  // 勾选图标(SVG 内联, 不依赖外部资源)
+  pageReadBtn.innerHTML =
+    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="#fff"/></svg>';
+  const pageReadText = document.createElement("span");
+  pageReadText.textContent = "一键本页已读";
+  pageReadBtn.appendChild(pageReadText);
+  pageReadBtn.onclick = () => {
+    if (typeof window.__kesaMarkPageRead === "function") {
+      const before = __storeVal(__readIds).length;
+      window.__kesaMarkPageRead();
+      const after = __storeVal(__readIds).length;
+      alert(`本页已全部标记已读，新增 ${after - before} 个种子`);
+    } else {
+      alert("未找到当前页数据，请先切换到瀑布流视图");
+    }
+  };
+  row.appendChild(pageReadBtn);
   const clearBtn = document.createElement("button");
   clearBtn.textContent = "清除所有已读标记";
   clearBtn.style.cssText =

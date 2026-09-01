@@ -25,6 +25,7 @@ declare global {
     __kesaImgDiag?: any;
     __kesaResizeBound?: any;
     __kesaMTDiag?: any;
+    __kesaMarkPageRead?: () => void;
     // jQuery(站点自带)
     jQuery?: any;
     $?: any;
