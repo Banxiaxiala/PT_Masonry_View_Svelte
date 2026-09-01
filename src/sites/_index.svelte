@@ -640,12 +640,34 @@
         __mtFill(arr);
         try { __kesaSavePageState(n); } catch (e) {}
         try { __kesaPageInd(n); } catch (e) {}
+        // 数据整体替换后再次滚顶, 确保新页从顶部开始浏览
+        try {
+          window.scrollTo({ top: 0, behavior: "auto" });
+          const el = document.querySelector(".app-content__inner, .app-content, .waterfall");
+          if (el && el.scrollTop) el.scrollTop = 0;
+          let nd = waterfallNode;
+          while (nd) {
+            if (nd.scrollHeight > nd.clientHeight && nd.scrollTop) nd.scrollTop = 0;
+            nd = nd.parentElement;
+          }
+        } catch (e) {}
       } else if (++__polls >= 8) {
         clearInterval(iv);
       }
     }, 500);
-    // 换页后自动滚回顶部
+    // 换页后自动滚回顶部: M-Team 是内部滚动 SPA, 主文档往往不滚动, 需复位内部滚动容器
+    // (app-content__inner 等), 以及脚本自身瀑布流容器 waterfallNode 及其可滚动祖先。
     try { window.scrollTo({ top: 0, behavior: "auto" }); } catch (e) {}
+    try {
+      const els = document.querySelectorAll(".app-content__inner, .app-content, .waterfall, .kesaWaterfall, #_kesa_root, #app");
+      els.forEach((el) => { if (el.scrollTop) el.scrollTop = 0; });
+      // 从瀑布流容器向上找实际可滚动容器并复位(兼容不同站点布局)
+      let node = waterfallNode;
+      while (node) {
+        if (node.scrollHeight > node.clientHeight && node.scrollTop) node.scrollTop = 0;
+        node = node.parentElement;
+      }
+    } catch (e) {}
     return true;
   }
   // @ts-ignore
