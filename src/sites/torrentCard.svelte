@@ -46,7 +46,7 @@
     return "#";
   }
 
-  /** 点击卡片标题/封面: 在网页内 iframe 中打开详情预览(不再新标签页) */
+  /** 点击卡片封面/图片: 在网页内 iframe 中打开详情预览(标题已改为原生 target=_blank 打开新标签页, 不再走此) */
   /** @param {any} e */
   function onClickCard(e) {
     const link = detailLink();
@@ -207,10 +207,11 @@
       {cateName}
     </div>
 
-    <!-- 标题 & 详情链接 -->
+    <!-- 标题 & 详情链接: 点击打开新网页(原生 target=_blank, 左键前台新标签/中键后台新标签),
+         不走悬浮预览 iframe(预览仅保留在封面/图片区域 onClickCard) -->
     {#if $_CARD_SHOW.title}
       <div class="card-title">
-        <a class="two-lines" href={detailLink()} target="_blank" on:click={onClickCard}>
+        <a class="two-lines" href={detailLink()} target="_blank">
           <b>{it.name}</b>
         </a>
       </div>
