@@ -958,6 +958,13 @@
     background-color: gray;
     color: white;
 
+    /* 统一侧边栏按钮字体, 避免 M-Team(body Rubik/16px) 等站点字体偏大导致悬浮窗尺寸异常 */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+      "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    font-size: 13px;
+    line-height: 1.2;
+    white-space: nowrap;
+
     padding: 4px 8px;
 
     margin: 4px;
