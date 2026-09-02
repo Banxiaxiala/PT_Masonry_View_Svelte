@@ -1,0 +1,12 @@
+refactor(v1.2.91b): M-Team 详情收集改为直接 DOM 模拟(不走 API)
+
+用户反馈: 第一轮点按钮不弹窗/取0, 第二轮才正常(弹 modal 一页页翻页)。
+用户进一步明确: 不要直接请求 API, 而是和"第二轮"一样模拟(即 DOM 点击打开 modal 翻页收集)。
+修复(userdetail.js):
+1. __collectMTeam 直接 return __collectMTeamTorrentIds()(DOM 模拟), 删除 API 优先逻辑;
+2. 删除整个 API 路径死代码(__mteamApiPost / __collectMTeamViaApi / __MT_REQ_DEF / __mtEnsureReq),
+   产物体积 189.9kB→185.5kB, minified 中 __kesaMtApi 出现 0 次;
+3. 保留 __mtThrottle(DOM 3s 节流: 打开 modal/翻页前都过它, 避免"请求过于频繁");
+4. 主流程保留"首次收集全空则自动重试一轮"兜底。
+验证: npx vite build 压缩版 180.44 kB(185,495B); @version 1.2.91b;
+node --check 通过; minified 含 `function us(){return hc()}`(__collectMTeam→DOM), 无 __kesaMtApi。

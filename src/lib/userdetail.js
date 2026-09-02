@@ -7,9 +7,9 @@
 //      接口 getusertorrentlistajax.php?page=N&userid=UID&type=TYPE (page 从 0)
 //   ② mua.xloli.cc(userdetails.php?uuid=...): 同为 NexusPHP 结构但**参数名是 `useruuid`**(实测确认)
 //      接口 getusertorrentlistajax.php?useruuid=UUID&type=TYPE&page=N (**page 从 0**, 跟其他 NexusPHP 一致)
-//   ③ M-Team(kp.m-team.cc/profile/detail/N): mTorrent/antd SPA **优先走官方接口**
-//      POST /member/getUserTorrentList {userid, type:COMPLETED|INCOMPLETE, pageNumber, pageSize}
-//      (HMAC 签名与 _index.svelte 同套), 失败才回退点击"察看"展开 ant-modal 翻页收集。
+//   ③ M-Team(kp.m-team.cc/profile/detail/N): mTorrent/antd SPA **直接 DOM 模拟**
+//      点击"完成種子/未完成種子"行的"察看"展开 ant-modal, 逐页收集(不走 API,
+//      用户实测 API 首轮会卡/失败, DOM 模拟正常)。
 // 仅在这些页面生效，不干扰种子列表页/种子详情页的瀑布流主逻辑。
 
 const __READ_NS = 'Kesa:Masonry';     // 与 sync.js 的 __STORE_NS 保持一致
@@ -95,162 +95,9 @@ async function __mtThrottle() {
   __mtLastTs = Date.now();
 }
 
-/** M-Team MAIN_WORLD 签名辅助 __kesaMtReq 的定义脚本(幂等注入)。
- * 读取 localStorage(auth/did/visitorId/apiHost) 构造 HMAC-SHA1 签名请求官方接口,
- * 结果经 __kesaMtApi 自定义事件回传沙盒。签名算法与 _index.svelte __mtFetchFallback 一致。 */
-const __MT_REQ_DEF = 'window.__kesaMtReq || (window.__kesaMtApiInit=function(){' +
-  'var __secret="HLkPcWmycL57mfJt";' +
-  'window.__kesaMtReq=function(path,body,token){' +
-  'try{' +
-  'var __apiHost=localStorage.getItem("apiHost")||"";' +
-  // M-Team 真实 API 域名(localStorage apiHost; 无值时用 api2.m-team.cc/api 兜底)
-  'if(!__apiHost && /m-team\\.cc/i.test(location.hostname)) __apiHost="https://api2.m-team.cc/api";' +
-  'var __u=(__apiHost||("https://api2.m-team"+location.origin.match(/\\.([^.]+)$/)[0]+"/api"))+path;' +
-  'var __o={};for(var k in body)__o[k]=body[k];__o._timestamp=Date.now();' +
-  'if(!window.crypto||!window.crypto.subtle){document.dispatchEvent(new CustomEvent("__kesaMtApi",{detail:{token:token,error:"no-crypto"}}));return;}' +
-  'window.crypto.subtle.importKey("raw",new TextEncoder().encode(__secret),{name:"HMAC",hash:"SHA-1"},false,["sign"])' +
-  '.then(function(k){return window.crypto.subtle.sign("HMAC",k,new TextEncoder().encode("POST&"+new URL(__u).pathname+"&"+__o._timestamp));})' +
-  '.then(function(sig){__o._sgin=btoa(String.fromCharCode.apply(null,new Uint8Array(sig)));' +
-  'var __h={"Content-Type":"application/json",version:"1.1.7",webVersion:"1170",visitorId:localStorage.getItem("visitorId")||"",did:localStorage.getItem("did")||"",authorization:localStorage.getItem("auth")||"",ts:Math.floor(Date.now()/1e3)};' +
-  'return fetch(__u,{method:"POST",headers:__h,body:JSON.stringify(__o)});})' +
-  '.then(function(r){return r.json();})' +
-  '.then(function(j){document.dispatchEvent(new CustomEvent("__kesaMtApi",{detail:{token:token,result:j}}));})' +
-  '.catch(function(e){document.dispatchEvent(new CustomEvent("__kesaMtApi",{detail:{token:token,error:String(e)}}));});' +
-  '}catch(e){document.dispatchEvent(new CustomEvent("__kesaMtApi",{detail:{token:token,error:String(e)}}));}' +
-  '};' +
-  'return true;' +
-  '}())';
-
-/** 确保 MAIN_WORLD 已注入 __kesaMtReq(幂等; append script 是同步执行的) */
-function __mtEnsureReq() {
-  const s = document.createElement('script');
-  s.textContent = __MT_REQ_DEF;
-  (document.head || document.documentElement).appendChild(s);
-  s.remove();
-}
-
-/**
- * M-Team API 通用调用：在 MAIN_WORLD 注入脚本读取 localStorage(auth/did/visitorId),
- * 构造 HMAC-SHA1 签名请求调用官方接口，结果通过 document 自定义事件回传沙盒。
- * 与 _index.svelte 的 __mtFetchFallback(劫持 sandbox)同一套签名机制。
- * 请求前先确保 __kesaMtReq 已注入 + 过 __mtThrottle 全局节流。
- * @param {string} path 接口路径(如 "/member/getUserTorrentList")
- * @param {object} body 业务参数字典(不含 _timestamp/_sgin)
- * @param {number} [timeout] 超时 ms，默认 12000
- * @returns {Promise<object|null>} 接口 JSON 响应(含 code/message/data)；出错或超时返回 null
- */
-async function __mteamApiPost(path, body, timeout) {
-  await __mtThrottle();
-  __mtEnsureReq(); // 确保签名函数已注入, 避免"首次点击取 0"
-  return new Promise((resolve) => {
-    const __token = 'm' + Date.now() + Math.random().toString(36).slice(2);
-    const __done = (v) => { clearTimeout(tid); document.removeEventListener('__kesaMtApi', __on); resolve(v); };
-    const __on = (e) => {
-      const d = e && e.detail;
-      if (!d || d.token !== __token) return;
-      if (d.error) { __done(null); return; }
-      __done(d.result || null);
-    };
-    const tid = setTimeout(() => __done(null), timeout || 8000);
-    // 关键: 必须在 document 上监听(与 _index.svelte __mtFetchFallback 的
-    // document.addEventListener("__kesaMTData") 一致)。__kesaMtReq 在 MAIN_WORLD
-    // 用 document.dispatchEvent 派发, 油猴沙盒的 window 监听收不到 document 派发的
-    // CustomEvent(事件隔离), 会导致请求永远 pending → 收集 0 条/超时。
-    document.addEventListener('__kesaMtApi', __on);
-    const script = document.createElement('script');
-    script.textContent =
-      '(function(){' +
-      'try{' +
-      '__kesaMtReq(' + JSON.stringify(path) + ',' + JSON.stringify(body) + ',' + JSON.stringify(__token) + ');' +
-      '}catch(e){document.dispatchEvent(new CustomEvent("__kesaMtApi",{detail:{token:' + JSON.stringify(__token) + ',error:String(e)}}));}' +
-      '})();';
-    (document.head || document.documentElement).appendChild(script);
-    script.remove();
-  });
-}
-
-/**
- * M-Team API 收集器：分页调用官方接口 /member/getUserTorrentList 提取完成/未完成种子 id。
- * 相比 DOM 点击"察看"展开 ant-modal 翻页，走官方接口更稳定，且不受分页条省略号折叠影响。
- * 返回 { completed, incomplete } 两个 Set；任一组失败返回对应空 Set(由主流程决定是否回退 DOM)。
- */
-async function __collectMTeamViaApi() {
-  const result = { completed: new Set(), incomplete: new Set() };
-  const map = { completed: 'COMPLETED', incomplete: 'INCOMPLETE' };
-  const userId = __MT_PROFILE_ID; // 抓包实测: userid 传字符串(如 "349701")
-  if (!userId) return result;
-  // 注: 不再预热 /system/getConf——抓包确认它是 multipart(form-data items=...),
-  // 用 JSON 空体调用会挂起/无意义, 且实测不带它也能正常调 getUserTorrentList。
-  const pageSize = 100; // 抓包实测: 页面用 pageSize=100(分页条每页 100)
-  for (const type of ['completed', 'incomplete']) {
-    const set = result[type];
-    let page = 1;
-    for (; page <= 1000; page++) { // swagger: pageNumber 最大 1000
-      let resp;
-      try {
-        resp = await __mteamApiPost('/member/getUserTorrentList', {
-          userid: userId, type: map[type], pageNumber: page, pageSize: pageSize,
-        });
-      } catch (e) {
-        console.warn('[kesa-userdetail][mt-api] ' + type + ' 第' + page + '页请求异常:', e);
-        break;
-      }
-      // 响应结构 Result{code,message,data}；成功 code=0, data 键为
-      // {pageNumber,pageSize,total,totalPages,data}, data.data 每条为
-      // {torrent,snatched,peer,seek}, 种子 id 在 item.torrent.id
-      if (!resp) { console.warn('[kesa-userdetail][mt-api] ' + type + ' 第' + page + '页超时/失败'); break; }
-      if (resp.code != null && resp.code !== 0 && resp.code !== 200) {
-        console.warn('[kesa-userdetail][mt-api] ' + type + ' code=' + resp.code, resp.message);
-        // 一次性打印响应结构便于定位字段差异
-        if (!window.__kesaMtApiDiag && resp.data != null) { window.__kesaMtApiDiag = true; console.log('[kesa-userdetail][mt-api] 原始 data 键=', Object.keys(resp.data)); }
-        break;
-      }
-      const dataObj = resp.data || {};
-      // 种子数组: data.data; 每页与总页数信息在 data.total/data.totalPages
-      const list = Array.isArray(dataObj.data) ? dataObj.data : [];
-      const totalPages = parseInt(dataObj.totalPages, 10);
-      if (!list.length) {
-        // 首次失败时打印结构, 便于对实际 JSON 调整
-        if (!window.__kesaMtApiDiag && resp.data != null) {
-          window.__kesaMtApiDiag = true;
-          console.log('[kesa-userdetail][mt-api] 响应无种子数组, data=', JSON.stringify(resp.data).slice(0, 500));
-        }
-        break;
-      }
-      // 首次成功时打印条目结构, 便于确认 id 字段路径
-      if (!window.__kesaMtApiDiag) {
-        window.__kesaMtApiDiag = true;
-        console.log('[kesa-userdetail][mt-api] 首个条目键=', Object.keys(list[0]), '| torrent.id=', list[0].torrent && list[0].torrent.id);
-      }
-      list.forEach((it) => {
-        // 实测: id 在 it.torrent.id(种子对象), 兼容 torrentId/id 兜底
-        const t = it && (it.torrent || it);
-        const tid = t != null && t.torrentId != null ? t.torrentId
-          : (t != null && t.id != null ? t.id : null);
-        if (tid != null) set.add(String(tid));
-      });
-      if (page % 5 === 0) { console.log('[kesa-userdetail][mt-api] ' + type + ' 已抓取 ' + page + ' 页, 累计 ' + set.size); }
-      // 精准分页终止: data.totalPages 已知时用它; 否则按"返回数<pageSize"兜底
-      // 请求间隔已由 __mteamApiPost 内部全局节流保证(每次调用前自动补足 3s)
-      if (totalPages > 0) { if (page >= totalPages) break; }
-      else if (list.length < pageSize) break;
-    }
-    console.log('[kesa-userdetail][mt-api] ' + type + ' 遍历 ' + (page - 1) + ' 页, 累计 ' + set.size + ' 条');
-  }
-  return result;
-}
-
-/** ③ M-Team：先用官方 API 收集，失败再回退 DOM 点击遍历(见下方 __collectMTeamTorrentIds) */
+/** ③ M-Team：直接走 DOM 模拟(点击"察看"打开 modal + 一页页翻页收集)。
+ * 用户实测 API 路径首轮会卡/失败, 而 DOM 模拟(第二轮)正常, 故不再先请求 API。 */
 async function __collectMTeam() {
-  // 确保 MAIN_WORLD 已注入 __kesaMtReq 签名辅助(幂等; 每次 __mteamApiPost 前也会再确保)
-  __mtEnsureReq();
-  const api = await __collectMTeamViaApi();
-  const apiOk = api.completed.size > 0 || api.incomplete.size > 0;
-  if (apiOk) {
-    console.log('[kesa-userdetail][mt] 优先采用官方 API 收集: 完成' + api.completed.size + ' 未完成' + api.incomplete.size);
-    return api;
-  }
-  console.warn('[kesa-userdetail][mt] API 收集为空, 回退 DOM 点击遍历');
   return __collectMTeamTorrentIds();
 }
 
@@ -488,9 +335,8 @@ async function __recordCompletedIncompleteRead() {
   if (btn) btn.textContent = '提取中…';
 
   if (__IS_MT) {
-    // M-Team profile 页：优先官方 API 收集，失败回退 DOM 点击遍历
-    // 首次可能因 __kesaMtReq 注入/初始化竞态返回空(用户实测: 第一轮不弹窗, 第二轮才正常),
-    // 故若收集结果全空则自动重试一轮(第二轮通常正常)。
+    // M-Team profile 页：直接 DOM 模拟点击"察看"展开 modal 逐页收集。
+    // 首次 DOM 可能因 antd modal 渲染时序未就绪返回空, 故全空时自动重试一轮。
     let map = await __collectMTeam();
     if (map.completed.size === 0 && map.incomplete.size === 0) {
       console.warn('[kesa-userdetail][mt] 首次收集为空, 自动重试一轮');
@@ -556,8 +402,6 @@ function __injectReadButton() {
 /** 入口：document-start 后多次尝试注入(等待用户详情页区块渲染) */
 function __initUserDetail() {
   if (!__isUserDetailsPage()) return;
-  // M-Team 详情页预注入 __kesaMtReq 签名辅助, 避免"首次点击获取 0"(二次点击才正常)
-  if (__IS_MT) { try { __mtEnsureReq(); } catch (e) { /* 忽略 */ } }
   __injectReadButton();
   setTimeout(__injectReadButton, 1000);
   setTimeout(__injectReadButton, 3000);
