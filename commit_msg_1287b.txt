@@ -1,0 +1,13 @@
+fix(v1.2.87b): M-Team API 请求节流改为 __mteamApiPost 内部全局节流(保证严格 3s 间隔)
+
+用户反馈上一版(1.2.86b)加间隔后请求还是很快, 不是每 3 秒一次。
+原因: 1.2.86b 只在分页循环每页后 sleep, 但:
+  1) 第一个请求(每分类第一页)前没有 sleep;
+  2) 两分类(completed/incomplete)切换之间没有间隔;
+  3) getConf 预热等其他请求不受控。
+修复: 把节流下沉到 __mteamApiPost 内部, 用模块级变量 __mtApiLastTs 记录上次请求时间,
+每次调用前 await sleep 补足到 __MT_API_INTERVAL(3s), 保证任意相邻两次 API 请求
+间隔 >= 3s(覆盖 getConf/completed/incomplete 全部分页)。移除分页循环里独立的 sleep,
+避免与内部节流叠加成 6s。
+验证: npx vite build 压缩版 184.50 kB(189,661B); @version 1.2.87b; node --check 通过;
+minified 含 `async function dc(e,t,n){const i=Date.now(),o=ac-(i-cs);return o>0&&await ii(o),cs=Date.now()`(ac=3e3)。

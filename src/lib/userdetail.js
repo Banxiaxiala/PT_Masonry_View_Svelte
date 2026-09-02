@@ -90,12 +90,20 @@ function __sleep(ms) {
  * M-Team API 通用调用：在 MAIN_WORLD 注入脚本读取 localStorage(auth/did/visitorId),
  * 构造 HMAC-SHA1 签名请求调用官方接口，结果通过 document 自定义事件回传沙盒。
  * 与 _index.svelte 的 __mtFetchFallback(劫持 sandbox)同一套签名机制。
+ * 内部对连续请求做全局节流: 保证相邻两次 API 请求至少间隔 __MT_API_INTERVAL(3s),
+ * 避免触发 M-Team "请求过于频繁" 限流(覆盖所有请求, 含分页与分类切换)。
  * @param {string} path 接口路径(如 "/member/getUserTorrentList")
  * @param {object} body 业务参数字典(不含 _timestamp/_sgin)
  * @param {number} [timeout] 超时 ms，默认 12000
  * @returns {Promise<object|null>} 接口 JSON 响应(含 code/message/data)；出错或超时返回 null
  */
-function __mteamApiPost(path, body, timeout) {
+let __mtApiLastTs = 0;
+async function __mteamApiPost(path, body, timeout) {
+  // 全局节流: 距上一次请求不足 3s 则等待补足, 保证任意相邻请求间隔 >= 3s
+  const now = Date.now();
+  const wait = __MT_API_INTERVAL - (now - __mtApiLastTs);
+  if (wait > 0) await __sleep(wait);
+  __mtApiLastTs = Date.now();
   return new Promise((resolve) => {
     const __token = 'm' + Date.now() + Math.random().toString(36).slice(2);
     const __done = (v) => { clearTimeout(tid); document.removeEventListener('__kesaMtApi', __on); resolve(v); };
@@ -185,12 +193,9 @@ async function __collectMTeamViaApi() {
       });
       if (page % 5 === 0) { console.log('[kesa-userdetail][mt-api] ' + type + ' 已抓取 ' + page + ' 页, 累计 ' + set.size); }
       // 精准分页终止: data.totalPages 已知时用它; 否则按"返回数<pageSize"兜底
-      let isLast = false;
-      if (totalPages > 0) { isLast = page >= totalPages; }
-      else if (list.length < pageSize) isLast = true;
-      if (isLast) break;
-      // 请求间隔: 3s, 避免触发 M-Team "请求过于频繁"限流
-      await __sleep(__MT_API_INTERVAL);
+      // 请求间隔已由 __mteamApiPost 内部全局节流保证(每次调用前自动补足 3s)
+      if (totalPages > 0) { if (page >= totalPages) break; }
+      else if (list.length < pageSize) break;
     }
     console.log('[kesa-userdetail][mt-api] ' + type + ' 遍历 ' + (page - 1) + ' 页, 累计 ' + set.size + ' 条');
   }
