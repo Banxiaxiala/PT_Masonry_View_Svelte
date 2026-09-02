@@ -1,0 +1,16 @@
+fix(v1.2.92b): M-Team 详情"第一轮失败"根因——首轮无预热 waitForModal 超时过长
+
+用户问为什么第一轮会失败(第二轮正常)。
+根因分析:
+1. waitForModal 超时 120 次×150ms=18s, 且 thrott 首轮不等待(__mtLastTs=0 冷启动
+   使 wait=3000-(now-0) 为负, 跳过 sleep) → 第一轮点击后立即打开 modal, 但 SPA/
+   antd modal 首轮异步渲染未就绪, .ant-table-tbody tr 迟迟不出现 → waitForModal
+   长时间等待(最长 18s×2 个 modal) → 用户看到"不弹窗没反应"(其实在等); 第二轮
+   时站点/缓存已预热, modal 快速就绪 → 正常。
+修复(userdetail.js):
+1. __mtThrottle 新增 __mtFirst 首轮预热标志: 首次调用强制等待完整间隔(3s), 让
+   SPA/modal 先渲染稳定, 规避首轮竞态失败; 后续正常按间隔节流。
+2. waitForModal 超时 120→60 次(si>9s), 首轮失败能更快进入主流程的"自动重试一轮"
+   (1.2.90b 已加), 减少无效长时间等待。
+验证: npx vite build 压缩版 180.47 kB(185,533B); @version 1.2.92b;
+node --check 通过; minified 含 `let us=!0`(__mtFirst)+Math.max 预热逻辑。

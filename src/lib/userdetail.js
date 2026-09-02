@@ -85,12 +85,16 @@ function __sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+// 首轮预热标志: 第一次调用强制等待一个完整间隔, 让 SPA/modal 先渲染稳定, 避免首轮竞态失败
+let __mtFirst = true;
 let __mtLastTs = 0;
 /** M-Team 全局请求节流: 保证相邻两次"会触发后端请求"的操作至少间隔 __MT_API_INTERVAL(3s)。
- * API 分页请求、DOM 回退的打开 modal/翻页点击 都调用它, 避免触发"请求过于频繁"限流。 */
+ * DOM 回退的打开 modal/翻页点击 都调用它, 避免触发"请求过于频繁"限流。
+ * 首次调用额外等待一个完整间隔作预热(规避首轮 antd modal 未就绪)。 */
 async function __mtThrottle() {
   const now = Date.now();
-  const wait = __MT_API_INTERVAL - (now - __mtLastTs);
+  let wait = __MT_API_INTERVAL - (now - __mtLastTs);
+  if (__mtFirst) { wait = Math.max(wait, __MT_API_INTERVAL); __mtFirst = false; }
   if (wait > 0) await __sleep(wait);
   __mtLastTs = Date.now();
 }
@@ -239,7 +243,7 @@ async function __collectMTeamTorrentIds() {
           return true;
         });
         if (hit) { clearInterval(timer); resolve(hit); return; }
-        if (++attempts > 120) { clearInterval(timer); resolve(null); }
+        if (++attempts > 60) { clearInterval(timer); resolve(null); }
       }, 150);
     });
 
