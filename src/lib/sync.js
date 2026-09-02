@@ -966,6 +966,25 @@ function __wdvFetch(url, method, body) {
   });
 }
 
+// 去掉整个 Kesa:Masonry 里的已读 id 子键(_read_ids 或 _read_ids.<host>),
+// 让 cfg.json 只同步配置、不再顺带备份已读; 已读完全交给 read.json 精确同步,
+// 避免 cfg/read 两文件冗余存同一份已读, 也避免已读增删触发 cfg.json 重复写盘。
+/**
+ * @param {any} cfgStr
+ */
+function __cfgStripReads(cfgStr) {
+  if (!cfgStr) return cfgStr;
+  try {
+    const o = JSON.parse(cfgStr);
+    for (const k in o) {
+      if (k.indexOf("_read_ids") === 0) delete o[k];
+    }
+    return JSON.stringify(o);
+  } catch (e) {
+    return cfgStr;
+  }
+}
+
 // 上传: 把本站已读/配置/页码 分别合并到 3 个本站独立文件(各站独立)。
 // 流量优化(坚果云): 手动上传(force=true)三部分全传; 自动上传(force=false)按"是否有变化"逐文件决定, 无变化的不重复写盘。
 /**
@@ -975,7 +994,8 @@ async function __wdvUpload(force) {
   const c = __storeVal(__wdvCfg);
   if (!c.url || !c.pass) throw new Error("请先填写 WebDAV 配置");
   const ids = [...__storeVal(__readIds)];
-  const cfgStr = localStorage.getItem("Kesa:Masonry") || "{}";
+  // 配置快照/上传一律用"剔除已读子键"后的净化串, 让 cfg 变化检测只反映真实配置变动。
+  const cfgStr = __cfgStripReads(localStorage.getItem("Kesa:Masonry") || "{}");
   const fallStr = localStorage.getItem("Kesa:Fall") || "{}";
   const snapIds = GM_getValue("pt_sync_idsSnap", "");
   const snapCfg = GM_getValue("pt_sync_cfgSnap", "");
