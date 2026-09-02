@@ -1,4 +1,4 @@
-export let version = '1.2.68b';
+export let version = '1.2.69b';
 
 export function config(mode) {
   return {
@@ -37,7 +37,7 @@ export function config(mode) {
       "*/seek.php*",
       "*m-team*/detail/*",
       "*/detail/*",
-      "*details.php*",
+      "*/details.php*",
       "*preview.php*",
       "*torrent-details*",
       // M-Team 消息页(message/-2 等)不是种子列表, 不需要瀑布流

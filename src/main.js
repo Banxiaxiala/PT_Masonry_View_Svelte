@@ -1,6 +1,7 @@
 import App from './main.svelte';
 import { GET_TORRENT_LIST_SELECTOR, IS_MT, __isPTT, __pttBoot } from './sites/index.js';
 import { __initReadTracking } from './lib/sync';
+import { __initUserDetail } from './lib/userdetail';
 // -------------------------------------------------------------
 
 export { _ORIGIN_TL_Node };
@@ -42,6 +43,14 @@ try {
   } else {
     setTimeout(__retryInit, 0);
   }
+}
+
+// 用户详情页(userdetails.php)专用功能: 提取完成/未完成种子写入已读。
+// 独立于瀑布流主逻辑, 仅在该页面注入按钮, 不干扰种子列表页/详情页。
+try {
+  __initUserDetail();
+} catch (e) {
+  console.warn("[kesa] __initUserDetail 执行失败:", e);
 }
 
 // -------------------------------------------------------------
