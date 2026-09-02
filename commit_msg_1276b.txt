@@ -1,0 +1,13 @@
+fix(v1.2.76b): M-Team 用户详情页完成/未完成种子仍报 0 条——antd modal 可见性误判
+
+用户反馈 1.2.75b 后 kp.m-team.cc 仍显示"完成种子0条、未完成种子0条、新增已读0条"。
+分析用户提供的 MHTML: 页面**同时挂载 2 个 ant-modal**(完成種子/未完成種子)，
+其中未展开的那个是隐藏的空 modal。旧 waitForModal 用 `el.style.display==='none'`
+判断可见性不可靠——antd 隐藏 modal 是外层 .ant-modal-wrap 的 CSS 设 display:none，
+dialog 自身内联 style.display 为空字符串，被误判为可见 → 命中空 modal → 收集 0 条。
+修复:
+1. 新增 isModalVisible: 用 getComputedStyle 沿祖先链冒泡, 任一 display:none 即隐藏;
+2. waitForModal 就绪条件收紧为"标题+可见+表格已渲染出至少一行
+   (.ant-table-tbody tr)", 避免 loading 骨架期误判就绪漏抓第一页;
+3. 按"察看"按钮 title 状态分流: 含"隱藏"=已展开直接用, 否则先点击再等待,
+   避免盲等 18s, 也避免重复点击误关。

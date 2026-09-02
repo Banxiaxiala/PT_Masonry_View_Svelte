@@ -158,9 +158,27 @@ async function __collectMTeamTorrentIds() {
   };
 
   /**
-   * 等待标题匹配、且已展开(可见)的 modal 对话框；超时返回 null。
-   * 注意：不能用"有 .ant-pagination"作就绪条件——未完成种子等可能只有 1 页，
-   * antd 不渲染分页条，会误判超时。改为"标题匹配 + 非 display:none(可见)"。
+   * 判断元素是否真正可见：沿祖先链向上冒泡，任何一层 getComputedStyle.display 为
+   * none 即视为隐藏。antd 隐藏的 modal 是通过外层 .ant-modal-wrap 的 CSS 设为
+   * display:none，而 dialog 自身内联 style.display 为空字符串，所以不能用
+   * `el.style.display` 判断(会误判空 modal 为可见)。必须用 getComputedStyle 冒泡。
+   */
+  const isModalVisible = (el) => {
+    let n = el;
+    while (n) {
+      try {
+        if (getComputedStyle(n).display === 'none') return false;
+      } catch (e) { /* 忽略个别祖先报错 */ }
+      n = n.parentElement;
+    }
+    return true;
+  };
+
+  /**
+   * 等待"标题匹配 + 真正可见 + 表格已渲染(.ant-table 存在)"的 modal 对话框；超时返回 null。
+   * 就绪条件不能只看标题/可见——antd 打开 modal 时先渲染容器后异步回填数据，且
+   * 未完成种子可能为空(无 .ant-pagination、无行)。用 .ant-table 兜底：只要 ant-table
+   * 结构渲染出来就认为该 modal 可收集(空则收集到 0 条，符合实际)。
    */
   const waitForModal = (titleRe) =>
     new Promise((resolve) => {
@@ -169,9 +187,10 @@ async function __collectMTeamTorrentIds() {
         const hit = Array.from(document.querySelectorAll('[role="dialog"]')).find((d) => {
           const t = d.querySelector('.ant-modal-title');
           if (!t || !titleRe.test(t.innerText || '')) return false;
-          // antd 隐藏的 modal 会保留在 DOM 并设 display:none，展开后为可见
-          const st = d.style;
-          if (st && st.display === 'none') return false;
+          if (!isModalVisible(d)) return false;
+          // 表格已渲染出至少一行结构("t" 行或 antd 空态 placeholder 行)才算就绪，
+          // 避免 loading 骨架期误判就绪导致漏抓第一页。
+          if (!d.querySelector('.ant-table-tbody tr')) return false;
           return true;
         });
         if (hit) { clearInterval(timer); resolve(hit); return; }
@@ -194,17 +213,23 @@ async function __collectMTeamTorrentIds() {
       console.warn('[kesa-userdetail] M-Team ' + type + ' 行未找到"察看"按钮');
       continue;
     }
-    // modal 可能已展开(按钮显示"隱藏")，也可能未展开(按钮显示"察看")；
-    // 未展开时才点击"察看"打开，已展开则直接使用当前 modal。
-    let modal = await waitForModal(modalTitleRe[type]);
-    if (!modal) {
-      if (/察看/.test(viewBtn.getAttribute('title') || '')) viewBtn.click();
-      else viewBtn.click(); // 无论标题，点击以触发数据加载
+    console.log('[kesa-userdetail][mt] ' + type + ' 按钮 title=', viewBtn.getAttribute('title') || '');
+    // 判断"察看"按钮当前状态：title 含"察看"= 未展开(点击打开)；含"隱藏"= 已展开(直接用)
+    const btnTitle = viewBtn.getAttribute('title') || viewBtn.textContent || '';
+    const alreadyOpen = /隱藏/.test(btnTitle);
+    let modal = null;
+    if (alreadyOpen) {
+      // 已展开(之前打开过)，直接等该 modal 就绪
+      modal = await waitForModal(modalTitleRe[type]);
+    } else {
+      // 未展开(按钮为"察看")：先点击打开，再等待就绪，避免盲等 18s
+      viewBtn.click();
       modal = await waitForModal(modalTitleRe[type]);
     }
     if (!modal) {
       console.warn('[kesa-userdetail] M-Team ' + type + ' 打开种子列表 modal 超时');
-      continue;
+      if (!alreadyOpen) { viewBtn.click(); modal = await waitForModal(modalTitleRe[type]); }
+      if (!modal) { console.warn('[kesa-userdetail] M-Team ' + type + ' 重试打开仍超时'); continue; }
     }
     // 在 modal 内部遍历分页收集 torrent_id
     let guard = 0;
