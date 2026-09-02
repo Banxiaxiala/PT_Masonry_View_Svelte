@@ -145,7 +145,9 @@ async function __collectMTeamViaApi() {
         console.warn('[kesa-userdetail][mt-api] ' + type + ' 第' + page + '页请求异常:', e);
         break;
       }
-      // 响应结构 Result{code,message,data}；成功 code 通常为 0，种子数组在 data.data
+      // 响应结构 Result{code,message,data}；成功 code=0, data 键为
+      // {pageNumber,pageSize,total,totalPages,data}, data.data 每条为
+      // {torrent,snatched,peer,seek}, 种子 id 在 item.torrent.id
       if (!resp) { console.warn('[kesa-userdetail][mt-api] ' + type + ' 第' + page + '页超时/失败'); break; }
       if (resp.code != null && resp.code !== 0 && resp.code !== 200) {
         console.warn('[kesa-userdetail][mt-api] ' + type + ' code=' + resp.code, resp.message);
@@ -153,9 +155,11 @@ async function __collectMTeamViaApi() {
         if (!window.__kesaMtApiDiag && resp.data != null) { window.__kesaMtApiDiag = true; console.log('[kesa-userdetail][mt-api] 原始 data 键=', Object.keys(resp.data)); }
         break;
       }
-      // 兜底解析种子数组: 兼容 data.data / data.torrents / data.list / data.totalRows...
-      let list = (resp.data && (resp.data.data || resp.data.torrents || resp.data.list)) || [];
-      if (!Array.isArray(list) || !list.length) {
+      const dataObj = resp.data || {};
+      // 种子数组: data.data; 每页与总页数信息在 data.total/data.totalPages
+      const list = Array.isArray(dataObj.data) ? dataObj.data : [];
+      const totalPages = parseInt(dataObj.totalPages, 10);
+      if (!list.length) {
         // 首次失败时打印结构, 便于对实际 JSON 调整
         if (!window.__kesaMtApiDiag && resp.data != null) {
           window.__kesaMtApiDiag = true;
@@ -163,21 +167,22 @@ async function __collectMTeamViaApi() {
         }
         break;
       }
-      // 首次成功时打印键名与 id 样本, 便于确认字段是否叫 torrentId
+      // 首次成功时打印条目结构, 便于确认 id 字段路径
       if (!window.__kesaMtApiDiag) {
         window.__kesaMtApiDiag = true;
-        console.log('[kesa-userdetail][mt-api] 首个条目键=', Object.keys(list[0]));
+        console.log('[kesa-userdetail][mt-api] 首个条目键=', Object.keys(list[0]), '| torrent.id=', list[0].torrent && list[0].torrent.id);
       }
-      let got = 0;
       list.forEach((it) => {
-        const tid = it != null && it.torrentId != null ? it.torrentId
-          : (it != null && it.id != null ? it.id : null);
-        if (tid != null) { set.add(String(tid)); got++; }
+        // 实测: id 在 it.torrent.id(种子对象), 兼容 torrentId/id 兜底
+        const t = it && (it.torrent || it);
+        const tid = t != null && t.torrentId != null ? t.torrentId
+          : (t != null && t.id != null ? t.id : null);
+        if (tid != null) set.add(String(tid));
       });
-      // 每页数量少于 pageSize → 已到末页
-      if (list.length < pageSize) break;
-      if (got === 0) break; // 防呆：有行但提取不到 id 也停
       if (page % 5 === 0) { console.log('[kesa-userdetail][mt-api] ' + type + ' 已抓取 ' + page + ' 页, 累计 ' + set.size); }
+      // 精准分页终止: data.totalPages 已知时用它; 否则按"返回数<pageSize"兜底
+      if (totalPages > 0) { if (page >= totalPages) break; }
+      else if (list.length < pageSize) break;
     }
     console.log('[kesa-userdetail][mt-api] ' + type + ' 遍历 ' + (page - 1) + ' 页, 累计 ' + set.size + ' 条');
   }

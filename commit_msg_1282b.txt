@@ -1,0 +1,23 @@
+fix(v1.2.82b): M-Team 详情页收集修复(API 响应 id 在 torrent.id) + /browse/ 白名单瀑布流
+
+用户反馈: ①只有 /browse/ 后面的才需要加载瀑布流 ②「记录完成/未完成种子为已读」仍不行, 需调试浏览器。
+
+【浏览器调试发现 - 真实 API 响应结构】(在 kp.m-team.cc/browse/movie 页 attach, 注入签名请求实测):
+- localStorage apiHost 实际为 https://api2.m-team.cc/api(非 api.m-team.io; localStorage 有值所以 fallback 未触发)
+- GET/POST /member/getUserTorrentList 成功(code=0 SUCCESS)
+- 响应 data 键为 {pageNumber,pageSize,total,totalPages,data}
+- data.data 每条为 {torrent,snatched,peer,seek}, **种子 id 在 it.torrent.id**(非 torrentId/id!)
+- 实测 userid=349701: INCOMPLETE total=14/totalPages=1; COMPLETED total=420/totalPages=3
+- id 样本 1237624 等与 MHTML 的 data-row-key COMPLETED_1237624 完全一致 → API 与 DOM 数据同源
+
+【修复1 - API 解析】(userdetail.js __collectMTeamViaApi):
+- id 提取改为 it.torrent.id(兼容 torrentId/id 兜底): const t=it&&(it.torrent||it); tid=t.torrentId??t.id
+- 分页终止改用 data.totalPages 精准判断(有值时 page>=totalPages 停), 无值才按 list.length<pageSize 兜底
+- 移除原来错误的 got===0 break(旧代码 id 取不到→got 恒 0→首页即 break→0 条, 这正是功能不行的根因)
+
+【修复2 - 瀑布流白名单】(main.js):
+- M-Team 挂载守卫改为仅 /browse/ 开头才挂载(if(!/\/browse\//i.test(pathname)) 跳过)
+- 覆盖 /message/*、/usercp、/profile、首页、详情页等全部非列表页
+
+验证: npx vite build 压缩版 184.21 kB(189,348B); @version 1.2.82b; node --check 通过;
+minified 含 /\/browse\//i.test(pathname) 守卫与 totalPages 分页逻辑。
