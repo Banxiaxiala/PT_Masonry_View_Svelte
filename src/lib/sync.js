@@ -966,18 +966,31 @@ function __wdvFetch(url, method, body) {
   });
 }
 
-// 去掉整个 Kesa:Masonry 里的已读 id 子键(_read_ids 或 _read_ids.<host>),
-// 让 cfg.json 只同步配置、不再顺带备份已读; 已读完全交给 read.json 精确同步,
-// 避免 cfg/read 两文件冗余存同一份已读, 也避免已读增删触发 cfg.json 重复写盘。
+// 上传 cfg 前的净化: 只保留本站真正需要的配置子键, 剔除两类冗余/串站残留:
+//   ① 已读 id 子键(_read_ids / _read_ids.<host>): 已读已由 read.json 精确同步, 不在此备份;
+//   ② 无 ".host" 后缀的旧版遗留全局键(_SITE_SETTING/_bgColor/_card_layout/_read_ids 等):
+//      1.2.35b/1.2.50b 前的旧脚本把它们整包写进 Kesa:Masonry, 且 1.2.35b 前曾跨站共享
+//      (如 M-Team 的 _SITE_SETTING.mt 会混进 kamept 等站). 当前代码已改为按 "_key.<host>" 后缀
+//      逐站读写、_SITE_SETTING 等已删源码, 这些无后缀键纯属历史残留, 每站 cfg.json 整包携带
+//      就会"一个站点上传的文件里混进别站内容". 故只保留属于本站的后缀键 + 白名单全局键(_webdav_config,
+//      跨站共用同一 WebDAV, 需要随下载带到新机器), 其余一律剔除。
 /**
  * @param {any} cfgStr
  */
-function __cfgStripReads(cfgStr) {
+function __cfgCleanSync(cfgStr) {
   if (!cfgStr) return cfgStr;
   try {
+    const host = (typeof location !== "undefined" && location.hostname) || "";
     const o = JSON.parse(cfgStr);
+    /** @type {Record<string, boolean>} */
+    const allowGlobal = { _webdav_config: true };
     for (const k in o) {
-      if (k.indexOf("_read_ids") === 0) delete o[k];
+      const suffixed = host && k.indexOf("." + host) === k.length - ("." + host).length;
+      if (k.indexOf("_read_ids") === 0) {
+        delete o[k]; // 已读交给 read.json
+      } else if (!suffixed && !allowGlobal[k]) {
+        delete o[k]; // 无本站后缀的旧版遗留全局键, 剔除避免串站
+      }
     }
     return JSON.stringify(o);
   } catch (e) {
@@ -994,8 +1007,9 @@ async function __wdvUpload(force) {
   const c = __storeVal(__wdvCfg);
   if (!c.url || !c.pass) throw new Error("请先填写 WebDAV 配置");
   const ids = [...__storeVal(__readIds)];
-  // 配置快照/上传一律用"剔除已读子键"后的净化串, 让 cfg 变化检测只反映真实配置变动。
-  const cfgStr = __cfgStripReads(localStorage.getItem("Kesa:Masonry") || "{}");
+  // 配置快照/上传一律用"净化后的本站配置串"做比对与写盘: 剔除已读与无本站后缀的旧版遗留全局键,
+  // 让 cfg.json 只携带本站真正需要的配置子键(不混入别站/旧版残留), 变化检测也只反映真实配置变动。
+  const cfgStr = __cfgCleanSync(localStorage.getItem("Kesa:Masonry") || "{}");
   const fallStr = localStorage.getItem("Kesa:Fall") || "{}";
   const snapIds = GM_getValue("pt_sync_idsSnap", "");
   const snapCfg = GM_getValue("pt_sync_cfgSnap", "");
@@ -1101,7 +1115,8 @@ async function __wdvDownload(updateHistSnapshot) {
   const cf = await __wdvReadData("cfg");
   if (cf.config && typeof cf.config.masonry === "string") {
     try {
-      const far = JSON.parse(cf.config.masonry);
+      // 远端 masonry 同样先净化(剔除已读 + 无本站后缀旧版残留), 避免历史脏文件把别站内容并回本地
+      const far = JSON.parse(__cfgCleanSync(cf.config.masonry));
       const local = JSON.parse(localStorage.getItem("Kesa:Masonry") || "{}");
       let changed = false;
       for (const k in far) {
