@@ -1,0 +1,17 @@
+fix(v1.2.79b): pttime 未完成种子识别不全(38→10)——ajax 接口忽略 page 参数
+
+用户反馈 https://www.pttime.org/userdetails.php?id=95707 实际未完成种子 38 个,
+但识别成 10 个。
+浏览器实测定位(无截图, external_browser_evaluate 直接 fetch 探测):
+1. pttime 的 getusertorrentlistajax.php **忽略 page 参数**: 实测 page=0/1/2/3/4
+   都返回完全相同的前 10 条(len 均 9302, id 都从 46403 起), 且无 .nexus-pagination
+   分页条 → 原 page 循环只抓到第一页 10 条就 break, 永远漏抓(38→10)。
+2. pttime 需改用**非 ajax 的完整列表页** getusertorrentlist.php?type=X&userid=N
+   (服务端渲染): 实测 type=incomplete 返回 38 条(与页面"共有38记录"完全一致),
+   type=completed 返回 9 条(与页面"共有9记录"一致), 均一次性拿全、不分页。
+修复(__collectNexusTorrentIds): 新增 isPttime 分支——直接 fetch
+getusertorrentlist.php 完整列表页(小写 type), 过滤 userdetails 链接,
+提取 details.php?id= 全部 id, 不再走 ajax+page 循环。mua 与其他 NexusPHP
+仍走原 ajax 分页逻辑不受影响。
+验证: npx vite build 压缩版 184.05 kB(189,190B); @version 1.2.79b;
+node --check 通过; minified 含 getusertorrentlist.php PTT 分支。

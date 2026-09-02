@@ -225,12 +225,41 @@ async function __collectMTeam() {
 
 /**
  * ① 遍历 NexusPHP/mua 某分类(completed/incomplete)全部分页，提取所有 torrent_id。
- * mua 参数为 useruuid、page 从 1 起；其余 NexusPHP 为 userid、page 从 0 起。
+ * - mua 参数为 useruuid、page 从 0 起；其余 NexusPHP 为 userid、page 从 0 起。
+ * - **PTT(pttime.org)特殊**：实测其 getusertorrentlistajax.php **忽略 page 参数**，
+ *   无论 page=0/1/2... 都只返回固定前 10 条(无分页条) → 分页循环只抓到 10 条。
+ *   PTT 需改用非 ajax 的 getusertorrentlist.php?type=X&userid=N (服务端渲染完整列表,
+ *   一次性返回全部完成/未完成种子, 不分页)。用 page 循环在此站会永远漏抓(38→10)。
  */
 async function __collectNexusTorrentIds(type) {
   const ids = new Set();
   const isMua = /mua\.xloli\.cc/i.test(__HOST);
+  const isPttime = /pttime\.org/i.test(__HOST);
   const uidParam = isMua ? ('useruuid=' + encodeURIComponent(__USERUUID)) : ('userid=' + __USERID);
+
+  // PTT: 直接抓非 ajax 完整列表页 getusertorrentlist.php(type 小写), 一次性拿全不分页
+  if (isPttime) {
+    const url = location.origin + '/getusertorrentlist.php?' + uidParam + '&type=' + type;
+    console.log('[kesa-userdetail][ptt] 一次性抓取完整列表 type=' + type, url);
+    let html = '';
+    try {
+      const resp = await fetch(url);
+      html = await resp.text();
+    } catch (e) {
+      console.error('[kesa-userdetail][ptt] 抓取 ' + type + ' 失败', e);
+      return ids;
+    }
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    doc.querySelectorAll('a[href*="details.php?id="]').forEach((a) => {
+      const href = a.getAttribute('href') || '';
+      if (href.indexOf('userdetails.php') !== -1) return; // 排除 userdetails 链接
+      const m = href.match(/details\.php\?id=(\d+)/);
+      if (m) ids.add(m[1]);
+    });
+    console.log('[kesa-userdetail][ptt] type=' + type + ' 完成, 累计id=' + ids.size);
+    return ids;
+  }
+
   // 截图证据(完成种子 101 条, 1-100/101-101)表明 mua 跟其他 NexusPHP 一样 page 从 0 起;
   // 1.2.70b 误猜 page=1 导致只抓到第二页 1 条。统一从 0 起。
   let page = 0;
