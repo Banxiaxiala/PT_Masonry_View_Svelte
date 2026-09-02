@@ -93,6 +93,8 @@ async function __collectNexusTorrentIds(type) {
   const isMua = /mua\.xloli\.cc/i.test(__HOST);
   const uidParam = isMua ? ('useruuid=' + encodeURIComponent(__USERUUID)) : ('userid=' + __USERID);
   let page = isMua ? 1 : 0;
+  let pageCount = 0;
+  if (isMua) console.log('[kesa-userdetail][mua] 开始收集 type=' + type, 'uid=' + uidParam, '起始page=' + page);
   while (true) {
     const url = location.origin + '/getusertorrentlistajax.php?' + uidParam + '&type=' + type + '&page=' + page;
     let html = '';
@@ -104,17 +106,26 @@ async function __collectNexusTorrentIds(type) {
       break;
     }
     const doc = new DOMParser().parseFromString(html, 'text/html');
+    const pageIds = new Set();
     doc.querySelectorAll('a[href*="details.php?id="]').forEach((a) => {
       const m = (a.getAttribute('href') || '').match(/details\.php\?id=(\d+)/);
-      if (m) ids.add(m[1]);
+      if (m) pageIds.add(m[1]);
     });
+    pageCount++;
+    if (isMua) {
+      console.log('[kesa-userdetail][mua] 第' + page + '页(type=' + type + '): htmlLen=' + html.length,
+        '本页id数=' + pageIds.size, '样本=' + Array.from(pageIds).slice(0, 5).join(','));
+    }
+    pageIds.forEach((id) => ids.add(id));
     // 判断是否还有下一页：分页条中"下一页 >>"是带 href 的 <a> 即为有下一页
     const next = Array.from(doc.querySelectorAll('.nexus-pagination a'))
       .find((el) => /下一页/.test(el.textContent));
+    if (isMua) console.log('[kesa-userdetail][mua] 第' + page + '页 有下一页?', !!next, 'nexus-pagination a 数=', doc.querySelectorAll('.nexus-pagination a').length);
     if (!next) break;
     page++;
     await __sleep(__FETCH_INTERVAL);
   }
+  if (isMua) console.log('[kesa-userdetail][mua] type=' + type + ' 完成, 遍历页数=' + pageCount, '累计id=' + ids.size);
   return ids;
 }
 
