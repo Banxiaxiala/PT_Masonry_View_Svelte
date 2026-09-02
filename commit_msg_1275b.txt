@@ -1,0 +1,11 @@
+fix(v1.2.75b): M-Team 用户详情页"记录完成/未完成种子为已读"无法获取种子 id
+
+用户反馈该功能异常, 不能正确获取种子的 id。
+根因: 种子表格渲染在 antd 独立 Modal 对话框内, 原收集逻辑
+在区块行父表格内查 a[href*="/detail/"], 作用域错误导致收集不到 id。
+修复:
+1. __collectMTeamTorrentIds 改为在 modal 内收集链接与 data-row-key;
+2. 翻页改用 .ant-pagination-next 按钮 + ant-pagination-disabled 终止
+   (原"找 cur+1 页码"在页数多时中间被省略号折叠会提前 break);
+3. waitForModal 放宽为"标题匹配 + 可见", 不再要求必有 .ant-pagination
+   (只有 1 页的 modal 无分页条会误判超时)。

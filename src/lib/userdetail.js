@@ -16,7 +16,7 @@ const __READ_NS = 'Kesa:Masonry';     // 与 sync.js 的 __STORE_NS 保持一致
 const __READ_KEY = '_read_ids';        // 已读 id 数组子键(不带 host 后缀，见 __readKey)
 const __PAGE_SIZE = 100;               // KamePT 用户详情分类每页条数
 const __FETCH_INTERVAL = 300;          // 抓取分页间隔(ms)
-const __MT_PAGE_INTERVAL = 1500;       // M-Team 翻页间隔(ms)，避免触发"请求频繁"限流
+const __MT_PAGE_INTERVAL = 4000;       // M-Team 翻页间隔(ms)，避免触发"请求频繁"限流(4s 保守)
 
 /** 站点域名 → 用户详情页分类的标题文字(做种行第一格)，用于定位区块 */
 const __UD_SITE_ROW = {
@@ -136,12 +136,16 @@ async function __collectNexusTorrentIds(type) {
 
 /**
  * ③ M-Team mTorrent profile 页：点击"完成種子/未完成種子"行的"察看"按钮展开，
- * 遍历 antd 分页收集 /detail/<id> 的 torrent_id。
+ * 展开后的种子表格渲染在一个 **ant-modal 对话框**(ant-modal-root)里(独立 overlay)，
+ * 并非该行表格的子元素。因此必须按 modal 标题定位到对应对话框，在 modal 内部
+ * 收集 /detail/<id> 链接与 data-row-key，并在 modal 内部翻页。
  * 返回 { completed, incomplete } 两组的 id Set。
  */
 async function __collectMTeamTorrentIds() {
   const result = { completed: new Set(), incomplete: new Set() };
   const rowRegex = { completed: /完成種子/, incomplete: /未完成種子/ };
+  const modalTitleRe = { completed: /完成種子/, incomplete: /未完成種子/ };
+  const rowKeyPrefix = { completed: 'COMPLETED_', incomplete: 'INCOMPLETED_' };
 
   // 找到"完成種子/未完成種子"区块行(表格行，第一格标题含关键词)
   const findRowCell = (re) => {
@@ -153,13 +157,35 @@ async function __collectMTeamTorrentIds() {
     return null;
   };
 
+  /**
+   * 等待标题匹配、且已展开(可见)的 modal 对话框；超时返回 null。
+   * 注意：不能用"有 .ant-pagination"作就绪条件——未完成种子等可能只有 1 页，
+   * antd 不渲染分页条，会误判超时。改为"标题匹配 + 非 display:none(可见)"。
+   */
+  const waitForModal = (titleRe) =>
+    new Promise((resolve) => {
+      let attempts = 0;
+      const timer = setInterval(() => {
+        const hit = Array.from(document.querySelectorAll('[role="dialog"]')).find((d) => {
+          const t = d.querySelector('.ant-modal-title');
+          if (!t || !titleRe.test(t.innerText || '')) return false;
+          // antd 隐藏的 modal 会保留在 DOM 并设 display:none，展开后为可见
+          const st = d.style;
+          if (st && st.display === 'none') return false;
+          return true;
+        });
+        if (hit) { clearInterval(timer); resolve(hit); return; }
+        if (++attempts > 120) { clearInterval(timer); resolve(null); }
+      }, 150);
+    });
+
   for (const type of ['completed', 'incomplete']) {
     const tds = findRowCell(rowRegex[type]);
     if (!tds) {
       console.warn('[kesa-userdetail] M-Team 未找到 ' + type + ' 区块行');
       continue;
     }
-    // 点击该行"察看"按钮展开(antd 按钮含 eye 图标 / title=察看/隱藏)
+    // 找到该行"察看"按钮(antd 按钮含 eye 图标 / title=察看/隱藏)
     const rowEl = tds[0].closest('tr') || tds[0].parentElement;
     const viewBtn = rowEl && Array.from(rowEl.querySelectorAll('.ant-btn')).find(
       (b) => /察看|隱藏/.test(b.getAttribute('title') || '') || b.querySelector('svg')
@@ -168,40 +194,49 @@ async function __collectMTeamTorrentIds() {
       console.warn('[kesa-userdetail] M-Team ' + type + ' 行未找到"察看"按钮');
       continue;
     }
-    const viewParent = viewBtn.closest('tr') || rowEl;
-    viewBtn.click();
-    // 等待列表展开(网络请求+渲染)
-    await __sleep(1200);
-    let guard = 0;
-    while (guard < 200) { // 最多约 20s
-      const pageEls = Array.from(document.querySelectorAll('.ant-pagination-item'));
-      if (pageEls.length > 0) {
-        // 收集当前页种子链接 /detail/<id>
-        const links = Array.from(viewParent.parentElement.querySelectorAll('a[href*="/detail/"]'));
-        links.forEach((a) => {
-          const m = (a.getAttribute('href') || '').match(/\/detail\/(\d+)/);
-          if (m) result[type].add(m[1]);
-        });
-        // 若已有"下一页"(页码按钮存在且当前页非末页)，点击翻页继续
-        const active = Array.from(document.querySelectorAll('.ant-pagination-item-active'))[0];
-        const cur = active ? parseInt(active.innerText, 10) : 1;
-        const nextBtn = Array.from(document.querySelectorAll('.ant-pagination-item'))
-          .map((el) => parseInt(el.innerText, 10))
-          .filter((n) => !isNaN(n))
-          .find((n) => n === cur + 1);
-        if (nextBtn) {
-          const target = Array.from(document.querySelectorAll('.ant-pagination-item'))
-            .find((el) => parseInt(el.innerText, 10) === nextBtn);
-          target.click();
-          // 用较长间隔避免触发 M-Team "请求频繁"限流
-          await __sleep(__MT_PAGE_INTERVAL);
-          continue;
-        }
-        break;
-      }
-      await __sleep(150);
-      guard++;
+    // modal 可能已展开(按钮显示"隱藏")，也可能未展开(按钮显示"察看")；
+    // 未展开时才点击"察看"打开，已展开则直接使用当前 modal。
+    let modal = await waitForModal(modalTitleRe[type]);
+    if (!modal) {
+      if (/察看/.test(viewBtn.getAttribute('title') || '')) viewBtn.click();
+      else viewBtn.click(); // 无论标题，点击以触发数据加载
+      modal = await waitForModal(modalTitleRe[type]);
     }
+    if (!modal) {
+      console.warn('[kesa-userdetail] M-Team ' + type + ' 打开种子列表 modal 超时');
+      continue;
+    }
+    // 在 modal 内部遍历分页收集 torrent_id
+    let guard = 0;
+    while (guard < 300) { // 最多约 20s/页
+      // ① 种子名链接 a[href*="/detail/<id>"] (绝对地址)
+      Array.from(modal.querySelectorAll('a[href*="/detail/"]')).forEach((a) => {
+        const m = (a.getAttribute('href') || '').match(/\/detail\/(\d+)/);
+        if (m) result[type].add(m[1]);
+      });
+      // ② 行 data-row-key="COMPLETED_<id>" / "INCOMPLETED_<id>" (更可靠的兜底)
+      Array.from(modal.querySelectorAll('[data-row-key]')).forEach((el) => {
+        const k = el.getAttribute('data-row-key') || '';
+        if (k.indexOf(rowKeyPrefix[type]) === 0) result[type].add(k.slice(rowKeyPrefix[type].length));
+      });
+      // ③ 翻页：优先点 antd 的"下一页"按钮(.ant-pagination-next)。
+      //    不要用"找 cur+1 页码项"——页数多时(如 17 页)中间页码被省略号折叠，
+      //    cur+1 项不存在会导致提前 break、收集不全。next 按钮始终存在，
+      //    且到最后一页时带 ant-pagination-disabled，正好作终止条件。
+      const pag = modal.querySelector('.ant-pagination');
+      const nextBtn = pag && pag.querySelector('.ant-pagination-next');
+      const isLast = nextBtn && /ant-pagination-disabled/.test(nextBtn.className || '');
+      if (nextBtn && !isLast) {
+        nextBtn.click();
+        // 较长间隔避免触发 M-Team "请求频繁"限流
+        await __sleep(__MT_PAGE_INTERVAL);
+        continue;
+      }
+      break;
+    }
+    // 关闭该 modal，避免影响另一类型的 modal(完成/未完成各一个)
+    const closeBtn = modal.querySelector('.ant-modal-close');
+    if (closeBtn) { closeBtn.click(); await __sleep(600); }
   }
   return result;
 }
