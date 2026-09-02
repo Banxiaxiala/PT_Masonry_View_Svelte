@@ -1,0 +1,14 @@
+fix(v1.2.84b): M-Team 用户详情收集请求格式对齐真实抓包(userid 字符串/pageSize 100/移除 getConf 预热)
+
+用户提供抓包 curl(详情页实际请求): https://api2.m-team.cc/api/member/getUserTorrentList
+真实请求体 {"userid":"349701","type":"COMPLETED","pageNumber":1,"pageSize":100,"_timestamp":...,"_sgin":...}
+且 userid 是**字符串**; getConf 用 multipart(form-data items=TORRENT_LABEL_CONFIG)而非 JSON。
+据此对齐 __collectMTeamViaApi:
+1. userid 直接传字符串 __MT_PROFILE_ID(不再 parseInt);
+2. pageSize 200→100(对齐页面分页条每页 100);
+3. 移除 /system/getConf 的 JSON 空体预热(抓包确认它要 multipart, 空 JSON 会挂起/无意义;
+   实测不带它也能正常调 getUserTorrentList);
+4. __collectMTeam 域名 fallback api.m-team.io→api2.m-team.cc(与 localStorage apiHost/抓包一致)。
+id 提取保持 it.torrent.id(用户确认 1223534 等即瀑布流对应 id), 已读集合存字符串与瀑布流一致。
+验证: npx vite build 压缩版 184.41 kB(189,573B); @version 1.2.84b; node --check 通过;
+minified 含 api2.m-team.cc、pageSize:100、无 /system/getConf。

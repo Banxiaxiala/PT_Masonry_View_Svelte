@@ -126,12 +126,11 @@ function __mteamApiPost(path, body, timeout) {
 async function __collectMTeamViaApi() {
   const result = { completed: new Set(), incomplete: new Set() };
   const map = { completed: 'COMPLETED', incomplete: 'INCOMPLETE' };
-  const userId = parseInt(__MT_PROFILE_ID, 10);
+  const userId = __MT_PROFILE_ID; // 抓包实测: userid 传字符串(如 "349701")
   if (!userId) return result;
-  // 预热: 站点页面抓包确认会调 /system/getConf 获取配置(可能含 apiHost/版本),
-  // 与 getUserTorrentList 配合使用。这里预热一次, 失败不影响主流程。
-  try { await __mteamApiPost('/system/getConf', {}); } catch (e) { /* 忽略 */ }
-  const pageSize = 200; // swagger: UserTorrentSearch.pageSize 最大 200
+  // 注: 不再预热 /system/getConf——抓包确认它是 multipart(form-data items=...),
+  // 用 JSON 空体调用会挂起/无意义, 且实测不带它也能正常调 getUserTorrentList。
+  const pageSize = 100; // 抓包实测: 页面用 pageSize=100(分页条每页 100)
   for (const type of ['completed', 'incomplete']) {
     const set = result[type];
     let page = 1;
@@ -200,10 +199,10 @@ async function __collectMTeam() {
     'window.__kesaMtReq=function(path,body,token){' +
     'try{' +
     'var __apiHost=localStorage.getItem("apiHost")||"";' +
-    // M-Team 真实 API 域名固定为 api.m-team.io(用户抓包确认), 不再按 location TLD 猜测;
-    // 无 localStorage apiHost 时对 m-team.cc 子域直接用该固定域名。
-    'if(!__apiHost && /m-team\\.cc/i.test(location.hostname)) __apiHost="https://api.m-team.io/api";' +
-    'var __u=(__apiHost||("https://api.m-team"+location.origin.match(/\\.([^.]+)$/)[0]+"/api"))+path;' +
+    // M-Team 真实 API 域名(localStorage apiHost, 抓包确认 api2.m-team.cc/api; api.m-team.io 亦可用)。
+    // 无 localStorage apiHost 时对 m-team.cc 子域直接用 api2.m-team.cc/api。
+    'if(!__apiHost && /m-team\\.cc/i.test(location.hostname)) __apiHost="https://api2.m-team.cc/api";' +
+    'var __u=(__apiHost||("https://api2.m-team"+location.origin.match(/\\.([^.]+)$/)[0]+"/api"))+path;' +
     'var __o={};for(var k in body)__o[k]=body[k];__o._timestamp=Date.now();' +
     'if(!window.crypto||!window.crypto.subtle){document.dispatchEvent(new CustomEvent("__kesaMtApi",{detail:{token:token,error:"no-crypto"}}));return;}' +
     'window.crypto.subtle.importKey("raw",new TextEncoder().encode(__secret),{name:"HMAC",hash:"SHA-1"},false,["sign"])' +
