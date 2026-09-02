@@ -5,8 +5,8 @@
 // 支持三类用户详情页：
 //   ① NexusPHP(userdetails.php?id=N): kamept/pttime/nicept/ptfans
 //      接口 getusertorrentlistajax.php?page=N&userid=UID&type=TYPE (page 从 0)
-//   ② mua.xloli.cc(userdetails.php?uuid=...): 同为 NexusPHP 结构但参数不同
-//      接口 getusertorrentlistajax.php?useruuid=UUID&type=TYPE&page=N (page 从 1)
+//   ② mua.xloli.cc(userdetails.php?uuid=...): 同为 NexusPHP 结构但**参数名是 `useruuid`**(实测确认)
+//      接口 getusertorrentlistajax.php?useruuid=UUID&type=TYPE&page=N (**page 从 0**, 跟其他 NexusPHP 一致)
 //   ③ M-Team(kp.m-team.cc/profile/detail/N): mTorrent/antd SPA
 //      点击"察看"按钮展开, POST api.m-team.io/api/member/getUserTorrentList,
 //      antd 分页翻页收集 /detail/<id> 的 torrent_id
@@ -92,7 +92,9 @@ async function __collectNexusTorrentIds(type) {
   const ids = new Set();
   const isMua = /mua\.xloli\.cc/i.test(__HOST);
   const uidParam = isMua ? ('useruuid=' + encodeURIComponent(__USERUUID)) : ('userid=' + __USERID);
-  let page = isMua ? 1 : 0;
+  // 截图证据(完成种子 101 条, 1-100/101-101)表明 mua 跟其他 NexusPHP 一样 page 从 0 起;
+  // 1.2.70b 误猜 page=1 导致只抓到第二页 1 条。统一从 0 起。
+  let page = 0;
   let pageCount = 0;
   if (isMua) console.log('[kesa-userdetail][mua] 开始收集 type=' + type, 'uid=' + uidParam, '起始page=' + page);
   while (true) {
@@ -117,10 +119,12 @@ async function __collectNexusTorrentIds(type) {
         '本页id数=' + pageIds.size, '样本=' + Array.from(pageIds).slice(0, 5).join(','));
     }
     pageIds.forEach((id) => ids.add(id));
-    // 判断是否还有下一页：分页条中"下一页 >>"是带 href 的 <a> 即为有下一页
-    const next = Array.from(doc.querySelectorAll('.nexus-pagination a'))
-      .find((el) => /下一页/.test(el.textContent));
-    if (isMua) console.log('[kesa-userdetail][mua] 第' + page + '页 有下一页?', !!next, 'nexus-pagination a 数=', doc.querySelectorAll('.nexus-pagination a').length);
+    // 判断是否还有下一页：分页条中"下一页"是带 href 的 <a> 即为有下一页；
+    // mua 分页条可能用其他写法, 同时也接受 href 含 type=&page= 的页码 a
+    const pagLinks = Array.from(doc.querySelectorAll('.nexus-pagination a'));
+    const next = pagLinks.find((el) => /下一页|next/i.test(el.textContent || ''))
+      || pagLinks.find((el) => /page=\d+/i.test(el.getAttribute('href') || '') && !/(?:^|\W)page=0(?:$|&|\W)/i.test(el.getAttribute('href') || ''));
+    if (isMua) console.log('[kesa-userdetail][mua] 第' + page + '页 有下一页?', !!next, 'nexus-pagination a 数=', pagLinks.length, 'hrefs=', pagLinks.map((a) => a.getAttribute('href')).join('|'));
     if (!next) break;
     page++;
     await __sleep(__FETCH_INTERVAL);
