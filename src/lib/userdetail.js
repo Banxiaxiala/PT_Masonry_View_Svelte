@@ -97,7 +97,7 @@ function __sleep(ms) {
 function __mteamApiPost(path, body, timeout) {
   return new Promise((resolve) => {
     const __token = 'm' + Date.now() + Math.random().toString(36).slice(2);
-    const __done = (v) => { clearTimeout(tid); window.removeEventListener('__kesaMtApi', __on); resolve(v); };
+    const __done = (v) => { clearTimeout(tid); document.removeEventListener('__kesaMtApi', __on); resolve(v); };
     const __on = (e) => {
       const d = e && e.detail;
       if (!d || d.token !== __token) return;
@@ -105,7 +105,11 @@ function __mteamApiPost(path, body, timeout) {
       __done(d.result || null);
     };
     const tid = setTimeout(() => __done(null), timeout || 12000);
-    window.addEventListener('__kesaMtApi', __on);
+    // 关键: 必须在 document 上监听(与 _index.svelte __mtFetchFallback 的
+    // document.addEventListener("__kesaMTData") 一致)。__kesaMtReq 在 MAIN_WORLD
+    // 用 document.dispatchEvent 派发, 油猴沙盒的 window 监听收不到 document 派发的
+    // CustomEvent(事件隔离), 会导致请求永远 pending → 收集 0 条/超时。
+    document.addEventListener('__kesaMtApi', __on);
     const script = document.createElement('script');
     script.textContent =
       '(function(){' +

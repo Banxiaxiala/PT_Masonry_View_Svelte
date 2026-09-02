@@ -1,0 +1,17 @@
+fix(v1.2.85b): M-Team 详情收集 API 事件监听 window→document(油猴沙盒事件隔离)
+
+用户反馈还是不行, 浏览器调试定位真正的根因:
+【浏览器实测】(kp.m-team.cc/browse 可 attach, 详情页被扩展拦截):
+- 干净签名脚本直接调 /member/getUserTorrentList 成功(code=0 SUCCESS, 14 条 INCOMPLETE,
+  firstId=1238571); localStorage apiHost=https://api.m-team.io/api, 页面自身 /torrent/search
+  也走该域名且成功。
+- 注入的 __kesaMtReq 调用后事件确实派发(document/window 都收到, result.code=0)。
+→ API 请求本身完全正常, 问题在沙盒收不到事件!
+根因: __mteamApiPost 用 window.addEventListener('__kesaMtApi') 监听, 而 __kesaMtReq
+在 MAIN_WORLD 用 document.dispatchEvent 派发。在页面主世界测试能冒泡到 window,
+但油猴沙盒(isolated world)的事件隔离使沙盒 window 收不到 document 派发的
+CustomEvent → 请求永远 pending → __mteamApiPost 12s 超时 → 收集 0 条/卡顿。
+修复: __mteamApiPost 改为 document.addEventListener/removeEventListener, 与
+_index.svelte __mtFetchFallback 监听 document 的 __kesaMTData 一致(已验证可工作)。
+验证: npx vite build 压缩版 184.42 kB(189,577B); @version 1.2.85b; node --check 通过;
+minified 含 document.addEventListener("__kesaMtApi",r)。
