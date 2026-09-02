@@ -1,4 +1,4 @@
-export let version = '1.2.69b';
+export let version = '1.2.70b';
 
 export function config(mode) {
   return {
@@ -35,13 +35,17 @@ export function config(mode) {
       "*/forums.php*",
       "*/viewrequests.php*",
       "*/seek.php*",
-      "*m-team*/detail/*",
-      "*/detail/*",
+      // 排除根级种子详情页 /detail/<id>(M-Team/mua 的 torrent 详情)；
+      // 用 *://*/detail/* 锚定"detail 紧跟在域名后"，不误伤 /profile/detail/<id>(M-Team 使用者详情)。
+      "https://*.m-team.cc/detail/*",
+      "*://*/detail/*",
       "*/details.php*",
       "*preview.php*",
       "*torrent-details*",
       // M-Team 消息页(message/-2 等)不是种子列表, 不需要瀑布流
       "*m-team*/message/*",
+      // M-Team 个人控制面板(usercp?tab=personal)不是种子列表, 不需要瀑布流
+      "*m-team*/usercp*",
     ],
     grant: [
       "GM_xmlhttpRequest",
