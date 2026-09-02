@@ -1,0 +1,13 @@
+fix(v1.2.78b): M-Team 用户详情页仍收集 0 条——"察看/隱藏"按钮状态误判
+
+用户反馈 1.2.77b 还是不行(0条)。调试定位真正的根因:
+M-Team 该按钮的 title 属性**固定**为 "察看/隱藏"(tooltip, 开闭都一样),
+真实开闭状态在 **textContent**("察看"=未开, "隱藏"=已开)。
+旧代码用 `viewBtn.getAttribute('title')` 取到恒为 "察看/隱藏" 的值,
+`/隱藏/.test(...)` 恒为 true → alreadyOpen 恒 true → **永远不点击"察看"打开 modal**
+→ 等待一个从未打开的 modal → 超时 → 收集 0 条。
+修复: 改用 `viewBtn.textContent` 判断 alreadyOpen。
+附带增强 API 解析健壮性(__collectMTeamViaApi):
+- 种子数组兜底兼容 data.data / data.torrents / data.list;
+- 首次失败/成功时一次性打印响应 data 键与条目键(便于实测者对字段差异再做微调)。
+保留 API 优先+DOM 回退结构; DOM 回退路径现在能真正点击打开 modal 收集。

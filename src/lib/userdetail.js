@@ -142,14 +142,29 @@ async function __collectMTeamViaApi() {
         console.warn('[kesa-userdetail][mt-api] ' + type + ' 第' + page + '页请求异常:', e);
         break;
       }
-      // 响应结构 Result{code,message,data}；成功 code 通常为 0，data.data 为种子数组
+      // 响应结构 Result{code,message,data}；成功 code 通常为 0，种子数组在 data.data
       if (!resp) { console.warn('[kesa-userdetail][mt-api] ' + type + ' 第' + page + '页超时/失败'); break; }
       if (resp.code != null && resp.code !== 0 && resp.code !== 200) {
         console.warn('[kesa-userdetail][mt-api] ' + type + ' code=' + resp.code, resp.message);
+        // 一次性打印响应结构便于定位字段差异
+        if (!window.__kesaMtApiDiag && resp.data != null) { window.__kesaMtApiDiag = true; console.log('[kesa-userdetail][mt-api] 原始 data 键=', Object.keys(resp.data)); }
         break;
       }
-      const list = (resp.data && resp.data.data) || [];
-      if (!Array.isArray(list) || !list.length) break; // 空页视为结束
+      // 兜底解析种子数组: 兼容 data.data / data.torrents / data.list / data.totalRows...
+      let list = (resp.data && (resp.data.data || resp.data.torrents || resp.data.list)) || [];
+      if (!Array.isArray(list) || !list.length) {
+        // 首次失败时打印结构, 便于对实际 JSON 调整
+        if (!window.__kesaMtApiDiag && resp.data != null) {
+          window.__kesaMtApiDiag = true;
+          console.log('[kesa-userdetail][mt-api] 响应无种子数组, data=', JSON.stringify(resp.data).slice(0, 500));
+        }
+        break;
+      }
+      // 首次成功时打印键名与 id 样本, 便于确认字段是否叫 torrentId
+      if (!window.__kesaMtApiDiag) {
+        window.__kesaMtApiDiag = true;
+        console.log('[kesa-userdetail][mt-api] 首个条目键=', Object.keys(list[0]));
+      }
       let got = 0;
       list.forEach((it) => {
         const tid = it != null && it.torrentId != null ? it.torrentId
@@ -336,16 +351,17 @@ async function __collectMTeamTorrentIds() {
       console.warn('[kesa-userdetail] M-Team ' + type + ' 行未找到"察看"按钮');
       continue;
     }
-    console.log('[kesa-userdetail][mt] ' + type + ' 按钮 title=', viewBtn.getAttribute('title') || '');
-    // 判断"察看"按钮当前状态：title 含"察看"= 未展开(点击打开)；含"隱藏"= 已展开(直接用)
-    const btnTitle = viewBtn.getAttribute('title') || viewBtn.textContent || '';
-    const alreadyOpen = /隱藏/.test(btnTitle);
+    console.log('[kesa-userdetail][mt] ' + type + ' 按钮 text=', (viewBtn.textContent || '').trim());
+    // 关键: 该按钮 title 固定为"察看/隱藏"(tooltip, 开闭都一样), 不能用 title 判断;
+    // 真实状态在 textContent:"察看"=未开(点击打开), "隱藏"=已开(直接使用, 别点否则会关闭)。
+    const btnText = (viewBtn.textContent || '').trim();
+    const alreadyOpen = /隱藏/.test(btnText);
     let modal = null;
     if (alreadyOpen) {
-      // 已展开(之前打开过)，直接等该 modal 就绪
+      // 已展开(显示"隱藏")：直接用当前 modal
       modal = await waitForModal(modalTitleRe[type]);
     } else {
-      // 未展开(按钮为"察看")：先点击打开，再等待就绪，避免盲等 18s
+      // 未展开(显示"察看")：点击打开后再等待就绪
       viewBtn.click();
       modal = await waitForModal(modalTitleRe[type]);
     }
