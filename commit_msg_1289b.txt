@@ -1,0 +1,14 @@
+fix(v1.2.89b): 修复 M-Team 详情"首次点击获取 0, 二次点击才正常"
+
+用户反馈: 第一次点"记录完成/未完成种子为已读"获取 0, 再次点击才正常。
+根因: __kesaMtReq(MAIN_WORLD 签名辅助)仅在点击时才注入, 首次点击时可能
+尚未就绪或注入 script 与请求 script 时序竞争, 导致首次请求失败→收集 0;
+二次点击时 __kesaMtReq 已存在→正常。
+修复(userdetail.js):
+1. 提取 __MT_REQ_DEF(定义脚本字符串) + __mtEnsureReq()(幂等注入辅助);
+2. __mteamApiPost 每次请求前调用 __mtEnsureReq(), 确保签名函数已注入;
+3. __collectMTeam 开头 __mtEnsureReq();
+4. __initUserDetail(M-Team 详情页加载时) 预注入 __kesaMtReq, 点击前即就绪。
+三层防护消除"首次 0"。原有 3s 全局节流(__mtThrottle)与 document 事件监听保持不变。
+验证: npx vite build 压缩版 184.59 kB(189,746B); @version 1.2.89b;
+node --check 通过; __kesaMtReq=function(path,body,token) 定义存在。

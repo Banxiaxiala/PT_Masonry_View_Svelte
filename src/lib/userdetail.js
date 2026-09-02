@@ -95,11 +95,45 @@ async function __mtThrottle() {
   __mtLastTs = Date.now();
 }
 
+/** M-Team MAIN_WORLD 签名辅助 __kesaMtReq 的定义脚本(幂等注入)。
+ * 读取 localStorage(auth/did/visitorId/apiHost) 构造 HMAC-SHA1 签名请求官方接口,
+ * 结果经 __kesaMtApi 自定义事件回传沙盒。签名算法与 _index.svelte __mtFetchFallback 一致。 */
+const __MT_REQ_DEF = 'window.__kesaMtReq || (window.__kesaMtApiInit=function(){' +
+  'var __secret="HLkPcWmycL57mfJt";' +
+  'window.__kesaMtReq=function(path,body,token){' +
+  'try{' +
+  'var __apiHost=localStorage.getItem("apiHost")||"";' +
+  // M-Team 真实 API 域名(localStorage apiHost; 无值时用 api2.m-team.cc/api 兜底)
+  'if(!__apiHost && /m-team\\.cc/i.test(location.hostname)) __apiHost="https://api2.m-team.cc/api";' +
+  'var __u=(__apiHost||("https://api2.m-team"+location.origin.match(/\\.([^.]+)$/)[0]+"/api"))+path;' +
+  'var __o={};for(var k in body)__o[k]=body[k];__o._timestamp=Date.now();' +
+  'if(!window.crypto||!window.crypto.subtle){document.dispatchEvent(new CustomEvent("__kesaMtApi",{detail:{token:token,error:"no-crypto"}}));return;}' +
+  'window.crypto.subtle.importKey("raw",new TextEncoder().encode(__secret),{name:"HMAC",hash:"SHA-1"},false,["sign"])' +
+  '.then(function(k){return window.crypto.subtle.sign("HMAC",k,new TextEncoder().encode("POST&"+new URL(__u).pathname+"&"+__o._timestamp));})' +
+  '.then(function(sig){__o._sgin=btoa(String.fromCharCode.apply(null,new Uint8Array(sig)));' +
+  'var __h={"Content-Type":"application/json",version:"1.1.7",webVersion:"1170",visitorId:localStorage.getItem("visitorId")||"",did:localStorage.getItem("did")||"",authorization:localStorage.getItem("auth")||"",ts:Math.floor(Date.now()/1e3)};' +
+  'return fetch(__u,{method:"POST",headers:__h,body:JSON.stringify(__o)});})' +
+  '.then(function(r){return r.json();})' +
+  '.then(function(j){document.dispatchEvent(new CustomEvent("__kesaMtApi",{detail:{token:token,result:j}}));})' +
+  '.catch(function(e){document.dispatchEvent(new CustomEvent("__kesaMtApi",{detail:{token:token,error:String(e)}}));});' +
+  '}catch(e){document.dispatchEvent(new CustomEvent("__kesaMtApi",{detail:{token:token,error:String(e)}}));}' +
+  '};' +
+  'return true;' +
+  '}())';
+
+/** 确保 MAIN_WORLD 已注入 __kesaMtReq(幂等; append script 是同步执行的) */
+function __mtEnsureReq() {
+  const s = document.createElement('script');
+  s.textContent = __MT_REQ_DEF;
+  (document.head || document.documentElement).appendChild(s);
+  s.remove();
+}
+
 /**
  * M-Team API 通用调用：在 MAIN_WORLD 注入脚本读取 localStorage(auth/did/visitorId),
  * 构造 HMAC-SHA1 签名请求调用官方接口，结果通过 document 自定义事件回传沙盒。
  * 与 _index.svelte 的 __mtFetchFallback(劫持 sandbox)同一套签名机制。
- * 请求前先过 __mtThrottle 全局节流，保证相邻请求间隔 >= __MT_API_INTERVAL。
+ * 请求前先确保 __kesaMtReq 已注入 + 过 __mtThrottle 全局节流。
  * @param {string} path 接口路径(如 "/member/getUserTorrentList")
  * @param {object} body 业务参数字典(不含 _timestamp/_sgin)
  * @param {number} [timeout] 超时 ms，默认 12000
@@ -107,6 +141,7 @@ async function __mtThrottle() {
  */
 async function __mteamApiPost(path, body, timeout) {
   await __mtThrottle();
+  __mtEnsureReq(); // 确保签名函数已注入, 避免"首次点击取 0"
   return new Promise((resolve) => {
     const __token = 'm' + Date.now() + Math.random().toString(36).slice(2);
     const __done = (v) => { clearTimeout(tid); document.removeEventListener('__kesaMtApi', __on); resolve(v); };
@@ -207,39 +242,8 @@ async function __collectMTeamViaApi() {
 
 /** ③ M-Team：先用官方 API 收集，失败再回退 DOM 点击遍历(见下方 __collectMTeamTorrentIds) */
 async function __collectMTeam() {
-  // 注入 M-Team 签名辅助函数(幂等)：在 MAIN_WORLD 定义 __kesaMtApiInit/__kesaMtReq，
-  // 读取 localStorage(auth/did/visitorId/apiHost) 构造 HMAC-SHA1 签名请求官方接口，
-  // 结果经 __kesaMtApi 自定义事件回传沙盒。签名算法与 _index.svelte 完全一致。
-  const mw =
-    'window.__kesaMtReq || (window.__kesaMtApiInit=function(){' +
-    'var __secret="HLkPcWmycL57mfJt";' +
-    'window.__kesaMtReq=function(path,body,token){' +
-    'try{' +
-    'var __apiHost=localStorage.getItem("apiHost")||"";' +
-    // M-Team 真实 API 域名(localStorage apiHost, 抓包确认 api2.m-team.cc/api; api.m-team.io 亦可用)。
-    // 无 localStorage apiHost 时对 m-team.cc 子域直接用 api2.m-team.cc/api。
-    'if(!__apiHost && /m-team\\.cc/i.test(location.hostname)) __apiHost="https://api2.m-team.cc/api";' +
-    'var __u=(__apiHost||("https://api2.m-team"+location.origin.match(/\\.([^.]+)$/)[0]+"/api"))+path;' +
-    'var __o={};for(var k in body)__o[k]=body[k];__o._timestamp=Date.now();' +
-    'if(!window.crypto||!window.crypto.subtle){document.dispatchEvent(new CustomEvent("__kesaMtApi",{detail:{token:token,error:"no-crypto"}}));return;}' +
-    'window.crypto.subtle.importKey("raw",new TextEncoder().encode(__secret),{name:"HMAC",hash:"SHA-1"},false,["sign"])' +
-    '.then(function(k){return window.crypto.subtle.sign("HMAC",k,new TextEncoder().encode("POST&"+new URL(__u).pathname+"&"+__o._timestamp));})' +
-    '.then(function(sig){__o._sgin=btoa(String.fromCharCode.apply(null,new Uint8Array(sig)));' +
-    'var __h={"Content-Type":"application/json",version:"1.1.7",webVersion:"1170",visitorId:localStorage.getItem("visitorId")||"",did:localStorage.getItem("did")||"",authorization:localStorage.getItem("auth")||"",ts:Math.floor(Date.now()/1e3)};' +
-    'return fetch(__u,{method:"POST",headers:__h,body:JSON.stringify(__o)});})' +
-    '.then(function(r){return r.json();})' +
-    '.then(function(j){document.dispatchEvent(new CustomEvent("__kesaMtApi",{detail:{token:token,result:j}}));})' +
-    '.catch(function(e){document.dispatchEvent(new CustomEvent("__kesaMtApi",{detail:{token:token,error:String(e)}}));});' +
-    '}catch(e){document.dispatchEvent(new CustomEvent("__kesaMtApi",{detail:{token:token,error:String(e)}}));}' +
-    '};' +
-    'return true;' +
-    '}())';
-  try {
-    const s = document.createElement('script');
-    s.textContent = mw;
-    (document.head || document.documentElement).appendChild(s);
-    s.remove();
-  } catch (e) { /* 忽略 */ }
+  // 确保 MAIN_WORLD 已注入 __kesaMtReq 签名辅助(幂等; 每次 __mteamApiPost 前也会再确保)
+  __mtEnsureReq();
   const api = await __collectMTeamViaApi();
   const apiOk = api.completed.size > 0 || api.incomplete.size > 0;
   if (apiOk) {
@@ -545,6 +549,8 @@ function __injectReadButton() {
 /** 入口：document-start 后多次尝试注入(等待用户详情页区块渲染) */
 function __initUserDetail() {
   if (!__isUserDetailsPage()) return;
+  // M-Team 详情页预注入 __kesaMtReq 签名辅助, 避免"首次点击获取 0"(二次点击才正常)
+  if (__IS_MT) { try { __mtEnsureReq(); } catch (e) { /* 忽略 */ } }
   __injectReadButton();
   setTimeout(__injectReadButton, 1000);
   setTimeout(__injectReadButton, 3000);
