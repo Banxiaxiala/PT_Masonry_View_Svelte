@@ -119,12 +119,13 @@ else if (isMT) {
   // 参照 1.2.3b: M-Team 瀑布流应作为真实 div.app-content__inner 的兄弟节点插入,
   // _ORIGIN_TL_Node 即真实容器, 这样瀑布流模式隐藏原生种子表格时瀑布流自然显示在内容区。
   // SSR 页(/browse/* 等)的 div.app-content__inner 由 webpack 应用异步渲染, 需轮询等待。
-  // 排除 M-Team 消息页(/message/*, 如 kp.m-team.cc/message/-2)与个人控制面板
-  // (/usercp?tab=personal): 不是种子列表, 不需要瀑布流。
+  // 排除 M-Team 消息页(/message/*, 如 kp.m-team.cc/message/-2)、个人控制面板
+  // (/usercp?tab=personal)与个人中心(/profile, 含 /profile/detail/N 用户详情页):
+  // 都不是种子列表, 不需要瀑布流。
   // 虽然 userscript.config.js exclude 已拦截, 但 SPA 客户端路由跳转时脚本不会被重载,
   // 需在运行时也判断路径, 避免这些页面误挂瀑布流。
-  if (/\/message\/.*/i.test(window.location.pathname) || /\/usercp/i.test(window.location.pathname)) {
-    console.log("M-Team 消息页/个人控制面板(/message/*、/usercp): 跳过瀑布流挂载");
+  if (/\/message\/.*/i.test(window.location.pathname) || /\/usercp/i.test(window.location.pathname) || /\/profile/i.test(window.location.pathname)) {
+    console.log("M-Team 消息页/个人控制面板/个人中心(/message/*、/usercp、/profile): 跳过瀑布流挂载");
   } else {
   let mtTries = 0;
   const mtTimer = setInterval(() => {

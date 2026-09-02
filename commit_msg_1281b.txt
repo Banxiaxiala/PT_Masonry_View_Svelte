@@ -1,0 +1,12 @@
+feat(v1.2.81b): M-Team /profile 页面(含个人中心与 /profile/detail/N 用户详情页)不加载瀑布流
+
+用户反馈: M-Team /profile 页面不需要加载瀑布流。
+处理: main.js M-Team 运行时守卫在原有 /message/* 与 /usercp 基础上,
+新增 /\/profile/i 路径匹配, 命中即跳过瀑布流挂载(SPA 客户端路由跳转脚本
+不重载, 必须运行时判断)。
+注意: 不在 userscript.config.js exclude 排除 /profile——因为
+/profile/detail/N 仍是"记录完成/未完成种子为已读"按钮的注入页
+(__initUserDetail 独立于瀑布流挂载, 识别 /profile/detail/), 只跳过瀑布流、
+保留按钮注入。
+验证: npx vite build 压缩版 184.25 kB(189,397B); @version 1.2.81b;
+node --check 通过; minified 含 /\/profile/i.test(pathname) 守卫。
