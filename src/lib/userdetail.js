@@ -7,9 +7,9 @@
 //      接口 getusertorrentlistajax.php?page=N&userid=UID&type=TYPE (page 从 0)
 //   ② mua.xloli.cc(userdetails.php?uuid=...): 同为 NexusPHP 结构但**参数名是 `useruuid`**(实测确认)
 //      接口 getusertorrentlistajax.php?useruuid=UUID&type=TYPE&page=N (**page 从 0**, 跟其他 NexusPHP 一致)
-//   ③ M-Team(kp.m-team.cc/profile/detail/N): mTorrent/antd SPA
-//      点击"察看"按钮展开, POST api.m-team.io/api/member/getUserTorrentList,
-//      antd 分页翻页收集 /detail/<id> 的 torrent_id
+//   ③ M-Team(kp.m-team.cc/profile/detail/N): mTorrent/antd SPA **优先走官方接口**
+//      POST /member/getUserTorrentList {userid, type:COMPLETED|INCOMPLETE, pageNumber, pageSize}
+//      (HMAC 签名与 _index.svelte 同套), 失败才回退点击"察看"展开 ant-modal 翻页收集。
 // 仅在这些页面生效，不干扰种子列表页/种子详情页的瀑布流主逻辑。
 
 const __READ_NS = 'Kesa:Masonry';     // 与 sync.js 的 __STORE_NS 保持一致
@@ -83,6 +83,129 @@ function __writeReadIds(newIds) {
 
 function __sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
+}
+
+/**
+ * M-Team API 通用调用：在 MAIN_WORLD 注入脚本读取 localStorage(auth/did/visitorId),
+ * 构造 HMAC-SHA1 签名请求调用官方接口，结果通过 document 自定义事件回传沙盒。
+ * 与 _index.svelte 的 __mtFetchFallback(劫持 sandbox)同一套签名机制。
+ * @param {string} path 接口路径(如 "/member/getUserTorrentList")
+ * @param {object} body 业务参数字典(不含 _timestamp/_sgin)
+ * @param {number} [timeout] 超时 ms，默认 12000
+ * @returns {Promise<object|null>} 接口 JSON 响应(含 code/message/data)；出错或超时返回 null
+ */
+function __mteamApiPost(path, body, timeout) {
+  return new Promise((resolve) => {
+    const __token = 'm' + Date.now() + Math.random().toString(36).slice(2);
+    const __done = (v) => { clearTimeout(tid); window.removeEventListener('__kesaMtApi', __on); resolve(v); };
+    const __on = (e) => {
+      const d = e && e.detail;
+      if (!d || d.token !== __token) return;
+      if (d.error) { __done(null); return; }
+      __done(d.result || null);
+    };
+    const tid = setTimeout(() => __done(null), timeout || 12000);
+    window.addEventListener('__kesaMtApi', __on);
+    const script = document.createElement('script');
+    script.textContent =
+      '(function(){' +
+      'try{' +
+      '__kesaMtReq(' + JSON.stringify(path) + ',' + JSON.stringify(body) + ',' + JSON.stringify(__token) + ');' +
+      '}catch(e){document.dispatchEvent(new CustomEvent("__kesaMtApi",{detail:{token:' + JSON.stringify(__token) + ',error:String(e)}}));}' +
+      '})();';
+    (document.head || document.documentElement).appendChild(script);
+    script.remove();
+  });
+}
+
+/**
+ * M-Team API 收集器：分页调用官方接口 /member/getUserTorrentList 提取完成/未完成种子 id。
+ * 相比 DOM 点击"察看"展开 ant-modal 翻页，走官方接口更稳定，且不受分页条省略号折叠影响。
+ * 返回 { completed, incomplete } 两个 Set；任一组失败返回对应空 Set(由主流程决定是否回退 DOM)。
+ */
+async function __collectMTeamViaApi() {
+  const result = { completed: new Set(), incomplete: new Set() };
+  const map = { completed: 'COMPLETED', incomplete: 'INCOMPLETE' };
+  const userId = parseInt(__MT_PROFILE_ID, 10);
+  if (!userId) return result;
+  const pageSize = 200; // swagger: UserTorrentSearch.pageSize 最大 200
+  for (const type of ['completed', 'incomplete']) {
+    const set = result[type];
+    let page = 1;
+    for (; page <= 1000; page++) { // swagger: pageNumber 最大 1000
+      let resp;
+      try {
+        resp = await __mteamApiPost('/member/getUserTorrentList', {
+          userid: userId, type: map[type], pageNumber: page, pageSize: pageSize,
+        });
+      } catch (e) {
+        console.warn('[kesa-userdetail][mt-api] ' + type + ' 第' + page + '页请求异常:', e);
+        break;
+      }
+      // 响应结构 Result{code,message,data}；成功 code 通常为 0，data.data 为种子数组
+      if (!resp) { console.warn('[kesa-userdetail][mt-api] ' + type + ' 第' + page + '页超时/失败'); break; }
+      if (resp.code != null && resp.code !== 0 && resp.code !== 200) {
+        console.warn('[kesa-userdetail][mt-api] ' + type + ' code=' + resp.code, resp.message);
+        break;
+      }
+      const list = (resp.data && resp.data.data) || [];
+      if (!Array.isArray(list) || !list.length) break; // 空页视为结束
+      let got = 0;
+      list.forEach((it) => {
+        const tid = it != null && it.torrentId != null ? it.torrentId
+          : (it != null && it.id != null ? it.id : null);
+        if (tid != null) { set.add(String(tid)); got++; }
+      });
+      // 每页数量少于 pageSize → 已到末页
+      if (list.length < pageSize) break;
+      if (got === 0) break; // 防呆：有行但提取不到 id 也停
+      if (page % 5 === 0) { console.log('[kesa-userdetail][mt-api] ' + type + ' 已抓取 ' + page + ' 页, 累计 ' + set.size); }
+    }
+    console.log('[kesa-userdetail][mt-api] ' + type + ' 遍历 ' + (page - 1) + ' 页, 累计 ' + set.size + ' 条');
+  }
+  return result;
+}
+
+/** ③ M-Team：先用官方 API 收集，失败再回退 DOM 点击遍历(见下方 __collectMTeamTorrentIds) */
+async function __collectMTeam() {
+  // 注入 M-Team 签名辅助函数(幂等)：在 MAIN_WORLD 定义 __kesaMtApiInit/__kesaMtReq，
+  // 读取 localStorage(auth/did/visitorId/apiHost) 构造 HMAC-SHA1 签名请求官方接口，
+  // 结果经 __kesaMtApi 自定义事件回传沙盒。签名算法与 _index.svelte 完全一致。
+  const mw =
+    'window.__kesaMtReq || (window.__kesaMtApiInit=function(){' +
+    'var __secret="HLkPcWmycL57mfJt";' +
+    'window.__kesaMtReq=function(path,body,token){' +
+    'try{' +
+    'var __apiHost=localStorage.getItem("apiHost")||"";' +
+    'var __u=(__apiHost||("https://api.m-team"+location.origin.match(/\\.([^.]+)$/)[0]+"/api"))+path;' +
+    'var __o={};for(var k in body)__o[k]=body[k];__o._timestamp=Date.now();' +
+    'if(!window.crypto||!window.crypto.subtle){document.dispatchEvent(new CustomEvent("__kesaMtApi",{detail:{token:token,error:"no-crypto"}}));return;}' +
+    'window.crypto.subtle.importKey("raw",new TextEncoder().encode(__secret),{name:"HMAC",hash:"SHA-1"},false,["sign"])' +
+    '.then(function(k){return window.crypto.subtle.sign("HMAC",k,new TextEncoder().encode("POST&"+new URL(__u).pathname+"&"+__o._timestamp));})' +
+    '.then(function(sig){__o._sgin=btoa(String.fromCharCode.apply(null,new Uint8Array(sig)));' +
+    'var __h={"Content-Type":"application/json",version:"1.1.7",webVersion:"1170",visitorId:localStorage.getItem("visitorId")||"",did:localStorage.getItem("did")||"",authorization:localStorage.getItem("auth")||"",ts:Math.floor(Date.now()/1e3)};' +
+    'return fetch(__u,{method:"POST",headers:__h,body:JSON.stringify(__o)});})' +
+    '.then(function(r){return r.json();})' +
+    '.then(function(j){document.dispatchEvent(new CustomEvent("__kesaMtApi",{detail:{token:token,result:j}}));})' +
+    '.catch(function(e){document.dispatchEvent(new CustomEvent("__kesaMtApi",{detail:{token:token,error:String(e)}}));});' +
+    '}catch(e){document.dispatchEvent(new CustomEvent("__kesaMtApi",{detail:{token:token,error:String(e)}}));}' +
+    '};' +
+    'return true;' +
+    '}())';
+  try {
+    const s = document.createElement('script');
+    s.textContent = mw;
+    (document.head || document.documentElement).appendChild(s);
+    s.remove();
+  } catch (e) { /* 忽略 */ }
+  const api = await __collectMTeamViaApi();
+  const apiOk = api.completed.size > 0 || api.incomplete.size > 0;
+  if (apiOk) {
+    console.log('[kesa-userdetail][mt] 优先采用官方 API 收集: 完成' + api.completed.size + ' 未完成' + api.incomplete.size);
+    return api;
+  }
+  console.warn('[kesa-userdetail][mt] API 收集为空, 回退 DOM 点击遍历');
+  return __collectMTeamTorrentIds();
 }
 
 /**
@@ -285,8 +408,8 @@ async function __recordCompletedIncompleteRead() {
   if (btn) btn.textContent = '提取中…';
 
   if (__IS_MT) {
-    // M-Team profile 页：一次遍历两组
-    const map = await __collectMTeamTorrentIds();
+    // M-Team profile 页：优先官方 API 收集，失败回退 DOM 点击遍历
+    const map = await __collectMTeam();
     stat.completed = map.completed.size;
     stat.incomplete = map.incomplete.size;
     stat.added += __writeReadIds(Array.from(map.completed));

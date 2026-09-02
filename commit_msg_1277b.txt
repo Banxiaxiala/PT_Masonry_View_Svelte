@@ -1,0 +1,18 @@
+feat(v1.2.77b): M-Team 用户详情页收集改为优先走官方 API
+
+按用户要求, 馒头尽量使用官方 API 而非 DOM 点击展开 ant-modal。
+依据 test2.m-team.cc 的 swagger(OpenAPI) 确认接口:
+POST /member/getUserTorrentList
+  body: { userid, type: COMPLETED|INCOMPLETE, pageNumber, pageSize }
+  (UserTorrentSearch 必填 type+userid; pageSize 最大 200; pageNumber 最大 1000)
+  响应 Result{code,message,data}, success 时 code=0/200, data.data 为种子数组
+新增 __collectMTeam / __collectMTeamViaApi / __mteamApiPost：
+1. 在 MAIN_WORLD 注入 __kesaMtReq 辅助(与 _index.svelte __mtFetchFallback 同套
+   HMAC-SHA1 签名: secret + auth/did/visitorId/apiHost from localStorage +
+   _timestamp/_sgin, 结果经 __kesaMtApi 自定义事件回传沙盒);
+2. 按 COMPLETED/INCOMPLETE 各分页抓取(每页 200), 提取 torrentId(或 id),
+   空页/错误 code 即停; 官方 API 优先;
+3. 若 API 收集为空(签名失败/无数据/数据字段不符)则回退 DOM 点击遍历
+   (1.2.76b 的 getComputedStyle+ant-pagination-next 逻辑保持不变)。
+保留 1.2.76b 的 modal 可见性修复(用 getComputedStyle 冒泡判断, 支持 load 就绪)。
+构建后 minified 含 mt-api / getUserTorrentList / __kesaMtReq 逻辑。
