@@ -16,8 +16,7 @@ const __READ_NS = 'Kesa:Masonry';     // 与 sync.js 的 __STORE_NS 保持一致
 const __READ_KEY = '_read_ids';        // 已读 id 数组子键(不带 host 后缀，见 __readKey)
 const __PAGE_SIZE = 100;               // KamePT 用户详情分类每页条数
 const __FETCH_INTERVAL = 300;          // 抓取分页间隔(ms)
-const __MT_PAGE_INTERVAL = 4000;       // M-Team DOM 翻页间隔(ms)，避免触发"请求频繁"限流(4s 保守)
-const __MT_API_INTERVAL = 3000;        // M-Team API 分页请求间隔(ms)，用户要求 3s，避免"请求过于频繁"限流
+const __MT_API_INTERVAL = 3000;        // M-Team 全局请求节流间隔(ms)，用户要求 3s，避免"请求过于频繁"限流
 
 /** 站点域名 → 用户详情页分类的标题文字(做种行第一格)，用于定位区块 */
 const __UD_SITE_ROW = {
@@ -86,24 +85,28 @@ function __sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+let __mtLastTs = 0;
+/** M-Team 全局请求节流: 保证相邻两次"会触发后端请求"的操作至少间隔 __MT_API_INTERVAL(3s)。
+ * API 分页请求、DOM 回退的打开 modal/翻页点击 都调用它, 避免触发"请求过于频繁"限流。 */
+async function __mtThrottle() {
+  const now = Date.now();
+  const wait = __MT_API_INTERVAL - (now - __mtLastTs);
+  if (wait > 0) await __sleep(wait);
+  __mtLastTs = Date.now();
+}
+
 /**
  * M-Team API 通用调用：在 MAIN_WORLD 注入脚本读取 localStorage(auth/did/visitorId),
  * 构造 HMAC-SHA1 签名请求调用官方接口，结果通过 document 自定义事件回传沙盒。
  * 与 _index.svelte 的 __mtFetchFallback(劫持 sandbox)同一套签名机制。
- * 内部对连续请求做全局节流: 保证相邻两次 API 请求至少间隔 __MT_API_INTERVAL(3s),
- * 避免触发 M-Team "请求过于频繁" 限流(覆盖所有请求, 含分页与分类切换)。
+ * 请求前先过 __mtThrottle 全局节流，保证相邻请求间隔 >= __MT_API_INTERVAL。
  * @param {string} path 接口路径(如 "/member/getUserTorrentList")
  * @param {object} body 业务参数字典(不含 _timestamp/_sgin)
  * @param {number} [timeout] 超时 ms，默认 12000
  * @returns {Promise<object|null>} 接口 JSON 响应(含 code/message/data)；出错或超时返回 null
  */
-let __mtApiLastTs = 0;
 async function __mteamApiPost(path, body, timeout) {
-  // 全局节流: 距上一次请求不足 3s 则等待补足, 保证任意相邻请求间隔 >= 3s
-  const now = Date.now();
-  const wait = __MT_API_INTERVAL - (now - __mtApiLastTs);
-  if (wait > 0) await __sleep(wait);
-  __mtApiLastTs = Date.now();
+  await __mtThrottle();
   return new Promise((resolve) => {
     const __token = 'm' + Date.now() + Math.random().toString(36).slice(2);
     const __done = (v) => { clearTimeout(tid); document.removeEventListener('__kesaMtApi', __on); resolve(v); };
@@ -414,13 +417,17 @@ async function __collectMTeamTorrentIds() {
       // 已展开(显示"隱藏")：直接用当前 modal
       modal = await waitForModal(modalTitleRe[type]);
     } else {
-      // 未展开(显示"察看")：点击打开后再等待就绪
+      // 未展开(显示"察看")：先节流再点击打开(打开会触发后端请求)
+      await __mtThrottle();
       viewBtn.click();
       modal = await waitForModal(modalTitleRe[type]);
     }
     if (!modal) {
       console.warn('[kesa-userdetail] M-Team ' + type + ' 打开种子列表 modal 超时');
-      if (!alreadyOpen) { viewBtn.click(); modal = await waitForModal(modalTitleRe[type]); }
+      if (!alreadyOpen) {
+        await __mtThrottle();
+        viewBtn.click(); modal = await waitForModal(modalTitleRe[type]);
+      }
       if (!modal) { console.warn('[kesa-userdetail] M-Team ' + type + ' 重试打开仍超时'); continue; }
     }
     // 在 modal 内部遍历分页收集 torrent_id
@@ -444,9 +451,9 @@ async function __collectMTeamTorrentIds() {
       const nextBtn = pag && pag.querySelector('.ant-pagination-next');
       const isLast = nextBtn && /ant-pagination-disabled/.test(nextBtn.className || '');
       if (nextBtn && !isLast) {
+        // 翻页点击前节流(点击会触发后端分页请求), 避免"请求频繁"限流
+        await __mtThrottle();
         nextBtn.click();
-        // 较长间隔避免触发 M-Team "请求频繁"限流
-        await __sleep(__MT_PAGE_INTERVAL);
         continue;
       }
       break;

@@ -1,0 +1,16 @@
+fix(v1.2.88b): 统一 M-Team 全局 3s 节流覆盖 API 与 DOM 回退两路径
+
+用户反馈请求间隔仍只有 200ms, 且触发是"记录完成/未完成种子为已读"。
+根因: 用户详情页可能走 DOM 回退路径(__collectMTeamTorrentIds)——打开
+modal/翻页时由站点自身发 getUserTorrentList 请求, 不受 __mteamApiPost
+内部节流控制; 当时翻页用 __MT_PAGE_INTERVAL=4000 仅覆盖翻页, 打开 modal
+(完成/未完成两个 modal)之间仅 __sleep(600) → 请求间隔只有几百 ms。
+修复(userdetail.js):
+1. 提取独立全局节流函数 __mtThrottle(): 记录 __mtLastTs, 每次调用前
+   等待补足到 __MT_API_INTERVAL(3s);
+2. API 路径 __mteamApiPost 开头调用 __mtThrottle();
+3. DOM 回退 __collectMTeamTorrentIds 三处调用 __mtThrottle() 后再触发:
+   打开 modal 主分支、打开 modal 重试、翻页 nextBtn.click() 前;
+4. 移除不再使用的 __MT_PAGE_INTERVAL(4s), 统一用 3s 节流。
+验证: npx vite build 压缩版 184.55 kB(189,706B); @version 1.2.88b;
+node --check 通过; minified 含 4 处 await Vn()(Vn=__mtThrottle): API 1 + DOM 3。
