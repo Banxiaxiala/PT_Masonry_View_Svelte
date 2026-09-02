@@ -1,0 +1,9 @@
+fix(v1.2.86b): M-Team 用户详情 API 分页请求加 3s 间隔, 避免"请求过于频繁"限流
+
+用户反馈"請求過於頻繁", 要求间隔设定到 3s。
+修复(userdetail.js __collectMTeamViaApi): 新增 __MT_API_INTERVAL=3000,
+每次分页请求后(非末页) await __sleep(3000) 再请求下一页, 避免连续请求
+触发 M-Team 限流。末页 break 前不 sleep。
+注: DOM 回退路径已有 __MT_PAGE_INTERVAL=4000(DOM 翻页), 本次是 API 路径独立间隔。
+验证: npx vite build 压缩版 184.44 kB(189,601B); @version 1.2.86b;
+node --check 通过; minified 含 `if(...)break;await ii(rc)`(rc=3e3)。

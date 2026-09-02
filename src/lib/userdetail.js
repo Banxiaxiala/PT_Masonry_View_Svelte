@@ -16,7 +16,8 @@ const __READ_NS = 'Kesa:Masonry';     // 与 sync.js 的 __STORE_NS 保持一致
 const __READ_KEY = '_read_ids';        // 已读 id 数组子键(不带 host 后缀，见 __readKey)
 const __PAGE_SIZE = 100;               // KamePT 用户详情分类每页条数
 const __FETCH_INTERVAL = 300;          // 抓取分页间隔(ms)
-const __MT_PAGE_INTERVAL = 4000;       // M-Team 翻页间隔(ms)，避免触发"请求频繁"限流(4s 保守)
+const __MT_PAGE_INTERVAL = 4000;       // M-Team DOM 翻页间隔(ms)，避免触发"请求频繁"限流(4s 保守)
+const __MT_API_INTERVAL = 3000;        // M-Team API 分页请求间隔(ms)，用户要求 3s，避免"请求过于频繁"限流
 
 /** 站点域名 → 用户详情页分类的标题文字(做种行第一格)，用于定位区块 */
 const __UD_SITE_ROW = {
@@ -184,8 +185,12 @@ async function __collectMTeamViaApi() {
       });
       if (page % 5 === 0) { console.log('[kesa-userdetail][mt-api] ' + type + ' 已抓取 ' + page + ' 页, 累计 ' + set.size); }
       // 精准分页终止: data.totalPages 已知时用它; 否则按"返回数<pageSize"兜底
-      if (totalPages > 0) { if (page >= totalPages) break; }
-      else if (list.length < pageSize) break;
+      let isLast = false;
+      if (totalPages > 0) { isLast = page >= totalPages; }
+      else if (list.length < pageSize) isLast = true;
+      if (isLast) break;
+      // 请求间隔: 3s, 避免触发 M-Team "请求过于频繁"限流
+      await __sleep(__MT_API_INTERVAL);
     }
     console.log('[kesa-userdetail][mt-api] ' + type + ' 遍历 ' + (page - 1) + ' 页, 累计 ' + set.size + ' 条');
   }
