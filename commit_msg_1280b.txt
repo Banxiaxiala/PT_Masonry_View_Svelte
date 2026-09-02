@@ -1,0 +1,14 @@
+fix(v1.2.80b): M-Team「记录完成/未完成种子为已读」API 域名修正 + getConf 预热
+
+用户抓包确认: M-Team 真实 API 域名为 api.m-team.io(而非按 location TLD 猜测的域名),
+接口为 https://api.m-team.io/api/system/getConf 与 /api/member/getUserTorrentList。
+修复:
+1. __collectMTeam 注入的 __kesaMtReq 中, 当无 localStorage apiHost 时,
+   对 m-team.cc 子域直接写死 __apiHost="https://api.m-team.io/api",
+   不再按 location.origin 的 TLD 猜成 api.m-team.cc/platform 等错误域名;
+2. __collectMTeamViaApi 开头预热调用 /system/getConf(站点页面抓包确认会调此接口
+   获取配置/版本), 失败不影响主流程, 为 getUserTorrentList 请求建立会话。
+保留回答两条路径: API 优先(固定域名), 失败回退 DOM 点击遍历(1.2.78b 已修
+textContent 状态判断, 能真正点击"察看"打开 modal)。
+验证: npx vite build 压缩版 184.19 kB(189,328B); @version 1.2.80b;
+node --check 通过; minified 含 api.m-team.io 与 getConf 预热逻辑。

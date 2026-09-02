@@ -128,6 +128,9 @@ async function __collectMTeamViaApi() {
   const map = { completed: 'COMPLETED', incomplete: 'INCOMPLETE' };
   const userId = parseInt(__MT_PROFILE_ID, 10);
   if (!userId) return result;
+  // 预热: 站点页面抓包确认会调 /system/getConf 获取配置(可能含 apiHost/版本),
+  // 与 getUserTorrentList 配合使用。这里预热一次, 失败不影响主流程。
+  try { await __mteamApiPost('/system/getConf', {}); } catch (e) { /* 忽略 */ }
   const pageSize = 200; // swagger: UserTorrentSearch.pageSize 最大 200
   for (const type of ['completed', 'incomplete']) {
     const set = result[type];
@@ -192,6 +195,9 @@ async function __collectMTeam() {
     'window.__kesaMtReq=function(path,body,token){' +
     'try{' +
     'var __apiHost=localStorage.getItem("apiHost")||"";' +
+    // M-Team 真实 API 域名固定为 api.m-team.io(用户抓包确认), 不再按 location TLD 猜测;
+    // 无 localStorage apiHost 时对 m-team.cc 子域直接用该固定域名。
+    'if(!__apiHost && /m-team\\.cc/i.test(location.hostname)) __apiHost="https://api.m-team.io/api";' +
     'var __u=(__apiHost||("https://api.m-team"+location.origin.match(/\\.([^.]+)$/)[0]+"/api"))+path;' +
     'var __o={};for(var k in body)__o[k]=body[k];__o._timestamp=Date.now();' +
     'if(!window.crypto||!window.crypto.subtle){document.dispatchEvent(new CustomEvent("__kesaMtApi",{detail:{token:token,error:"no-crypto"}}));return;}' +
