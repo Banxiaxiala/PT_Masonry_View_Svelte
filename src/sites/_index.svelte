@@ -887,15 +887,25 @@
       try { __kesaSavePageState(currentPageFromUrl()); } catch (e) {}
       try { __kesaPageInd(currentPageFromUrl()); } catch (e) {}
       // 白名单: 仅 /browse/ 开头才显示瀑布流并加载数据; 其余 M-Team 页(/bet、/forums、
-      // /profile、/usercp 等)隐藏瀑布流容器 + 卡片, 避免 SPA 路由跳转后残留瀑布流。
+      // /profile、/usercp 等)隐藏瀑布流容器 + 卡片 + 悬浮窗(侧边栏按钮栏/详细配置面板/
+      // 重置位置按钮), 避免 SPA 路由跳转后残留。注意 SPA 内部路由不刷新页面、脚本不重载,
+      // 不能只隐藏瀑布流容器, 必须把整套注入 UI(尤其固定悬浮的 .sideP 悬浮窗)一并隐藏。
       const isBrowse = /\/browse\//.test(window.location.pathname);
       try {
         if (waterfallNode) waterfallNode.style.display = isBrowse ? "block" : "none";
         const np = document.querySelector("div.nextPage");
         if (np) np.style.display = isBrowse ? "block" : "none";
+        // 悬浮窗(右下角固定按钮栏 .sideP)+ 详细配置面板(.configP)+ 重置位置按钮(#reset_panel_pos):
+        // 由 main.svelte 无条件挂载, SPA 跳到非列表页不重载脚本会残留, 这里按需显隐。
+        const f1 = document.querySelector(".sideP");
+        if (f1) f1.style.display = isBrowse ? "block" : "none";
+        const f2 = document.querySelector(".configP");
+        if (f2) f2.style.display = isBrowse ? "block" : "none";
+        const f3 = document.querySelector("#reset_panel_pos");
+        if (f3) f3.style.display = isBrowse ? "block" : "none";
       } catch (e) {}
       if (!isBrowse) {
-        console.log("M-Team SPA 跳转到非 /browse/ 页, 隐藏瀑布流");
+        console.log("M-Team SPA 跳转到非 /browse/ 页, 隐藏瀑布流与悬浮窗");
         return; // 非列表页不重新加载数据
       }
       // 重新发起数据请求: 劫持能捕获则走 /search 响应, 否则签名回退主动拉取当前分组
