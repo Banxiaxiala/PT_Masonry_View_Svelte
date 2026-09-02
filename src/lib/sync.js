@@ -1038,20 +1038,37 @@ async function __wdvUpload(force) {
   }
 
   // ---- 页码(仅读写 page.json, 逐 key 取 max 合并, 本地为空保留远端) ----
+  // 站点隔离: pages 的 key 是含 host 的完整 URL, 本站 page.json 只应存本站页码。
+  // 此前直接把跨站本地 pt_pagemax 全量(含其它站 URL key)逐 key 写回本站文件, 造成
+  // 单站 page.json 混入其它站页码, 下载时又把别站页码并回本地 → 跨站互相污染。
   let pageMsg = "页码无变化";
   if (force || pagesDirty) {
     const pg = await __wdvReadData("page");
     const remote = (pg.pages && typeof pg.pages === "object") ? pg.pages : {};
+    // 只保留远端文件中属于本站 host 的页码(丢弃历史混入的其它站 key)
+    const siteOnly = {};
+    for (const h in remote) {
+      try {
+        if (new URL(h).hostname === location.hostname) siteOnly[h] = remote[h];
+      } catch (e) {
+        siteOnly[h] = remote[h]; // key 不是合法 URL(无法判站)时保守保留
+      }
+    }
     const local =
       typeof window.__kesaPageSync === "function" ? window.__kesaPageSync("get") : null;
     if (local && typeof local === "object") {
       for (const h in local) {
+        let sameSite = false;
+        try {
+          sameSite = new URL(h).hostname === location.hostname;
+        } catch (e) {}
+        if (!sameSite) continue; // 只合并本站本地页码, 不把其它站写入本站文件
         const lv = (local[h] && local[h].max) || 0;
-        const rv = (remote[h] && remote[h].max) || 0;
-        if (lv > rv) remote[h] = { max: lv };
+        const rv = (siteOnly[h] && siteOnly[h].max) || 0;
+        if (lv > rv) siteOnly[h] = { max: lv };
       }
     }
-    pg.pages = remote;
+    pg.pages = siteOnly;
     pg.updated = Date.now();
     await __wdvWriteKind("page", pg);
     const pageInfo =

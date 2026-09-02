@@ -1,4 +1,4 @@
-export let version = '1.2.94b';
+export let version = '1.2.95b';
 
 export function config(mode) {
   return {
