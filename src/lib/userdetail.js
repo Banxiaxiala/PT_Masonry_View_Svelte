@@ -16,6 +16,7 @@ const __READ_NS = 'Kesa:Masonry';     // 与 sync.js 的 __STORE_NS 保持一致
 const __READ_KEY = '_read_ids';        // 已读 id 数组子键(不带 host 后缀，见 __readKey)
 const __PAGE_SIZE = 100;               // KamePT 用户详情分类每页条数
 const __FETCH_INTERVAL = 300;          // 抓取分页间隔(ms)
+const __MT_PAGE_INTERVAL = 1500;       // M-Team 翻页间隔(ms)，避免触发"请求频繁"限流
 
 /** 站点域名 → 用户详情页分类的标题文字(做种行第一格)，用于定位区块 */
 const __UD_SITE_ROW = {
@@ -170,7 +171,7 @@ async function __collectMTeamTorrentIds() {
     const viewParent = viewBtn.closest('tr') || rowEl;
     viewBtn.click();
     // 等待列表展开(网络请求+渲染)
-    await __sleep(800);
+    await __sleep(1200);
     let guard = 0;
     while (guard < 200) { // 最多约 20s
       const pageEls = Array.from(document.querySelectorAll('.ant-pagination-item'));
@@ -192,12 +193,13 @@ async function __collectMTeamTorrentIds() {
           const target = Array.from(document.querySelectorAll('.ant-pagination-item'))
             .find((el) => parseInt(el.innerText, 10) === nextBtn);
           target.click();
-          await __sleep(__FETCH_INTERVAL);
+          // 用较长间隔避免触发 M-Team "请求频繁"限流
+          await __sleep(__MT_PAGE_INTERVAL);
           continue;
         }
         break;
       }
-      await __sleep(100);
+      await __sleep(150);
       guard++;
     }
   }
