@@ -1,0 +1,13 @@
+fix(v1.2.90b): M-Team 详情"第一轮不弹窗/取0, 第二轮才正常"——全空自动重试一轮
+
+用户反馈: 第一轮点按钮不弹窗(无 alert 也无 modal), 第二轮弹窗种子列表一页页翻页, 后面正常。
+根因: 首次收集可能因 __kesaMtReq 注入/初始化竞态返回空, 第一轮卡(API 超时/注入时序)导致
+看起来"不弹窗没反应", 第二轮 DOM 回退才真正跑起来收集。
+修复(userdetail.js):
+1. 主流程 __recordCompletedIncompleteRead 的 M-Team 分支: 首次 __collectMTeam 结果全空
+   (completed 且 incomplete 均 0)时, 打印警告+等待 1s 后自动重试一轮(第二轮通常正常),
+   保证一次的点击就能出结果, 不再需要用户点第二次。
+2. __mteamApiPost 默认超时 12000→8000ms, 减少首轮 API 卡顿等待。
+3. __kesaMtReq 定义提取到 __MT_REQ_DEF + __mtEnsureReq(上一版已做), 预注入+每次请求前确保。
+验证: npx vite build 压缩版 184.71 kB(189,894B); @version 1.2.90b;
+node --check 通过; minified 含 "首次收集为空, 自动重试一轮" 逻辑。

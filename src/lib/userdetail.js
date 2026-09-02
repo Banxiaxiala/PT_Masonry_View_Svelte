@@ -151,7 +151,7 @@ async function __mteamApiPost(path, body, timeout) {
       if (d.error) { __done(null); return; }
       __done(d.result || null);
     };
-    const tid = setTimeout(() => __done(null), timeout || 12000);
+    const tid = setTimeout(() => __done(null), timeout || 8000);
     // 关键: 必须在 document 上监听(与 _index.svelte __mtFetchFallback 的
     // document.addEventListener("__kesaMTData") 一致)。__kesaMtReq 在 MAIN_WORLD
     // 用 document.dispatchEvent 派发, 油猴沙盒的 window 监听收不到 document 派发的
@@ -489,7 +489,14 @@ async function __recordCompletedIncompleteRead() {
 
   if (__IS_MT) {
     // M-Team profile 页：优先官方 API 收集，失败回退 DOM 点击遍历
-    const map = await __collectMTeam();
+    // 首次可能因 __kesaMtReq 注入/初始化竞态返回空(用户实测: 第一轮不弹窗, 第二轮才正常),
+    // 故若收集结果全空则自动重试一轮(第二轮通常正常)。
+    let map = await __collectMTeam();
+    if (map.completed.size === 0 && map.incomplete.size === 0) {
+      console.warn('[kesa-userdetail][mt] 首次收集为空, 自动重试一轮');
+      await __sleep(1000);
+      map = await __collectMTeam();
+    }
     stat.completed = map.completed.size;
     stat.incomplete = map.incomplete.size;
     stat.added += __writeReadIds(Array.from(map.completed));
