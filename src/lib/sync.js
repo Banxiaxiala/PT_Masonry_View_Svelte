@@ -795,7 +795,7 @@ function __fillWebDAVSection(container) {
  *    同步文件按站点分离成 3 个独立文件(后续调整互不牵连、各站上传下载只读写当前站文件):
  *      PT_Masonry_Sync/<host>.read.json   —— 已读标记
  *      PT_Masonry_Sync/<host>.page.json   —— 页码(每页记录最大翻到几页)
- *      PT_Masonry_Sync/<host>.cfg.json    —— 配置(Kesa:Masonry 过滤/已读相关 + Kesa:Fall)
+ *      PT_Masonry_Sync/<host>.cfg.json    —— 配置(Kesa:Masonry 过滤/已读相关; 1.2.97b 起不再携带 Kesa:Fall 旧版残留段)
  *    流量优化: 上传时已读/配置/页码各自按"是否有变化"决定是否写盘, 无变化的不重复上传。
  * ========================================================================== */
 // 计算 WebDAV 根目录(服务器地址 + 路径); 路径做 URL 编码, 避免中文/特殊字符被服务器拒收
@@ -1009,13 +1009,13 @@ async function __wdvUpload(force) {
   const ids = [...__storeVal(__readIds)];
   // 配置快照/上传一律用"净化后的本站配置串"做比对与写盘: 剔除已读与无本站后缀的旧版遗留全局键,
   // 让 cfg.json 只携带本站真正需要的配置子键(不混入别站/旧版残留), 变化检测也只反映真实配置变动。
+  // 注: 1.2.97b 起不再同步 config.fall 段——那是 1.2.3x 旧版残留(整站 _mt_categories 分类缓存等),
+  // 当前脚本不消费它, 却让 cfg.json 异常臃肿, 故上传时整体丢弃。
   const cfgStr = __cfgCleanSync(localStorage.getItem("Kesa:Masonry") || "{}");
-  const fallStr = localStorage.getItem("Kesa:Fall") || "{}";
   const snapIds = GM_getValue("pt_sync_idsSnap", "");
   const snapCfg = GM_getValue("pt_sync_cfgSnap", "");
-  const snapFall = GM_getValue("pt_sync_cfgFallSnap", "");
   const idsChanged = ids.join(",") !== snapIds;
-  const cfgChanged = cfgStr !== snapCfg || fallStr !== snapFall;
+  const cfgChanged = cfgStr !== snapCfg;
   const pagesDirty =
     typeof window.__kesaPageSync === "function" && window.__kesaPageSync("isDirty");
   if (!force && !idsChanged && !cfgChanged && !pagesDirty) {
@@ -1043,12 +1043,14 @@ async function __wdvUpload(force) {
   let cfgMsg = "配置无变化";
   if (force || cfgChanged) {
     const cf = await __wdvReadData("cfg");
-    cf.config = { masonry: cfgStr, fall: fallStr };
+    // 只写 masonry, 不写 fall: 并在覆盖写盘前显式删除远端遗留的 config.fall(旧版残留大字段),
+    // 使本次 PUT 整体覆盖后远端 cfg.json 中不再含 fall/_mt_categories 等臃肿历史数据。
+    cf.config = { masonry: cfgStr };
     cf.updated = Date.now();
     await __wdvWriteKind("cfg", cf);
     cfgMsg = "配置已同步";
     GM_setValue("pt_sync_cfgSnap", cfgStr);
-    GM_setValue("pt_sync_cfgFallSnap", fallStr);
+    GM_setValue("pt_sync_cfgFallSnap", ""); // 清理旧版残留快照键, 不再参与比对
   }
 
   // ---- 页码(仅读写 page.json, 逐 key 取 max 合并, 本地为空保留远端) ----
