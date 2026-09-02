@@ -886,6 +886,18 @@
       infoList = [];
       try { __kesaSavePageState(currentPageFromUrl()); } catch (e) {}
       try { __kesaPageInd(currentPageFromUrl()); } catch (e) {}
+      // 白名单: 仅 /browse/ 开头才显示瀑布流并加载数据; 其余 M-Team 页(/bet、/forums、
+      // /profile、/usercp 等)隐藏瀑布流容器 + 卡片, 避免 SPA 路由跳转后残留瀑布流。
+      const isBrowse = /\/browse\//.test(window.location.pathname);
+      try {
+        if (waterfallNode) waterfallNode.style.display = isBrowse ? "block" : "none";
+        const np = document.querySelector("div.nextPage");
+        if (np) np.style.display = isBrowse ? "block" : "none";
+      } catch (e) {}
+      if (!isBrowse) {
+        console.log("M-Team SPA 跳转到非 /browse/ 页, 隐藏瀑布流");
+        return; // 非列表页不重新加载数据
+      }
       // 重新发起数据请求: 劫持能捕获则走 /search 响应, 否则签名回退主动拉取当前分组
       __mtFetchFallback();
     }, 500);

@@ -1,0 +1,13 @@
+fix(v1.2.83b): M-Team SPA 路由跳转到非 /browse/ 页(/bet、/forums 等)仍残留瀑布流
+
+用户反馈: 已调成 /browse/ 白名单, 但 https://kp.m-team.cc/bet 和 /forums 仍加载瀑布流。
+根因: 1.2.82b 的 /browse/ 白名单守卫只在 main.js document-start 一次性执行。
+M-Team 是 SPA, 从 /browse/* 客户端路由跳转到 /bet、/forums 时脚本不会重载,
+瀑布流容器已挂载且 __mtRouteWatch 只重置数据、不隐藏容器 → 瀑布流残留。
+修复(_index.svelte __mtRouteWatch 路由变化分支):
+- 计算 isBrowse = /\/browse\//.test(pathname)
+- 非 /browse/: waterfallNode 与 div.nextPage 设 display:none(隐藏瀑布流+加载按钮), 清空卡片, 不重新加载数据
+- /browse/: display:block 恢复并重新发起数据请求
+这样 SPA 路由跳转到任何非列表页都会隐藏瀑布流, 回到 /browse/* 恢复。
+验证: npx vite build 压缩版 184.47 kB(189,627B); @version 1.2.83b; node --check 通过;
+minified 含 "M-Team SPA 跳转到非 /browse/ 页, 隐藏瀑布流" 逻辑。
